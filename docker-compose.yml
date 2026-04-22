@@ -1,0 +1,35 @@
+services:
+  app:
+    build: .
+    container_name: olre-app
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_HOST: ${APP_HOST:-0.0.0.0}
+      APP_PORT: ${APP_PORT:-8080}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-olre_db}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MARIADB_HOST: ${MARIADB_HOST}
+      MARIADB_PORT: ${MARIADB_PORT:-3306}
+      MARIADB_DB: ${MARIADB_DB:-hr}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      INPUT_DIR: ${INPUT_DIR:-/data/input}
+      PROCESSED_DIR: ${PROCESSED_DIR:-/data/processed}
+      ERROR_DIR: ${ERROR_DIR:-/data/error}
+      SECRET_KEY: ${SECRET_KEY}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-olre_session}
+      SESSION_MAX_AGE_SECONDS: ${SESSION_MAX_AGE_SECONDS:-28800}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - /srv/olre/input:/data/input
+      - /srv/olre/processed:/data/processed
+      - /srv/olre/error:/data/error
+    restart: unless-stopped
+
