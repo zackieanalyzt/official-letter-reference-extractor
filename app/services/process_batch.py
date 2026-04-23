@@ -5,11 +5,14 @@ from sqlalchemy.orm import Session
 from app.batch.file_ops import ensure_directory, move_file_to_directory
 from app.batch.fingerprint import FileFingerprint, build_file_fingerprint
 from app.batch.pdf_validation import validate_pdf_readable
+from app.batch.reference_extraction import extract_references_from_pdf
 from app.batch.scanner import discover_pdf_files
 from app.batch.service import (
     HomeBatchSummary,
+    count_batch_references,
     create_batch_run,
     create_document_row,
+    create_document_reference,
     create_processing_log,
     finalize_batch_run,
     find_processed_document_by_hash,
@@ -32,6 +35,7 @@ class BatchProcessSummary:
     total_files_processed: int
     duplicate_files_skipped: int
     failed_files: int
+    total_references_found: int
     status: str
 
 
@@ -82,6 +86,42 @@ def process_registered_document(
         raise
 
     try:
+        references, extraction_issues, page_count = extract_references_from_pdf(fingerprint.path)
+        document.page_count = page_count
+        persisted_reference_keys: set[tuple[int, str, str]] = set()
+
+        for issue in extraction_issues:
+            if issue.page_number is None:
+                message = issue.message
+            else:
+                message = f"page={issue.page_number} {issue.message}"
+            create_processing_log(
+                session,
+                level="WARNING",
+                step_name=issue.step_name,
+                message=message,
+                batch_run_id=batch_run_id,
+                document_id=document.id,
+            )
+
+        for reference in references:
+            reference_key = (
+                reference.page_number,
+                reference.source_type,
+                reference.raw_reference,
+            )
+            if reference_key in persisted_reference_keys:
+                continue
+            persisted_reference_keys.add(reference_key)
+            create_document_reference(
+                session,
+                document_id=document.id,
+                page_number=reference.page_number,
+                source_type=reference.source_type,
+                reference_class=reference.reference_class,
+                raw_reference=reference.raw_reference,
+            )
+
         moved_path = move_file_to_directory(
             fingerprint.path,
             processed_dir,
@@ -98,12 +138,12 @@ def process_registered_document(
         )
         logger.info("File moved to processed file=%s destination=%s", fingerprint.path, moved_path)
     except Exception as exc:
-        error_message = f"Processed move failed: {exc}"
-        logger.exception("Processed move failed file=%s", fingerprint.path)
+        error_message = f"Document processing failed: {exc}"
+        logger.exception("Document processing failed file=%s", fingerprint.path)
         create_processing_log(
             session,
             level="ERROR",
-            step_name="file_move",
+            step_name="document_processing",
             message=error_message,
             batch_run_id=batch_run_id,
             document_id=document.id,
@@ -196,6 +236,7 @@ def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by:
 
             try:
                 process_registered_document(
+                    # reference extraction stays synchronous inside the existing per-file flow
                     session,
                     batch_run_id=batch_run.id,
                     fingerprint=fingerprint,
@@ -209,6 +250,7 @@ def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by:
                 session.commit()
 
         status = "completed_with_errors" if failed_files else "completed"
+        total_references_found = count_batch_references(session, batch_run.id)
         finalize_batch_run(
             session,
             batch_run,
@@ -216,6 +258,7 @@ def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by:
             total_files_processed=total_files_processed,
             duplicate_files_skipped=duplicate_files_skipped,
             failed_files=failed_files,
+            total_references_found=total_references_found,
             status=status,
         )
         session.commit()
@@ -235,6 +278,7 @@ def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by:
             total_files_processed=total_files_processed,
             duplicate_files_skipped=duplicate_files_skipped,
             failed_files=failed_files,
+            total_references_found=total_references_found,
             status=status,
         )
 

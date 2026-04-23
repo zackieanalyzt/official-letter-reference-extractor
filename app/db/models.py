@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -67,7 +67,16 @@ class Document(Base):
 
 class DocumentReference(Base):
     __tablename__ = "document_references"
-    __table_args__ = (Index("ix_document_references_document_id", "document_id"),)
+    __table_args__ = (
+        Index("ix_document_references_document_id", "document_id"),
+        UniqueConstraint(
+            "document_id",
+            "page_number",
+            "raw_reference",
+            "source_type",
+            name="uq_document_references_document_page_raw_source",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(PK_TYPE, primary_key=True, autoincrement=True)
     document_id: Mapped[int] = mapped_column(

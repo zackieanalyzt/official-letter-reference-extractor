@@ -5,7 +5,8 @@ from fastapi.templating import Jinja2Templates
 from app.auth.session import SessionManager
 from app.config import BASE_DIR
 from app.dependencies import get_session_manager
-from app.services.process_batch import fetch_home_batch_summary, run_batch_registration
+from app.services.process_batch import run_batch_registration
+from app.services.ui_views import count_pending_inbox_files, fetch_latest_batch, localize_batch_summary
 
 
 router = APIRouter()
@@ -23,13 +24,19 @@ async def process_batch(request: Request, session_manager: SessionManager = Depe
         request.app.state.postgres_engine,
         triggered_by=user["username"],
     )
-    latest_batch = fetch_home_batch_summary(request.app.state.postgres_engine)
+    batch_summary = localize_batch_summary(batch_summary)
+    latest_batch = fetch_latest_batch(request.app.state.postgres_engine)
     return templates.TemplateResponse(
         request=request,
-        name="home.html",
+        name="batch.html",
         context={
             "user": user,
+            "current_page": "batch",
             "batch_summary": batch_summary,
             "latest_batch": latest_batch,
+            "pending_count": count_pending_inbox_files(
+                request.app.state.settings,
+                request.app.state.postgres_engine,
+            ),
         },
     )

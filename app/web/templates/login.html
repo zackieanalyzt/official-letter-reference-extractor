@@ -1,42 +1,41 @@
 {% extends "base.html" %}
 
-{% block title %}Login | OLRE{% endblock %}
+{% block title %}เข้าสู่ระบบ | OLRE{% endblock %}
 {% block body_class %}app-shell auth-shell{% endblock %}
 
 {% block topbar_actions %}
-<div class="topbar-note">Secure access for internal staff</div>
+<div class="topbar-note">สำหรับเจ้าหน้าที่ภายในองค์กร</div>
 {% endblock %}
 
 {% block content %}
 <section class="auth-hero shell shell-wide">
     <div class="auth-hero-copy">
-        <span class="eyebrow">LAN Access Platform</span>
-        <h1>Reference extraction for official letters, designed for modern public service workflows.</h1>
+        <span class="eyebrow">ระบบภายในเครือข่าย</span>
+        <h1>ตรวจสอบรายการอ้างอิงจากหนังสือราชการในรูปแบบที่พร้อมใช้งานจริง</h1>
         <p class="lead">
-            OLRE provides a secure internal workspace for staff to access batch processing, review extracted references,
-            and prepare exports from one consistent system.
+            OLRE ช่วยให้เจ้าหน้าที่นำเข้าเอกสาร, ประมวลผลชุดงาน, ตรวจผลอ้างอิง และเตรียมข้อมูลสำหรับส่งออกจากระบบเดียวกัน
         </p>
 
         <div class="auth-feature-list">
             <div class="mini-feature">
                 <span class="mini-feature-icon"></span>
                 <div>
-                    <strong>Trusted internal access</strong>
-                    <p>Session-based access for staff on the organization network.</p>
+                    <strong>เข้าใช้งานภายในองค์กรอย่างปลอดภัย</strong>
+                    <p>รองรับการเข้าใช้งานด้วยบัญชีเดิมของหน่วยงานและ session สำหรับงานประจำวัน</p>
                 </div>
             </div>
             <div class="mini-feature">
                 <span class="mini-feature-icon"></span>
                 <div>
-                    <strong>Structured processing workflow</strong>
-                    <p>Prepared for secure batch operations, traceability, and exports.</p>
+                    <strong>ลำดับงานชัดเจน</strong>
+                    <p>รองรับการนำเข้าไฟล์, ประมวลผลชุดงาน, ตรวจผล และเตรียมข้อมูลส่งออกอย่างเป็นขั้นตอน</p>
                 </div>
             </div>
             <div class="mini-feature">
                 <span class="mini-feature-icon"></span>
                 <div>
-                    <strong>Clear operational design</strong>
-                    <p>Built with a calm, dashboard-first interface for day-to-day administrative use.</p>
+                    <strong>หน้าจออ่านง่าย</strong>
+                    <p>ออกแบบให้ใช้งานแบบ dashboard สำหรับงานเอกสารและการตรวจสอบข้อมูลจริง</p>
                 </div>
             </div>
         </div>
@@ -44,30 +43,36 @@
 
     <div class="auth-card">
         <div class="auth-card-header">
-            <span class="eyebrow">Sign In</span>
-            <h2>Access OLRE</h2>
-            <p>Use your existing organizational credentials to continue.</p>
+            <span class="eyebrow">เข้าสู่ระบบ</span>
+            <h2>เข้าใช้งาน OLRE</h2>
+            <p>ใช้บัญชีผู้ใช้ของหน่วยงานเพื่อเข้าสู่ระบบ</p>
         </div>
 
         {% if error_message %}
-        <div class="alert">{{ error_message }}</div>
+        <div class="alert">
+            {% if error_message == "Invalid username or password." %}
+            ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
+            {% else %}
+            {{ error_message }}
+            {% endif %}
+        </div>
         {% endif %}
 
         <form method="post" action="/login" class="form-stack auth-form">
             <input type="hidden" name="next_url" value="{{ next_url }}">
 
-            <label for="username">Username</label>
+            <label for="username">ชื่อผู้ใช้</label>
             <input id="username" name="username" type="text" value="{{ username or '' }}" autocomplete="username" required>
 
-            <label for="password">Password</label>
+            <label for="password">รหัสผ่าน</label>
             <input id="password" name="password" type="password" autocomplete="current-password" required>
 
-            <button type="submit" class="button button-primary button-block">Sign in</button>
+            <button type="submit" class="button button-primary button-block">เข้าสู่ระบบ</button>
         </form>
 
         <div class="auth-card-footer">
-            <div class="security-chip">8-hour secure session</div>
-            <div class="security-chip">Internal network only</div>
+            <div class="security-chip">session ใช้งาน 8 ชั่วโมง</div>
+            <div class="security-chip">ใช้งานภายในเครือข่ายองค์กร</div>
         </div>
     </div>
 </section>

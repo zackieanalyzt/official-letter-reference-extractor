@@ -1,185 +1,85 @@
 {% extends "base.html" %}
 
-{% block title %}Home | OLRE{% endblock %}
+{% block title %}หน้าแรก | OLRE{% endblock %}
 
 {% block content %}
-<section class="hero-section">
-    <div class="shell shell-wide hero-grid">
-        <div class="hero-copy">
-            <span class="eyebrow">Operational Dashboard</span>
-            <h1>Official letter reference extraction with a cleaner workflow for health and public-sector teams.</h1>
-            <p class="lead">
-                Welcome back, <strong>{{ user.display_name }}</strong>. OLRE is ready as a secure operational shell for
-                processing incoming PDFs, reviewing extracted references, and preparing exports in one place.
-            </p>
-
-            <div class="hero-actions">
-                <form method="post" action="/batch/process" class="inline-form">
-                    <button type="submit" class="button button-primary">Run Manual Batch</button>
-                </form>
-                <span class="button button-secondary button-static">Synchronous registration flow</span>
-            </div>
-
-            <div class="status-strip">
-                <div class="status-item">
-                    <span class="status-label">Access</span>
-                    <strong>Authenticated</strong>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">Session</span>
-                    <strong>8 Hours</strong>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">Mode</span>
-                    <strong>Manual Batch</strong>
-                </div>
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">ภาพรวมการปฏิบัติงาน</span>
+                <h1>แดชบอร์ดการทำงานประจำวัน</h1>
+                <p class="lead">ติดตามสถานะระบบ ดูจำนวนไฟล์รอประมวลผล และไปยังงานหลักได้จากหน้าจอเดียว</p>
             </div>
         </div>
 
-        <div class="hero-visual" aria-hidden="true">
-            <div class="city-plate">
-                <div class="building building-tall"></div>
-                <div class="building building-mid"></div>
-                <div class="building building-slim"></div>
-                <div class="building building-wide"></div>
-                <div class="pulse pulse-one"></div>
-                <div class="pulse pulse-two"></div>
-                <div class="signal-card signal-card-a"></div>
-                <div class="signal-card signal-card-b"></div>
-                <div class="signal-card signal-card-c"></div>
-            </div>
-        </div>
-    </div>
-</section>
+        <div class="stats-grid">
+            <article class="info-card stat-card">
+                <span class="card-kicker">สถานะผู้ใช้งาน</span>
+                <strong class="stat-value">เข้าสู่ระบบแล้ว</strong>
+                <p>{{ user.display_name }}</p>
+            </article>
 
-<section class="dashboard-section">
-    <div class="shell shell-wide batch-panel-grid">
-        <article class="info-card batch-action-card">
-            <span class="card-kicker">Batch Registration</span>
-            <h2>Scan the input folder and register pending PDFs.</h2>
-            <p>
-                This MVP step computes file hashes, registers new documents, skips duplicate content already processed,
-                and moves handled files into the processed or error folders.
-            </p>
-            <form method="post" action="/batch/process" class="batch-action-form">
-                <button type="submit" class="button button-primary">Start Batch Now</button>
-            </form>
-        </article>
-
-        <article class="info-card batch-summary-card">
-            <span class="card-kicker">Latest Batch</span>
-            {% if batch_summary %}
-            <h2>Batch #{{ batch_summary.batch_run_id }} finished in this session.</h2>
-            <div class="summary-metrics">
-                <div class="summary-metric">
-                    <span>Files seen</span>
-                    <strong>{{ batch_summary.total_files_seen }}</strong>
-                </div>
-                <div class="summary-metric">
-                    <span>Processed</span>
-                    <strong>{{ batch_summary.total_files_processed }}</strong>
-                </div>
-                <div class="summary-metric">
-                    <span>Duplicates skipped</span>
-                    <strong>{{ batch_summary.duplicate_files_skipped }}</strong>
-                </div>
-                <div class="summary-metric">
-                    <span>Failed</span>
-                    <strong>{{ batch_summary.failed_files }}</strong>
-                </div>
-            </div>
-            {% elif latest_batch %}
-            <h2>Batch #{{ latest_batch.batch_run_id }} is the most recent recorded run.</h2>
-            <div class="summary-metrics">
-                <div class="summary-metric">
-                    <span>Files seen</span>
-                    <strong>{{ latest_batch.total_files_seen }}</strong>
-                </div>
-                <div class="summary-metric">
-                    <span>Processed</span>
-                    <strong>{{ latest_batch.total_files_processed }}</strong>
-                </div>
-                <div class="summary-metric">
-                    <span>Duplicates skipped</span>
-                    <strong>{{ latest_batch.duplicate_files_skipped }}</strong>
-                </div>
-                <div class="summary-metric">
-                    <span>Failed</span>
-                    <strong>{{ latest_batch.failed_files }}</strong>
-                </div>
-            </div>
-            {% else %}
-            <h2>No batch has been run yet.</h2>
-            <p class="muted-copy">
-                Use the manual batch action to scan `INPUT_DIR`, register PDF files, and move handled files into the configured folders.
-            </p>
-            {% endif %}
-        </article>
-    </div>
-</section>
-
-<section class="dashboard-section">
-    <div class="shell shell-wide dashboard-grid">
-        <article class="info-card feature-card">
-            <span class="card-kicker">Workspace</span>
-            <h2>Platform shell ready</h2>
-            <p>
-                Authentication, protected routes, session management, and system wiring are in place for the next OLRE modules.
-            </p>
-        </article>
-
-        <article class="info-card feature-card">
-            <span class="card-kicker">Batch Processing</span>
-            <h2>Prepared for intake flow</h2>
-            <p>
-                The interface already reserves clear navigation space for upcoming batch scanning, file handling, and operational status views.
-            </p>
-        </article>
-
-        <article class="info-card feature-card">
-            <span class="card-kicker">Results</span>
-            <h2>Designed for table-first review</h2>
-            <p>
-                Future extracted references, URLs, and normalized document numbers can slot into a clean, card-and-table layout without redesign.
-            </p>
-        </article>
-
-        <article class="info-card feature-card">
-            <span class="card-kicker">Exports</span>
-            <h2>Reporting-friendly presentation</h2>
-            <p>
-                CSV and Markdown export actions are visually planned so the app can feel like a complete internal platform as features arrive.
-            </p>
-        </article>
-    </div>
-</section>
-
-<section class="dashboard-section dashboard-section-soft">
-    <div class="shell shell-wide summary-layout">
-        <div class="summary-panel">
-            <span class="eyebrow">Navigation Preview</span>
-            <h2>Application areas staged for the next implementation steps.</h2>
-            <p class="muted-copy">
-                This home view now acts as a real dashboard shell rather than a placeholder page, giving OLRE a more production-ready presence.
-            </p>
+            <article class="info-card stat-card">
+                <span class="card-kicker">ไฟล์รอประมวลผล</span>
+                <strong class="stat-value">{{ pending_count }}</strong>
+                <p>ไฟล์ PDF ที่อยู่ในโฟลเดอร์นำเข้าและพร้อมเข้าสู่ batch</p>
+            </article>
         </div>
 
-        <div class="mini-card-grid">
-            <article class="mini-card">
-                <strong>Home</strong>
-                <p>Overview, status, and launch actions.</p>
+        <div class="dashboard-main-grid">
+            <article class="info-card summary-card">
+                <span class="card-kicker">สรุป batch ล่าสุด</span>
+                {% if latest_batch %}
+                <h2>ชุดงาน #{{ latest_batch.batch_run_id }}</h2>
+                <div class="summary-metrics">
+                    <div class="summary-metric">
+                        <span>ไฟล์ทั้งหมด</span>
+                        <strong>{{ latest_batch.total_files_seen }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>ประมวลผลสำเร็จ</span>
+                        <strong>{{ latest_batch.total_files_processed }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>ไฟล์ซ้ำ</span>
+                        <strong>{{ latest_batch.duplicate_files_skipped }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>ไฟล์ผิดพลาด</span>
+                        <strong>{{ latest_batch.failed_files }}</strong>
+                    </div>
+                </div>
+                <div class="status-inline">
+                    <span class="status-badge">{{ latest_batch.status }}</span>
+                    <span>จำนวนรายการอ้างอิง: {{ latest_batch.total_references_found }}</span>
+                </div>
+                {% else %}
+                <h2>ยังไม่มีประวัติการประมวลผล</h2>
+                <p class="muted-copy">เริ่มจากอัปโหลดไฟล์ PDF เข้าหน้านำเข้าไฟล์ แล้วค่อยสั่งประมวลผลชุดงาน</p>
+                {% endif %}
             </article>
-            <article class="mini-card">
-                <strong>Batch Processing</strong>
-                <p>Queued for the next operational workflow phase.</p>
-            </article>
-            <article class="mini-card">
-                <strong>Results</strong>
-                <p>Reserved for extracted-reference review and filtering.</p>
-            </article>
-            <article class="mini-card">
-                <strong>Exports</strong>
-                <p>Prepared for reporting and downstream sharing.</p>
+
+            <article class="info-card action-panel">
+                <span class="card-kicker">ทางลัด</span>
+                <div class="action-list">
+                    <a href="/imports" class="action-link-card">
+                        <strong>นำเข้าไฟล์</strong>
+                        <p>อัปโหลด PDF หลายไฟล์เข้าสู่ inbox</p>
+                    </a>
+                    <a href="/batch" class="action-link-card">
+                        <strong>เริ่ม batch</strong>
+                        <p>ตรวจสอบรายการรอคิวและสั่งประมวลผลทันที</p>
+                    </a>
+                    <a href="/results" class="action-link-card">
+                        <strong>ดูผลลัพธ์</strong>
+                        <p>ตรวจสอบ reference ที่ดึงได้ในรูปแบบตาราง</p>
+                    </a>
+                    <a href="/exports" class="action-link-card">
+                        <strong>ส่งออกข้อมูล</strong>
+                        <p>ดูภาพรวมข้อมูลที่พร้อมสำหรับงานส่งต่อ</p>
+                    </a>
+                </div>
             </article>
         </div>
     </div>

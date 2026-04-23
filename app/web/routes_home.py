@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from app.auth.session import SessionManager
 from app.config import BASE_DIR
 from app.dependencies import get_session_manager
-from app.services.process_batch import fetch_home_batch_summary
+from app.services.ui_views import count_pending_inbox_files, fetch_latest_batch
 
 
 router = APIRouter()
@@ -18,13 +18,16 @@ async def home(request: Request, session_manager: SessionManager = Depends(get_s
     if not user:
         return RedirectResponse(url="/login?next=/", status_code=303)
 
-    latest_batch = fetch_home_batch_summary(request.app.state.postgres_engine)
     return templates.TemplateResponse(
         request=request,
         name="home.html",
         context={
             "user": user,
-            "batch_summary": None,
-            "latest_batch": latest_batch,
+            "current_page": "home",
+            "latest_batch": fetch_latest_batch(request.app.state.postgres_engine),
+            "pending_count": count_pending_inbox_files(
+                request.app.state.settings,
+                request.app.state.postgres_engine,
+            ),
         },
     )

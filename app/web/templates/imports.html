@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}นำเข้าไฟล์ | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">นำเข้าไฟล์</span>
+                <h1>อัปโหลดเอกสารเข้ากล่องรับไฟล์</h1>
+                <p class="lead">ลากไฟล์ PDF มาวางหรือเลือกหลายไฟล์ เพื่อเตรียมข้อมูลก่อนเริ่ม batch</p>
+            </div>
+            <div class="page-heading-side">
+                <span class="metric-chip">รอประมวลผล {{ pending_count }} ไฟล์</span>
+            </div>
+        </div>
+
+        {% if upload_summary %}
+        <div class="alert alert-success">
+            อัปโหลดสำเร็จ {{ upload_summary.saved_count }} ไฟล์
+            {% if upload_summary.failed_count %}
+            และไม่สำเร็จ {{ upload_summary.failed_count }} ไฟล์
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="dashboard-main-grid">
+            <article class="info-card">
+                <form method="post" action="/imports/upload" enctype="multipart/form-data" class="upload-form">
+                    <label for="upload-files" class="upload-dropzone" id="upload-dropzone">
+                        <input id="upload-files" name="files" type="file" accept=".pdf,application/pdf" multiple>
+                        <span class="upload-icon"></span>
+                        <strong>ลากไฟล์ PDF มาวางที่นี่</strong>
+                        <span>หรือกดเพื่อเลือกหลายไฟล์จากเครื่อง</span>
+                    </label>
+                    <div class="upload-actions">
+                        <button type="submit" class="button button-primary">อัปโหลดเข้า inbox</button>
+                        <span class="muted-copy">รองรับเฉพาะไฟล์ `.pdf`</span>
+                    </div>
+                </form>
+            </article>
+
+            <article class="info-card compact-help-card">
+                <span class="card-kicker">ขั้นตอนถัดไป</span>
+                <ol class="number-list">
+                    <li>อัปโหลดไฟล์เข้ากล่องรับไฟล์</li>
+                    <li>ตรวจสอบสถานะไฟล์ซ้ำหรือไฟล์รอประมวลผล</li>
+                    <li>ไปที่หน้า “ประมวลผลชุดงาน” เพื่อเริ่ม batch</li>
+                </ol>
+            </article>
+        </div>
+
+        <article class="info-card table-card">
+            <div class="section-head">
+                <div>
+                    <span class="card-kicker">รายการไฟล์ใน inbox</span>
+                    <h2>พร้อมใช้งานก่อนประมวลผล</h2>
+                </div>
+                <a href="/batch" class="button button-secondary">ไปหน้าประมวลผลชุดงาน</a>
+            </div>
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ลำดับ</th>
+                            <th>ชื่อไฟล์</th>
+                            <th>ขนาดไฟล์</th>
+                            <th>วันที่อัปโหลด</th>
+                            <th>สถานะ</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inbox_items %}
+                        <tr>
+                            <td>{{ item.index }}</td>
+                            <td class="cell-strong">{{ item.file_name }}</td>
+                            <td>{{ item.file_size_label }}</td>
+                            <td>{{ item.uploaded_at }}</td>
+                            <td><span class="status-badge">{{ item.status }}</span></td>
+                            <td>
+                                <form method="post" action="/imports/delete" class="inline-form">
+                                    <input type="hidden" name="file_name" value="{{ item.file_name }}">
+                                    <button type="submit" class="button button-ghost button-small">ลบออกจาก inbox</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="table-empty">ยังไม่มีไฟล์ใน inbox</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+</section>
+
+<script>
+const dropzone = document.getElementById("upload-dropzone");
+const fileInput = document.getElementById("upload-files");
+
+if (dropzone && fileInput) {
+    ["dragenter", "dragover"].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            dropzone.classList.add("is-dragover");
+        });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            dropzone.classList.remove("is-dragover");
+        });
+    });
+
+    dropzone.addEventListener("drop", (event) => {
+        if (event.dataTransfer && event.dataTransfer.files.length) {
+            fileInput.files = event.dataTransfer.files;
+        }
+    });
+}
+</script>
+{% endblock %}

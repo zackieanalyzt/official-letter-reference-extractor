@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}ประมวลผลชุดงาน | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">ประมวลผลชุดงาน</span>
+                <h1>สั่งประมวลผลไฟล์ใน inbox</h1>
+                <p class="lead">batch ยังคงทำงานแบบ synchronous ตาม flow เดิม โดยอ่านไฟล์จากโฟลเดอร์กลางและบันทึกผลลงฐานข้อมูล</p>
+            </div>
+            <div class="page-heading-side">
+                <span class="metric-chip">รอประมวลผล {{ pending_count }} ไฟล์</span>
+            </div>
+        </div>
+
+        <div class="dashboard-main-grid">
+            <article class="info-card action-panel">
+                <span class="card-kicker">เริ่มงาน</span>
+                <h2>เริ่ม batch ทันที</h2>
+                <p class="muted-copy">เมื่อกดปุ่ม ระบบจะสแกน PDF ใน inbox, ตรวจไฟล์ซ้ำ, ดึงข้อมูลอ้างอิง และย้ายไฟล์ไปยังโฟลเดอร์ปลายทางตามผลลัพธ์</p>
+                <form method="post" action="/batch/process" class="batch-action-form">
+                    <button type="submit" class="button button-primary">เริ่มประมวลผลชุดงาน</button>
+                </form>
+            </article>
+
+            <article class="info-card summary-card">
+                <span class="card-kicker">ผลล่าสุด</span>
+                {% set active_batch = batch_summary or latest_batch %}
+                {% if active_batch %}
+                <h2>ชุดงาน #{{ active_batch.batch_run_id }}</h2>
+                <div class="summary-metrics">
+                    <div class="summary-metric">
+                        <span>ไฟล์ทั้งหมด</span>
+                        <strong>{{ active_batch.total_files_seen }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>ประมวลผลสำเร็จ</span>
+                        <strong>{{ active_batch.total_files_processed }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>ไฟล์ซ้ำ</span>
+                        <strong>{{ active_batch.duplicate_files_skipped }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>ไฟล์ผิดพลาด</span>
+                        <strong>{{ active_batch.failed_files }}</strong>
+                    </div>
+                </div>
+                <div class="status-inline">
+                    <span class="status-badge">{{ active_batch.status }}</span>
+                    {% if active_batch.total_references_found is defined %}
+                    <span>จำนวนรายการอ้างอิง: {{ active_batch.total_references_found }}</span>
+                    {% endif %}
+                </div>
+                {% else %}
+                <h2>ยังไม่มีข้อมูล batch</h2>
+                <p class="muted-copy">อัปโหลดไฟล์เข้าหน้านำเข้าไฟล์ก่อน แล้วกลับมาที่หน้านี้เพื่อเริ่มประมวลผล</p>
+                {% endif %}
+            </article>
+        </div>
+    </div>
+</section>
+{% endblock %}

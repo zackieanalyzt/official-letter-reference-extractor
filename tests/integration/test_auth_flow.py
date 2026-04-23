@@ -62,7 +62,7 @@ def test_failed_login(client):
     )
 
     assert response.status_code == 401
-    assert "Invalid username or password." in response.text
+    assert "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" in response.text
 
     audit_rows = fetch_audit_actions(client.app.state.postgres_engine)
     assert audit_rows[0]["username"] == "alice"

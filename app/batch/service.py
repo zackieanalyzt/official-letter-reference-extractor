@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import BatchRun, Document, ProcessingLog
+from app.db.models import BatchRun, Document, DocumentReference, ProcessingLog
 
 
 @dataclass
@@ -34,13 +34,14 @@ def finalize_batch_run(
     total_files_processed: int,
     duplicate_files_skipped: int,
     failed_files: int,
+    total_references_found: int,
     status: str,
 ) -> BatchRun:
     batch_run.total_files_seen = total_files_seen
     batch_run.total_files_processed = total_files_processed
     batch_run.duplicate_files_skipped = duplicate_files_skipped
     batch_run.failed_files = failed_files
-    batch_run.total_references_found = 0
+    batch_run.total_references_found = total_references_found
     batch_run.status = status
     batch_run.finished_at = datetime.now(UTC)
     session.flush()
@@ -92,6 +93,30 @@ def mark_document_failed(session: Session, document: Document, error_message: st
     return document
 
 
+def create_document_reference(
+    session: Session,
+    *,
+    document_id: int,
+    page_number: int,
+    source_type: str,
+    reference_class: str,
+    raw_reference: str,
+) -> DocumentReference:
+    reference = DocumentReference(
+        document_id=document_id,
+        page_number=page_number,
+        source_type=source_type,
+        reference_class=reference_class,
+        raw_reference=raw_reference,
+        final_url=None,
+        resolution_status="raw_only",
+        http_status=None,
+    )
+    session.add(reference)
+    session.flush()
+    return reference
+
+
 def create_processing_log(
     session: Session,
     *,
@@ -130,3 +155,12 @@ def get_latest_home_batch_summary(session: Session) -> HomeBatchSummary | None:
         finished_at=latest_batch.finished_at,
         failed_files=latest_batch.failed_files,
     )
+
+
+def count_batch_references(session: Session, batch_run_id: int) -> int:
+    return session.execute(
+        select(func.count(DocumentReference.id))
+        .select_from(DocumentReference)
+        .join(Document, DocumentReference.document_id == Document.id)
+        .where(Document.batch_run_id == batch_run_id)
+    ).scalar_one()

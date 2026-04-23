@@ -3,6 +3,7 @@ from pathlib import Path
 import fitz
 from sqlalchemy import text
 
+from app.batch.reference_extraction import ExtractedReference
 from app.services.process_batch import fetch_home_batch_summary, run_batch_registration
 
 
@@ -26,6 +27,17 @@ def fetch_one(engine, query: str):
 def fetch_all(engine, query: str):
     with engine.connect() as connection:
         return connection.execute(text(query)).mappings().all()
+
+
+def fetch_references(engine):
+    return fetch_all(
+        engine,
+        """
+        SELECT page_number, source_type, reference_class, raw_reference, resolution_status, final_url
+        FROM document_references
+        ORDER BY id
+        """,
+    )
 
 
 def test_batch_run_row_created(client):
@@ -236,3 +248,149 @@ def test_batch_summary_reflects_duplicate_and_failed_counts(client):
     assert latest_summary.total_files_processed == 0
     assert latest_summary.duplicate_files_skipped == 1
     assert latest_summary.failed_files == 1
+
+
+def test_text_url_reference_persisted_from_pdf_text(client):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "text-url.pdf", "Reference https://example.com/files/12345")
+
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_rows = fetch_references(client.app.state.postgres_engine)
+    assert len(reference_rows) == 1
+    assert reference_rows[0]["page_number"] == 1
+    assert reference_rows[0]["source_type"] == "text"
+    assert reference_rows[0]["reference_class"] == "url"
+    assert reference_rows[0]["raw_reference"] == "https://example.com/files/12345"
+    assert reference_rows[0]["resolution_status"] == "raw_only"
+    assert reference_rows[0]["final_url"] is None
+
+
+def test_short_url_reference_classified_from_pdf_text(client):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "short-url.pdf", "Short link https://bit.ly/olre-ref")
+
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_rows = fetch_references(client.app.state.postgres_engine)
+    assert len(reference_rows) == 1
+    assert reference_rows[0]["source_type"] == "text"
+    assert reference_rows[0]["reference_class"] == "short_url"
+    assert reference_rows[0]["raw_reference"] == "https://bit.ly/olre-ref"
+
+
+def test_qr_url_reference_persisted(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "qr-url.pdf", "qr url placeholder")
+
+    def fake_extract_references_from_pdf(_file_path):
+        return (
+            [
+                ExtractedReference(
+                    page_number=1,
+                    source_type="qr",
+                    reference_class="short_url",
+                    raw_reference="https://t.co/olre-qr",
+                )
+            ],
+            [],
+            1,
+        )
+
+    monkeypatch.setattr(
+        "app.services.process_batch.extract_references_from_pdf",
+        fake_extract_references_from_pdf,
+    )
+
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_rows = fetch_references(client.app.state.postgres_engine)
+    assert len(reference_rows) == 1
+    assert reference_rows[0]["source_type"] == "qr"
+    assert reference_rows[0]["reference_class"] == "short_url"
+    assert reference_rows[0]["raw_reference"] == "https://t.co/olre-qr"
+
+
+def test_non_url_qr_reference_persisted(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "qr-non-url.pdf", "qr non-url placeholder")
+
+    def fake_extract_references_from_pdf(_file_path):
+        return (
+            [
+                ExtractedReference(
+                    page_number=1,
+                    source_type="qr",
+                    reference_class="non_url",
+                    raw_reference="DOC:6176",
+                )
+            ],
+            [],
+            1,
+        )
+
+    monkeypatch.setattr(
+        "app.services.process_batch.extract_references_from_pdf",
+        fake_extract_references_from_pdf,
+    )
+
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_rows = fetch_references(client.app.state.postgres_engine)
+    assert len(reference_rows) == 1
+    assert reference_rows[0]["source_type"] == "qr"
+    assert reference_rows[0]["reference_class"] == "non_url"
+    assert reference_rows[0]["raw_reference"] == "DOC:6176"
+
+
+def test_duplicate_reference_suppression(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "duplicate-reference.pdf", "duplicate placeholder")
+
+    duplicate_reference = ExtractedReference(
+        page_number=1,
+        source_type="qr",
+        reference_class="url",
+        raw_reference="https://example.com/dup",
+    )
+
+    def fake_extract_references_from_pdf(_file_path):
+        return ([duplicate_reference, duplicate_reference], [], 1)
+
+    monkeypatch.setattr(
+        "app.services.process_batch.extract_references_from_pdf",
+        fake_extract_references_from_pdf,
+    )
+
+    summary = run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_rows = fetch_references(client.app.state.postgres_engine)
+    batch_row = fetch_one(
+        client.app.state.postgres_engine,
+        "SELECT total_references_found, status FROM batch_runs ORDER BY id DESC",
+    )
+
+    assert summary.status == "completed"
+    assert len(reference_rows) == 1
+    assert reference_rows[0]["raw_reference"] == "https://example.com/dup"
+    assert batch_row["total_references_found"] == 1

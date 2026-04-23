@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}ส่งออกข้อมูล | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">ส่งออกข้อมูล</span>
+                <h1>ภาพรวมข้อมูลสำหรับงานส่งต่อ</h1>
+                <p class="lead">ใช้หน้านี้เพื่อตรวจสอบปริมาณข้อมูลที่มีอยู่ก่อนนำไปส่งออกหรือสรุปรายงานต่อ</p>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <article class="info-card stat-card">
+                <span class="card-kicker">เอกสารประมวลผลแล้ว</span>
+                <strong class="stat-value">{{ export_summary.processed_documents }}</strong>
+                <p>จำนวนเอกสารที่ถูกย้ายเข้าพื้นที่ processed แล้ว</p>
+            </article>
+            <article class="info-card stat-card">
+                <span class="card-kicker">รายการอ้างอิงทั้งหมด</span>
+                <strong class="stat-value">{{ export_summary.total_references }}</strong>
+                <p>รวมผลที่ได้จากข้อความใน PDF และ QR</p>
+            </article>
+        </div>
+
+        <article class="info-card summary-card">
+            <span class="card-kicker">ชุดงานล่าสุด</span>
+            {% if export_summary.latest_batch %}
+            <h2>ชุดงาน #{{ export_summary.latest_batch.batch_run_id }}</h2>
+            <div class="summary-metrics">
+                <div class="summary-metric">
+                    <span>ประมวลผลสำเร็จ</span>
+                    <strong>{{ export_summary.latest_batch.total_files_processed }}</strong>
+                </div>
+                <div class="summary-metric">
+                    <span>ไฟล์ผิดพลาด</span>
+                    <strong>{{ export_summary.latest_batch.failed_files }}</strong>
+                </div>
+                <div class="summary-metric">
+                    <span>ไฟล์ซ้ำ</span>
+                    <strong>{{ export_summary.latest_batch.duplicate_files_skipped }}</strong>
+                </div>
+                <div class="summary-metric">
+                    <span>รายการอ้างอิง</span>
+                    <strong>{{ export_summary.latest_batch.total_references_found }}</strong>
+                </div>
+            </div>
+            {% else %}
+            <h2>ยังไม่มีข้อมูลสำหรับส่งออก</h2>
+            <p class="muted-copy">เมื่อมีการประมวลผลเอกสารแล้ว สถิติสำหรับงานส่งออกจะปรากฏที่หน้านี้</p>
+            {% endif %}
+        </article>
+    </div>
+</section>
+{% endblock %}
