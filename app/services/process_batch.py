@@ -23,6 +23,7 @@ from app.batch.service import (
 from app.config import Settings
 from app.db.postgres import create_postgres_session_factory
 from app.logging_config import get_logger
+from app.services.inbox_paths import get_inbox_path
 
 
 logger = get_logger(__name__)
@@ -167,7 +168,7 @@ def process_registered_document(
 
 
 def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by: str) -> BatchProcessSummary:
-    input_dir = ensure_directory(settings.input_path)
+    input_dir = get_inbox_path(settings)
     processed_dir = ensure_directory(settings.processed_path)
     error_dir = ensure_directory(settings.error_path)
 
@@ -177,8 +178,9 @@ def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by:
 
     pdf_files = discover_pdf_files(input_dir)
     logger.info(
-        "Batch start triggered_by=%s files_seen=%s files=%s",
+        "Batch start triggered_by=%s inbox_path=%s files_seen=%s files=%s",
         triggered_by,
+        input_dir,
         len(pdf_files),
         [str(path) for path in pdf_files],
     )

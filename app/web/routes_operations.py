@@ -7,9 +7,10 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.auth.session import SessionManager
-from app.batch.file_ops import ensure_directory
 from app.config import BASE_DIR
 from app.dependencies import get_session_manager
+from app.logging_config import get_logger
+from app.services.inbox_paths import get_inbox_path
 from app.services.ui_views import (
     count_pending_inbox_files,
     fetch_export_summary,
@@ -22,6 +23,7 @@ from app.services.ui_views import (
 
 router = APIRouter()
 templates = Jinja2Templates(directory=BASE_DIR / "app" / "web" / "templates")
+logger = get_logger(__name__)
 
 
 def _require_user(request: Request, session_manager: SessionManager):
@@ -51,7 +53,6 @@ def _save_uploaded_file(target_dir: Path, upload: UploadFile) -> tuple[bool, str
     if Path(upload.filename).suffix.lower() != ".pdf":
         return False, "รองรับเฉพาะไฟล์ PDF"
 
-    target_dir = ensure_directory(target_dir)
     original_name = Path(upload.filename).name
     candidate = target_dir / original_name
     if candidate.exists():
@@ -68,7 +69,7 @@ def _save_uploaded_file(target_dir: Path, upload: UploadFile) -> tuple[bool, str
             if not chunk:
                 break
             output_file.write(chunk)
-    return True, candidate.name
+    return True, str(candidate.resolve())
 
 
 @router.get("/imports")
@@ -106,14 +107,32 @@ async def upload_imports(
 
     saved_files: list[str] = []
     failed_files: list[str] = []
-    target_dir = request.app.state.settings.input_path
+    target_dir = get_inbox_path(request.app.state.settings)
+    logger.info(
+        "Imports upload start inbox_path=%s requested_files=%s filenames=%s",
+        target_dir,
+        len(files),
+        [upload.filename for upload in files],
+    )
 
     for upload in files:
         success, value = _save_uploaded_file(target_dir, upload)
         if success:
             saved_files.append(value)
+            logger.info(
+                "Imports upload saved original_name=%s saved_path=%s inbox_path=%s",
+                upload.filename,
+                value,
+                target_dir,
+            )
         else:
             failed_files.append(f"{upload.filename or 'unknown'}: {value}")
+            logger.warning(
+                "Imports upload failed original_name=%s reason=%s inbox_path=%s",
+                upload.filename,
+                value,
+                target_dir,
+            )
         await upload.close()
 
     inbox_items = list_inbox_files(request.app.state.settings, request.app.state.postgres_engine)
@@ -151,6 +170,9 @@ async def delete_import_file(
     target_path = safe_inbox_file_path(request.app.state.settings, file_name)
     if target_path:
         target_path.unlink(missing_ok=True)
+        logger.info("Imports delete removed file_name=%s file_path=%s", file_name, target_path)
+    else:
+        logger.warning("Imports delete skipped file_name=%s reason=not_found_or_outside_inbox", file_name)
 
     return RedirectResponse(url="/imports", status_code=303)
 

@@ -7,12 +7,16 @@ from pathlib import Path
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
-from app.batch.file_ops import ensure_directory
 from app.batch.fingerprint import compute_sha256
 from app.batch.service import HomeBatchSummary, get_latest_home_batch_summary
 from app.config import Settings
 from app.db.models import Document, DocumentReference
 from app.db.postgres import create_postgres_session_factory
+from app.logging_config import get_logger
+from app.services.inbox_paths import get_inbox_path
+
+
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -62,6 +66,9 @@ REFERENCE_CLASS_LABELS = {
 RESOLUTION_STATUS_LABELS = {
     "raw_only": "เก็บค่าเดิม",
 }
+INBOX_STATUS_ERROR = "ไฟล์ผิดพลาด"
+INBOX_STATUS_DUPLICATE = "ไฟล์ซ้ำ"
+INBOX_STATUS_PENDING = "รอประมวลผล"
 
 
 def format_datetime(value: datetime | None) -> str:
@@ -113,7 +120,7 @@ def localize_batch_summary(batch_summary):
 
 
 def list_inbox_files(settings: Settings, postgres_engine) -> list[InboxFileItem]:
-    input_dir = ensure_directory(settings.input_path)
+    input_dir = get_inbox_path(settings)
     session_factory = create_postgres_session_factory(postgres_engine)
     with session_factory() as session:
         processed_hashes = _fetch_processed_hashes(session)
@@ -123,6 +130,12 @@ def list_inbox_files(settings: Settings, postgres_engine) -> list[InboxFileItem]
         key=lambda item: item.stat().st_mtime,
         reverse=True,
     )
+    logger.info(
+        "Inbox listing path=%s files_found=%s files=%s",
+        input_dir,
+        len(files),
+        [path.name for path in files],
+    )
 
     inbox_items: list[InboxFileItem] = []
     for index, file_path in enumerate(files, start=1):
@@ -130,9 +143,9 @@ def list_inbox_files(settings: Settings, postgres_engine) -> list[InboxFileItem]
         try:
             content_hash = compute_sha256(file_path)
         except Exception:
-            status = "ไฟล์ผิดพลาด"
+            status = INBOX_STATUS_ERROR
         else:
-            status = "ไฟล์ซ้ำ" if content_hash in processed_hashes else "รอประมวลผล"
+            status = INBOX_STATUS_DUPLICATE if content_hash in processed_hashes else INBOX_STATUS_PENDING
 
         inbox_items.append(
             InboxFileItem(
@@ -148,7 +161,7 @@ def list_inbox_files(settings: Settings, postgres_engine) -> list[InboxFileItem]
 
 
 def count_pending_inbox_files(settings: Settings, postgres_engine) -> int:
-    return sum(1 for item in list_inbox_files(settings, postgres_engine) if item.status == "รอประมวลผล")
+    return sum(1 for item in list_inbox_files(settings, postgres_engine) if item.status == INBOX_STATUS_PENDING)
 
 
 def fetch_latest_batch(postgres_engine) -> HomeBatchSummary | None:
@@ -210,8 +223,8 @@ def fetch_export_summary(postgres_engine) -> ExportSummary:
 
 
 def safe_inbox_file_path(settings: Settings, file_name: str) -> Path | None:
-    candidate = (ensure_directory(settings.input_path) / file_name).resolve()
-    input_root = ensure_directory(settings.input_path).resolve()
+    input_root = get_inbox_path(settings)
+    candidate = (input_root / file_name).resolve()
     if candidate.parent != input_root or not candidate.exists():
         return None
     return candidate
