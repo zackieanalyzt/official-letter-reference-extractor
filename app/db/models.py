@@ -69,6 +69,8 @@ class DocumentReference(Base):
     __tablename__ = "document_references"
     __table_args__ = (
         Index("ix_document_references_document_id", "document_id"),
+        Index("ix_document_references_resolution_status", "resolution_status"),
+        Index("ix_document_references_source_type", "source_type"),
         UniqueConstraint(
             "document_id",
             "page_number",

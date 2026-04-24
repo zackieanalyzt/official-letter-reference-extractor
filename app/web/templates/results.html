@@ -1,52 +1,116 @@
 {% extends "base.html" %}
 
-{% block title %}ผลการตรวจสอบ | OLRE{% endblock %}
+{% block title %}Results | OLRE{% endblock %}
 
 {% block content %}
 <section class="page-section">
     <div class="shell shell-wide page-stack">
         <div class="page-heading">
             <div>
-                <span class="eyebrow">ผลการตรวจสอบ</span>
-                <h1>รายการอ้างอิงที่ตรวจพบ</h1>
-                <p class="lead">แสดงผลแบบตารางเป็นหลัก เพื่อให้ตรวจสอบ URL, QR และสถานะการเก็บข้อมูลได้อย่างรวดเร็ว</p>
+                <span class="eyebrow">Results</span>
+                <h1>Extracted References</h1>
+                <p class="lead">ดูผลที่สกัดได้จากเอกสารแต่ละไฟล์ ค้นหาได้ทันที และตรวจสอบสถานะการ resolve ก่อนนำไปใช้งานต่อ</p>
             </div>
         </div>
 
         <article class="info-card table-card">
+            <form method="get" action="/results" class="filters-bar">
+                <label class="filter-field">
+                    <span>Search</span>
+                    <input type="search" name="search" value="{{ search }}" placeholder="Search file name or URL">
+                </label>
+                <label class="filter-field">
+                    <span>Status</span>
+                    <select name="status">
+                        <option value="">All</option>
+                        <option value="pending" {% if status == "pending" %}selected{% endif %}>pending</option>
+                        <option value="resolved" {% if status == "resolved" %}selected{% endif %}>resolved</option>
+                        <option value="failed" {% if status == "failed" %}selected{% endif %}>failed</option>
+                    </select>
+                </label>
+                <label class="filter-field">
+                    <span>Source</span>
+                    <select name="source_type">
+                        <option value="">All</option>
+                        <option value="text" {% if source_type == "text" %}selected{% endif %}>text</option>
+                        <option value="image" {% if source_type == "image" %}selected{% endif %}>image</option>
+                    </select>
+                </label>
+                <div class="filters-actions">
+                    <button type="submit" class="button button-primary button-small">Apply</button>
+                    <a href="/results" class="button button-secondary button-small">Reset</a>
+                </div>
+            </form>
+
+            <div class="section-head">
+                <div class="results-meta">
+                    <strong>{{ total }}</strong>
+                    <span>references found</span>
+                </div>
+                <div class="results-actions">
+                    <a class="button button-secondary button-small" href="/exports?search={{ search }}&status={{ status }}&source_type={{ source_type }}">Open Exports</a>
+                </div>
+            </div>
+
             <div class="table-wrap">
-                <table class="data-table">
+                <table class="data-table results-table">
                     <thead>
                         <tr>
-                            <th>ลำดับ</th>
-                            <th>เอกสาร</th>
-                            <th>หน้า</th>
-                            <th>แหล่งที่มา</th>
-                            <th>ประเภท</th>
-                            <th>ค่าอ้างอิง</th>
-                            <th>สถานะ</th>
-                            <th>เวลาประมวลผล</th>
+                            <th>File Name</th>
+                            <th>Page</th>
+                            <th>Type</th>
+                            <th>Source</th>
+                            <th>Raw Reference</th>
+                            <th>Final URL</th>
+                            <th>Status</th>
+                            <th>Created</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for row in result_rows %}
+                        {% for row in rows %}
                         <tr>
-                            <td>{{ row.index }}</td>
-                            <td class="cell-strong">{{ row.original_file_name }}</td>
+                            <td class="cell-strong">{{ row.filename }}</td>
                             <td>{{ row.page_number }}</td>
-                            <td>{{ row.source_type }}</td>
                             <td>{{ row.reference_class }}</td>
-                            <td class="cell-wrap">{{ row.raw_reference }}</td>
-                            <td><span class="status-badge">{{ row.resolution_status }}</span></td>
-                            <td>{{ row.processed_at }}</td>
+                            <td>{{ row.source_type }}</td>
+                            <td class="cell-wrap">
+                                {% if row.raw_reference.startswith("http://") or row.raw_reference.startswith("https://") %}
+                                <a class="table-link ellipsis-link" href="{{ row.raw_reference }}" target="_blank" rel="noopener noreferrer" title="{{ row.raw_reference }}">{{ row.raw_reference }}</a>
+                                {% else %}
+                                <span class="ellipsis-link" title="{{ row.raw_reference }}">{{ row.raw_reference }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="cell-wrap">
+                                {% if row.final_url %}
+                                <a class="table-link ellipsis-link" href="{{ row.final_url }}" target="_blank" rel="noopener noreferrer" title="{{ row.final_url }}">{{ row.final_url }}</a>
+                                {% else %}
+                                <span class="muted-inline">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="status-badge status-badge-{{ row.resolution_status }}">{{ row.resolution_status }}</span>
+                            </td>
+                            <td>{{ row.created_at.strftime("%d/%m/%Y %H:%M") if row.created_at else "-" }}</td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="8" class="table-empty">ยังไม่มีผลการตรวจสอบในระบบ</td>
+                            <td colspan="8" class="table-empty">No extracted references match the current filters.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <div class="pagination-bar">
+                <span class="muted-inline">Page {{ page }}</span>
+                <div class="pagination-actions">
+                    {% if has_prev %}
+                    <a class="button button-secondary button-small" href="/results?{{ prev_query }}">Previous</a>
+                    {% endif %}
+                    {% if has_next %}
+                    <a class="button button-secondary button-small" href="/results?{{ next_query }}">Next</a>
+                    {% endif %}
+                </div>
             </div>
         </article>
     </div>

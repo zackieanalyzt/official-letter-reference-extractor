@@ -1,57 +1,66 @@
 {% extends "base.html" %}
 
-{% block title %}ส่งออกข้อมูล | OLRE{% endblock %}
+{% block title %}Exports | OLRE{% endblock %}
 
 {% block content %}
 <section class="page-section">
     <div class="shell shell-wide page-stack">
         <div class="page-heading">
             <div>
-                <span class="eyebrow">ส่งออกข้อมูล</span>
-                <h1>ภาพรวมข้อมูลสำหรับงานส่งต่อ</h1>
-                <p class="lead">ใช้หน้านี้เพื่อตรวจสอบปริมาณข้อมูลที่มีอยู่ก่อนนำไปส่งออกหรือสรุปรายงานต่อ</p>
+                <span class="eyebrow">Exports</span>
+                <h1>Export Results</h1>
+                <p class="lead">เลือกช่วงข้อมูลที่ต้องการ แล้วดาวน์โหลดได้ทันทีทั้งแบบ CSV สำหรับใช้งานต่อ และ Markdown สำหรับรายงานสรุป</p>
             </div>
         </div>
 
         <div class="stats-grid">
             <article class="info-card stat-card">
-                <span class="card-kicker">เอกสารประมวลผลแล้ว</span>
+                <span class="card-kicker">Processed Documents</span>
                 <strong class="stat-value">{{ export_summary.processed_documents }}</strong>
-                <p>จำนวนเอกสารที่ถูกย้ายเข้าพื้นที่ processed แล้ว</p>
+                <p>จำนวนเอกสารที่ผ่านการประมวลผลและพร้อมใช้งาน</p>
             </article>
             <article class="info-card stat-card">
-                <span class="card-kicker">รายการอ้างอิงทั้งหมด</span>
+                <span class="card-kicker">Total References</span>
                 <strong class="stat-value">{{ export_summary.total_references }}</strong>
-                <p>รวมผลที่ได้จากข้อความใน PDF และ QR</p>
+                <p>จำนวน QR และ URL ที่อยู่ในระบบตอนนี้</p>
             </article>
         </div>
 
         <article class="info-card summary-card">
-            <span class="card-kicker">ชุดงานล่าสุด</span>
-            {% if export_summary.latest_batch %}
-            <h2>ชุดงาน #{{ export_summary.latest_batch.batch_run_id }}</h2>
-            <div class="summary-metrics">
-                <div class="summary-metric">
-                    <span>ประมวลผลสำเร็จ</span>
-                    <strong>{{ export_summary.latest_batch.total_files_processed }}</strong>
+            <span class="card-kicker">Filter Before Export</span>
+            <form method="get" action="/exports" class="filters-bar">
+                <label class="filter-field">
+                    <span>Search</span>
+                    <input type="search" name="search" value="{{ search }}" placeholder="Search file name or URL">
+                </label>
+                <label class="filter-field">
+                    <span>Status</span>
+                    <select name="status">
+                        <option value="">All</option>
+                        <option value="pending" {% if status == "pending" %}selected{% endif %}>pending</option>
+                        <option value="resolved" {% if status == "resolved" %}selected{% endif %}>resolved</option>
+                        <option value="failed" {% if status == "failed" %}selected{% endif %}>failed</option>
+                    </select>
+                </label>
+                <label class="filter-field">
+                    <span>Source</span>
+                    <select name="source_type">
+                        <option value="">All</option>
+                        <option value="text" {% if source_type == "text" %}selected{% endif %}>text</option>
+                        <option value="image" {% if source_type == "image" %}selected{% endif %}>image</option>
+                    </select>
+                </label>
+                <div class="filters-actions">
+                    <button type="submit" class="button button-primary button-small">Preview Filters</button>
+                    <a href="/exports" class="button button-secondary button-small">Reset</a>
                 </div>
-                <div class="summary-metric">
-                    <span>ไฟล์ผิดพลาด</span>
-                    <strong>{{ export_summary.latest_batch.failed_files }}</strong>
-                </div>
-                <div class="summary-metric">
-                    <span>ไฟล์ซ้ำ</span>
-                    <strong>{{ export_summary.latest_batch.duplicate_files_skipped }}</strong>
-                </div>
-                <div class="summary-metric">
-                    <span>รายการอ้างอิง</span>
-                    <strong>{{ export_summary.latest_batch.total_references_found }}</strong>
-                </div>
+            </form>
+
+            <div class="export-actions">
+                <a class="button button-primary" href="/exports/csv?search={{ search }}&status={{ status }}&source_type={{ source_type }}">Download CSV</a>
+                <a class="button button-secondary" href="/exports/markdown?search={{ search }}&status={{ status }}&source_type={{ source_type }}">Download Markdown</a>
+                <a class="button button-ghost" href="/results?search={{ search }}&status={{ status }}&source_type={{ source_type }}">View Matching Results</a>
             </div>
-            {% else %}
-            <h2>ยังไม่มีข้อมูลสำหรับส่งออก</h2>
-            <p class="muted-copy">เมื่อมีการประมวลผลเอกสารแล้ว สถิติสำหรับงานส่งออกจะปรากฏที่หน้านี้</p>
-            {% endif %}
         </article>
     </div>
 </section>

@@ -50,7 +50,8 @@ a {
 }
 
 button,
-input {
+input,
+select {
     font: inherit;
 }
 
@@ -320,6 +321,21 @@ input {
     background: var(--accent-100);
     color: var(--brand-700);
     font-weight: 700;
+}
+
+.status-badge-pending {
+    background: #fff3cd;
+    color: #8a6500;
+}
+
+.status-badge-resolved {
+    background: var(--success-100);
+    color: #16643c;
+}
+
+.status-badge-failed {
+    background: var(--danger-100);
+    color: #9d2c2c;
 }
 
 .status-inline {
@@ -665,9 +681,89 @@ input {
     color: var(--ink-strong);
 }
 
+select {
+    width: 100%;
+    padding: 0.95rem 1rem;
+    border: 1px solid rgba(24, 54, 66, 0.12);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--ink-strong);
+}
+
 input:focus {
     outline: 2px solid rgba(39, 152, 170, 0.16);
     border-color: rgba(15, 108, 123, 0.28);
+}
+
+select:focus {
+    outline: 2px solid rgba(39, 152, 170, 0.16);
+    border-color: rgba(15, 108, 123, 0.28);
+}
+
+.filters-bar {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.8fr) repeat(2, minmax(150px, 0.8fr)) auto;
+    gap: 0.9rem;
+    align-items: end;
+    margin-bottom: 1.2rem;
+}
+
+.filter-field {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.filter-field span {
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.filters-actions,
+.pagination-actions,
+.results-actions,
+.export-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.results-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    color: var(--ink-soft);
+}
+
+.results-meta strong {
+    color: var(--ink-strong);
+    font-size: 1.35rem;
+}
+
+.table-link {
+    color: var(--brand-700);
+    font-weight: 700;
+}
+
+.ellipsis-link {
+    display: inline-block;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.muted-inline {
+    color: var(--ink-soft);
+}
+
+.pagination-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 1rem;
 }
 
 .auth-card-footer {
@@ -716,9 +812,14 @@ input:focus {
 
     .page-heading,
     .section-head,
-    .upload-actions {
+    .upload-actions,
+    .pagination-bar {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .filters-bar {
+        grid-template-columns: 1fr;
     }
 
     .info-card,

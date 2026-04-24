@@ -1,21 +1,25 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from starlette.background import BackgroundTask
 
 from app.auth.session import SessionManager
 from app.config import BASE_DIR
+from app.db.postgres import create_postgres_session_factory
 from app.dependencies import get_session_manager
 from app.logging_config import get_logger
+from app.services.export_service import export_csv, export_markdown
 from app.services.inbox_paths import get_inbox_path
+from app.services.results_service import DEFAULT_PAGE_SIZE, get_references
 from app.services.ui_views import (
     count_pending_inbox_files,
     fetch_export_summary,
     fetch_latest_batch,
-    fetch_results_rows,
     list_inbox_files,
     safe_inbox_file_path,
 )
@@ -45,6 +49,24 @@ def _render(
     if context:
         merged_context.update(context)
     return templates.TemplateResponse(request=request, name=name, context=merged_context)
+
+
+def _normalize_optional_query(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    return normalized or None
+
+
+def _build_results_query_string(*, search: str | None, status: str | None, source_type: str | None, page: int) -> str:
+    params = {"page": page}
+    if search:
+        params["search"] = search
+    if status:
+        params["status"] = status
+    if source_type:
+        params["source_type"] = source_type
+    return urlencode(params)
 
 
 def _save_uploaded_file(target_dir: Path, upload: UploadFile) -> tuple[bool, str]:
@@ -200,10 +222,36 @@ async def batch_page(request: Request, session_manager: SessionManager = Depends
 
 
 @router.get("/results")
-async def results_page(request: Request, session_manager: SessionManager = Depends(get_session_manager)):
+async def results_page(
+    request: Request,
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    source_type: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    session_manager: SessionManager = Depends(get_session_manager),
+):
     user, redirect_response = _require_user(request, session_manager)
     if redirect_response:
         return redirect_response
+
+    normalized_search = _normalize_optional_query(search)
+    normalized_status = _normalize_optional_query(status)
+    normalized_source_type = _normalize_optional_query(source_type)
+    offset = (page - 1) * DEFAULT_PAGE_SIZE
+    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    with session_factory() as session:
+        results = get_references(
+            session,
+            search=normalized_search,
+            status=normalized_status,
+            source_type=normalized_source_type,
+            limit=DEFAULT_PAGE_SIZE,
+            offset=offset,
+        )
+
+    total = results["total"]
+    has_prev = page > 1
+    has_next = offset + DEFAULT_PAGE_SIZE < total
 
     return _render(
         request,
@@ -211,16 +259,46 @@ async def results_page(request: Request, session_manager: SessionManager = Depen
         user=user,
         current_page="results",
         context={
-            "result_rows": fetch_results_rows(request.app.state.postgres_engine),
+            "rows": results["rows"],
+            "total": total,
+            "page": page,
+            "page_size": DEFAULT_PAGE_SIZE,
+            "search": normalized_search or "",
+            "status": normalized_status or "",
+            "source_type": normalized_source_type or "",
+            "has_prev": has_prev,
+            "has_next": has_next,
+            "prev_query": _build_results_query_string(
+                search=normalized_search,
+                status=normalized_status,
+                source_type=normalized_source_type,
+                page=page - 1,
+            ),
+            "next_query": _build_results_query_string(
+                search=normalized_search,
+                status=normalized_status,
+                source_type=normalized_source_type,
+                page=page + 1,
+            ),
         },
     )
 
 
 @router.get("/exports")
-async def exports_page(request: Request, session_manager: SessionManager = Depends(get_session_manager)):
+async def exports_page(
+    request: Request,
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    source_type: str | None = Query(default=None),
+    session_manager: SessionManager = Depends(get_session_manager),
+):
     user, redirect_response = _require_user(request, session_manager)
     if redirect_response:
         return redirect_response
+
+    normalized_search = _normalize_optional_query(search)
+    normalized_status = _normalize_optional_query(status)
+    normalized_source_type = _normalize_optional_query(source_type)
 
     return _render(
         request,
@@ -229,5 +307,70 @@ async def exports_page(request: Request, session_manager: SessionManager = Depen
         current_page="exports",
         context={
             "export_summary": fetch_export_summary(request.app.state.postgres_engine),
+            "search": normalized_search or "",
+            "status": normalized_status or "",
+            "source_type": normalized_source_type or "",
         },
     )
+
+
+@router.get("/exports/csv")
+async def export_csv_route(
+    request: Request,
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    source_type: str | None = Query(default=None),
+    session_manager: SessionManager = Depends(get_session_manager),
+):
+    user, redirect_response = _require_user(request, session_manager)
+    if redirect_response:
+        return redirect_response
+
+    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session = session_factory()
+    try:
+        response = export_csv(
+            session,
+            {
+                "search": _normalize_optional_query(search),
+                "status": _normalize_optional_query(status),
+                "source_type": _normalize_optional_query(source_type),
+            },
+        )
+    except Exception:
+        session.close()
+        raise
+
+    response.background = BackgroundTask(session.close)
+    return response
+
+
+@router.get("/exports/markdown")
+async def export_markdown_route(
+    request: Request,
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    source_type: str | None = Query(default=None),
+    session_manager: SessionManager = Depends(get_session_manager),
+):
+    user, redirect_response = _require_user(request, session_manager)
+    if redirect_response:
+        return redirect_response
+
+    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session = session_factory()
+    try:
+        response = export_markdown(
+            session,
+            {
+                "search": _normalize_optional_query(search),
+                "status": _normalize_optional_query(status),
+                "source_type": _normalize_optional_query(source_type),
+            },
+        )
+    except Exception:
+        session.close()
+        raise
+
+    response.background = BackgroundTask(session.close)
+    return response
