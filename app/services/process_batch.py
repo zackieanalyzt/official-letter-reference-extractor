@@ -7,6 +7,7 @@ from app.batch.fingerprint import FileFingerprint, build_file_fingerprint
 from app.batch.pdf_validation import validate_pdf_readable
 from app.batch.reference_extraction import extract_references_from_pdf
 from app.batch.scanner import discover_pdf_files
+from app.batch.url_resolution import resolve_document_references
 from app.batch.service import (
     HomeBatchSummary,
     count_batch_references,
@@ -143,6 +144,18 @@ def process_registered_document(
             document.id,
             len(persisted_reference_keys),
         )
+        try:
+            resolve_document_references(session, document.id)
+        except Exception as exc:
+            logger.exception("URL resolution failed document_id=%s file=%s", document.id, fingerprint.path)
+            create_processing_log(
+                session,
+                level="ERROR",
+                step_name="url_resolution",
+                message=f"URL resolution failed: {exc}",
+                batch_run_id=batch_run_id,
+                document_id=document.id,
+            )
 
         moved_path = move_file_to_directory(
             fingerprint.path,

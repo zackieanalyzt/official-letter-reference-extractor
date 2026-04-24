@@ -1,8 +1,10 @@
 from pathlib import Path
 
 import fitz
+import httpx
 from sqlalchemy import text
 
+from app.batch import url_resolution
 from app.batch.reference_extraction import ExtractedReference
 from app.services.process_batch import fetch_home_batch_summary, run_batch_registration
 
@@ -250,9 +252,21 @@ def test_batch_summary_reflects_duplicate_and_failed_counts(client):
     assert latest_summary.failed_files == 1
 
 
-def test_text_url_reference_persisted_from_pdf_text(client):
+def test_text_url_reference_persisted_from_pdf_text(client, monkeypatch):
     input_dir = Path(client.app.state.settings.input_dir)
     create_valid_pdf(input_dir / "text-url.pdf", "Reference https://example.com/files/12345")
+
+    def fake_resolve_url(raw_url: str):
+        return {
+            "raw_url": raw_url,
+            "final_url": "https://resolved.example.com/files/12345",
+            "status": "resolved",
+            "http_status_code": 200,
+            "error": None,
+            "attempts": 1,
+        }
+
+    monkeypatch.setattr("app.batch.url_resolution.resolve_url", fake_resolve_url)
 
     run_batch_registration(
         client.app.state.settings,
@@ -266,8 +280,8 @@ def test_text_url_reference_persisted_from_pdf_text(client):
     assert reference_rows[0]["source_type"] == "text"
     assert reference_rows[0]["reference_class"] == "url"
     assert reference_rows[0]["raw_reference"] == "https://example.com/files/12345"
-    assert reference_rows[0]["resolution_status"] == "pending"
-    assert reference_rows[0]["final_url"] is None
+    assert reference_rows[0]["resolution_status"] == "resolved"
+    assert reference_rows[0]["final_url"] == "https://resolved.example.com/files/12345"
 
 
 def test_short_url_reference_classified_from_pdf_text(client):
@@ -394,3 +408,332 @@ def test_duplicate_reference_suppression(client, monkeypatch):
     assert len(reference_rows) == 1
     assert reference_rows[0]["raw_reference"] == "https://example.com/dup"
     assert batch_row["total_references_found"] == 1
+
+
+def test_pending_http_reference_resolved_after_insert(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "resolve-url.pdf", "Reference https://example.com/resolve-me")
+
+    def fake_resolve_url(raw_url: str):
+        return {
+            "raw_url": raw_url,
+            "final_url": "https://final.example.com/destination",
+            "status": "resolved",
+            "http_status_code": 200,
+            "error": None,
+            "attempts": 1,
+        }
+
+    monkeypatch.setattr("app.batch.url_resolution.resolve_url", fake_resolve_url)
+
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT raw_reference, final_url, resolution_status
+        FROM document_references
+        ORDER BY id DESC
+        """,
+    )
+
+    assert reference_row["raw_reference"] == "https://example.com/resolve-me"
+    assert reference_row["final_url"] == "https://final.example.com/destination"
+    assert reference_row["resolution_status"] == "resolved"
+
+
+def test_pending_http_reference_404_does_not_break_batch(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "resolve-404.pdf", "Reference https://example.com/missing")
+
+    def fake_resolve_url(raw_url: str):
+        return {
+            "raw_url": raw_url,
+            "final_url": "https://example.com/missing",
+            "status": "failed",
+            "http_status_code": 404,
+            "error": "HTTP status 404",
+            "attempts": 1,
+        }
+
+    monkeypatch.setattr("app.batch.url_resolution.resolve_url", fake_resolve_url)
+
+    summary = run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT final_url, resolution_status
+        FROM document_references
+        ORDER BY id DESC
+        """,
+    )
+    document_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT processing_status
+        FROM documents
+        ORDER BY id DESC
+        """,
+    )
+
+    assert summary.total_files_processed == 1
+    assert document_row["processing_status"] == "processed"
+    assert reference_row["final_url"] == "https://example.com/missing"
+    assert reference_row["resolution_status"] == "failed"
+
+
+def test_pending_http_reference_timeout_does_not_break_batch(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "resolve-timeout.pdf", "Reference https://example.com/timeout")
+
+    def fake_resolve_url(raw_url: str):
+        return {
+            "raw_url": raw_url,
+            "final_url": None,
+            "status": "failed",
+            "http_status_code": None,
+            "error": "timed out",
+            "attempts": 2,
+        }
+
+    monkeypatch.setattr("app.batch.url_resolution.resolve_url", fake_resolve_url)
+
+    summary = run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT final_url, resolution_status
+        FROM document_references
+        ORDER BY id DESC
+        """,
+    )
+    document_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT processing_status
+        FROM documents
+        ORDER BY id DESC
+        """,
+    )
+
+    assert summary.total_files_processed == 1
+    assert document_row["processing_status"] == "processed"
+    assert reference_row["final_url"] is None
+    assert reference_row["resolution_status"] == "failed"
+
+
+def test_non_http_reference_skipped_without_network_call(client, monkeypatch, caplog):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "skip-non-http.pdf", "qr non-url placeholder")
+
+    def fake_extract_references_from_pdf(_file_path):
+        return (
+            [
+                ExtractedReference(
+                    page_number=1,
+                    source_type="image",
+                    reference_class="qr",
+                    raw_reference="DOC:6176",
+                )
+            ],
+            [],
+            1,
+        )
+
+    def fail_if_called(_raw_url: str):
+        raise AssertionError("resolve_url should not be called for non-http references")
+
+    monkeypatch.setattr(
+        "app.services.process_batch.extract_references_from_pdf",
+        fake_extract_references_from_pdf,
+    )
+    monkeypatch.setattr("app.batch.url_resolution.resolve_url", fail_if_called)
+
+    with caplog.at_level("INFO"):
+        summary = run_batch_registration(
+            client.app.state.settings,
+            client.app.state.postgres_engine,
+            triggered_by="alice",
+        )
+
+    reference_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT raw_reference, final_url, resolution_status
+        FROM document_references
+        ORDER BY id DESC
+        """,
+    )
+
+    assert summary.total_files_processed == 1
+    assert reference_row["raw_reference"] == "DOC:6176"
+    assert reference_row["final_url"] is None
+    assert reference_row["resolution_status"] == "pending"
+    assert "[URL_RESOLVE_SKIP]" in caplog.text
+
+
+def test_missing_http_status_column_does_not_break_resolution(client, monkeypatch, caplog):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "missing-http-status.pdf", "Reference https://example.com/no-http-status")
+
+    def fake_resolve_url(raw_url: str):
+        return {
+            "raw_url": raw_url,
+            "final_url": "https://final.example.com/no-http-status",
+            "status": "resolved",
+            "http_status_code": 200,
+            "error": None,
+            "attempts": 1,
+        }
+
+    monkeypatch.setattr("app.batch.url_resolution.has_column", lambda *_args, **_kwargs: False)
+    monkeypatch.setattr("app.batch.url_resolution.resolve_url", fake_resolve_url)
+
+    with caplog.at_level("INFO"):
+        summary = run_batch_registration(
+            client.app.state.settings,
+            client.app.state.postgres_engine,
+            triggered_by="alice",
+        )
+
+    reference_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT final_url, resolution_status
+        FROM document_references
+        ORDER BY id DESC
+        """,
+    )
+
+    assert summary.total_files_processed == 1
+    assert reference_row["final_url"] == "https://final.example.com/no-http-status"
+    assert reference_row["resolution_status"] == "resolved"
+    assert "[URL_RESOLVE_SCHEMA] http_status column not found, skipping persistence" in caplog.text
+
+
+def test_resolve_url_success_on_first_attempt(monkeypatch):
+    attempts = []
+
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def get(self, raw_url):
+            attempts.append(raw_url)
+
+            class Response:
+                status_code = 200
+                url = "https://final.example.com/redirected"
+
+            return Response()
+
+    monkeypatch.setattr(url_resolution.httpx, "Client", FakeClient)
+
+    result = url_resolution.resolve_url("https://example.com/start")
+
+    assert result == {
+        "raw_url": "https://example.com/start",
+        "final_url": "https://final.example.com/redirected",
+        "status": "resolved",
+        "http_status_code": 200,
+        "error": None,
+        "attempts": 1,
+    }
+    assert attempts == ["https://example.com/start"]
+
+
+def test_is_http_url_handles_invalid_values_safely():
+    assert url_resolution.is_http_url("https://example.com/path")
+    assert url_resolution.is_http_url("  http://example.com/path  ")
+    assert not url_resolution.is_http_url(None)
+    assert not url_resolution.is_http_url("")
+    assert not url_resolution.is_http_url("   ")
+    assert not url_resolution.is_http_url("ftp://example.com/path")
+    assert not url_resolution.is_http_url(123)  # type: ignore[arg-type]
+
+
+def test_resolve_url_marks_http_404_as_failed(monkeypatch):
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def get(self, _raw_url):
+            class Response:
+                status_code = 404
+                url = "https://example.com/missing"
+
+            return Response()
+
+    monkeypatch.setattr(url_resolution.httpx, "Client", FakeClient)
+
+    result = url_resolution.resolve_url("https://example.com/missing")
+
+    assert result == {
+        "raw_url": "https://example.com/missing",
+        "final_url": "https://example.com/missing",
+        "status": "failed",
+        "http_status_code": 404,
+        "error": "HTTP status 404",
+        "attempts": 1,
+    }
+
+
+def test_resolve_url_retries_timeout_and_fails(monkeypatch):
+    attempts = []
+
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def get(self, raw_url):
+            attempts.append(raw_url)
+            raise httpx.TimeoutException("timed out")
+
+    monkeypatch.setattr(url_resolution.httpx, "Client", FakeClient)
+
+    result = url_resolution.resolve_url("https://example.com/timeout")
+
+    assert result == {
+        "raw_url": "https://example.com/timeout",
+        "final_url": None,
+        "status": "failed",
+        "http_status_code": None,
+        "error": "timed out",
+        "attempts": 2,
+    }
+    assert attempts == [
+        "https://example.com/timeout",
+        "https://example.com/timeout",
+    ]
