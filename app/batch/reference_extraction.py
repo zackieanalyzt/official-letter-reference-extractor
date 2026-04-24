@@ -3,26 +3,15 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Callable
-from urllib.parse import urlparse
 
 import fitz
 
+from app.logging_config import get_logger
+
+
+logger = get_logger(__name__)
 
 URL_PATTERN = re.compile(r"(?i)\bhttps?://[^\s<>\"]+")
-SHORT_URL_HOSTS = {
-    "bit.ly",
-    "buff.ly",
-    "cutt.ly",
-    "goo.gl",
-    "is.gd",
-    "ow.ly",
-    "qrco.de",
-    "rb.gy",
-    "rebrand.ly",
-    "shorturl.at",
-    "t.co",
-    "tinyurl.com",
-}
 TRAILING_PUNCTUATION = ".,;:!?)]}>\"'"
 
 
@@ -45,18 +34,6 @@ def normalize_reference(raw_reference: str) -> str:
     return raw_reference.strip().strip(TRAILING_PUNCTUATION)
 
 
-def classify_reference(raw_reference: str) -> str:
-    normalized = normalize_reference(raw_reference)
-    parsed = urlparse(normalized)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        return "non_url"
-
-    hostname = (parsed.hostname or "").lower()
-    if hostname in SHORT_URL_HOSTS:
-        return "short_url"
-    return "url"
-
-
 def extract_urls_from_text(page_text: str, page_number: int) -> list[ExtractedReference]:
     references: list[ExtractedReference] = []
     seen: set[tuple[int, str, str, str]] = set()
@@ -69,7 +46,7 @@ def extract_urls_from_text(page_text: str, page_number: int) -> list[ExtractedRe
         reference = ExtractedReference(
             page_number=page_number,
             source_type="text",
-            reference_class=classify_reference(normalized),
+            reference_class="url",
             raw_reference=normalized,
         )
         dedupe_key = (
@@ -89,12 +66,17 @@ def extract_urls_from_text(page_text: str, page_number: int) -> list[ExtractedRe
 def render_page_to_rgb_array(page: fitz.Page):
     import numpy as np
 
-    pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+    pixmap = page.get_pixmap(matrix=fitz.Matrix(3, 3), alpha=False)
     channels = 3 if pixmap.n >= 3 else 1
     image = np.frombuffer(pixmap.samples, dtype=np.uint8).reshape(pixmap.height, pixmap.width, channels)
     if channels == 1:
         image = np.repeat(image, 3, axis=2)
     return image
+
+
+def extract_text_with_ocr_if_needed(file_path) -> str:
+    logger.info("[OCR_STUB] file=%s status=not_implemented", file_path)
+    return ""
 
 
 def detect_qr_values_from_page(page: fitz.Page) -> list[str]:
@@ -144,8 +126,10 @@ def extract_references_from_pdf(
     references: list[ExtractedReference] = []
     issues: list[ExtractionIssue] = []
     seen: set[tuple[int, str, str, str]] = set()
+    total_text_chars = 0
 
     detector = qr_detector or detect_qr_values_from_page
+    logger.info("[EXTRACT_START] file=%s", file_path)
 
     if qr_detector is None:
         try:
@@ -188,18 +172,22 @@ def extract_references_from_pdf(
                         message=f"Text extraction failed: {exc}",
                     )
                 )
-            else:
-                for reference in extract_urls_from_text(page_text, page_number):
-                    dedupe_key = (
-                        reference.page_number,
-                        reference.source_type,
-                        reference.raw_reference,
-                        reference.reference_class,
-                    )
-                    if dedupe_key in seen:
-                        continue
-                    seen.add(dedupe_key)
-                    references.append(reference)
+                page_text = ""
+
+            text_references = extract_urls_from_text(page_text, page_number)
+            total_text_chars += len(page_text)
+            logger.info("[TEXT] file=%s page=%s chars=%s urls=%s", file_path, page_number, len(page_text), len(text_references))
+            for reference in text_references:
+                dedupe_key = (
+                    reference.page_number,
+                    reference.source_type,
+                    reference.raw_reference,
+                    reference.reference_class,
+                )
+                if dedupe_key in seen:
+                    continue
+                seen.add(dedupe_key)
+                references.append(reference)
 
             if not qr_detection_available:
                 if page_number == 1:
@@ -210,6 +198,7 @@ def extract_references_from_pdf(
                             message=qr_error,
                         )
                     )
+                    logger.warning("[QR] file=%s found=0 reason=%s", file_path, qr_error)
                 continue
 
             try:
@@ -222,16 +211,18 @@ def extract_references_from_pdf(
                         message=f"QR extraction failed: {exc}",
                     )
                 )
+                logger.exception("[QR] file=%s page=%s found=0 error=%s", file_path, page_number, exc)
                 continue
 
+            logger.info("[QR] file=%s page=%s found=%s", file_path, page_number, len(qr_values))
             for raw_value in qr_values:
                 normalized = normalize_reference(raw_value)
                 if not normalized:
                     continue
                 reference = ExtractedReference(
                     page_number=page_number,
-                    source_type="qr",
-                    reference_class=classify_reference(normalized),
+                    source_type="image",
+                    reference_class="qr",
                     raw_reference=normalized,
                 )
                 dedupe_key = (
@@ -245,4 +236,9 @@ def extract_references_from_pdf(
                 seen.add(dedupe_key)
                 references.append(reference)
 
+        if total_text_chars == 0:
+            logger.info("[IMAGE_ONLY_PDF] file=%s pages=%s", file_path, page_count)
+            _ = extract_text_with_ocr_if_needed(file_path)
+
+    logger.info("[EXTRACT_DONE] file=%s total_refs=%s", file_path, len(references))
     return references, issues, page_count

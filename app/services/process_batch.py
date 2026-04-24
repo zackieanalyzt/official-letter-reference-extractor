@@ -87,9 +87,24 @@ def process_registered_document(
         raise
 
     try:
-        references, extraction_issues, page_count = extract_references_from_pdf(fingerprint.path)
-        document.page_count = page_count
+        references: list = []
+        extraction_issues: list = []
         persisted_reference_keys: set[tuple[int, str, str]] = set()
+        try:
+            references, extraction_issues, page_count = extract_references_from_pdf(fingerprint.path)
+            document.page_count = page_count
+        except Exception as exc:
+            logger.exception("Reference extraction failed file=%s", fingerprint.path)
+            create_processing_log(
+                session,
+                level="ERROR",
+                step_name="reference_extraction",
+                message=f"Reference extraction failed: {exc}",
+                batch_run_id=batch_run_id,
+                document_id=document.id,
+            )
+            references = []
+            extraction_issues = []
 
         for issue in extraction_issues:
             if issue.page_number is None:
@@ -122,6 +137,12 @@ def process_registered_document(
                 reference_class=reference.reference_class,
                 raw_reference=reference.raw_reference,
             )
+        logger.info(
+            "[DB_INSERT] file=%s document_id=%s inserted=%s",
+            fingerprint.path,
+            document.id,
+            len(persisted_reference_keys),
+        )
 
         moved_path = move_file_to_directory(
             fingerprint.path,

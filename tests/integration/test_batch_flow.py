@@ -266,7 +266,7 @@ def test_text_url_reference_persisted_from_pdf_text(client):
     assert reference_rows[0]["source_type"] == "text"
     assert reference_rows[0]["reference_class"] == "url"
     assert reference_rows[0]["raw_reference"] == "https://example.com/files/12345"
-    assert reference_rows[0]["resolution_status"] == "raw_only"
+    assert reference_rows[0]["resolution_status"] == "pending"
     assert reference_rows[0]["final_url"] is None
 
 
@@ -283,7 +283,7 @@ def test_short_url_reference_classified_from_pdf_text(client):
     reference_rows = fetch_references(client.app.state.postgres_engine)
     assert len(reference_rows) == 1
     assert reference_rows[0]["source_type"] == "text"
-    assert reference_rows[0]["reference_class"] == "short_url"
+    assert reference_rows[0]["reference_class"] == "url"
     assert reference_rows[0]["raw_reference"] == "https://bit.ly/olre-ref"
 
 
@@ -296,8 +296,8 @@ def test_qr_url_reference_persisted(client, monkeypatch):
             [
                 ExtractedReference(
                     page_number=1,
-                    source_type="qr",
-                    reference_class="short_url",
+                    source_type="image",
+                    reference_class="qr",
                     raw_reference="https://t.co/olre-qr",
                 )
             ],
@@ -318,8 +318,8 @@ def test_qr_url_reference_persisted(client, monkeypatch):
 
     reference_rows = fetch_references(client.app.state.postgres_engine)
     assert len(reference_rows) == 1
-    assert reference_rows[0]["source_type"] == "qr"
-    assert reference_rows[0]["reference_class"] == "short_url"
+    assert reference_rows[0]["source_type"] == "image"
+    assert reference_rows[0]["reference_class"] == "qr"
     assert reference_rows[0]["raw_reference"] == "https://t.co/olre-qr"
 
 
@@ -332,8 +332,8 @@ def test_non_url_qr_reference_persisted(client, monkeypatch):
             [
                 ExtractedReference(
                     page_number=1,
-                    source_type="qr",
-                    reference_class="non_url",
+                    source_type="image",
+                    reference_class="qr",
                     raw_reference="DOC:6176",
                 )
             ],
@@ -354,8 +354,8 @@ def test_non_url_qr_reference_persisted(client, monkeypatch):
 
     reference_rows = fetch_references(client.app.state.postgres_engine)
     assert len(reference_rows) == 1
-    assert reference_rows[0]["source_type"] == "qr"
-    assert reference_rows[0]["reference_class"] == "non_url"
+    assert reference_rows[0]["source_type"] == "image"
+    assert reference_rows[0]["reference_class"] == "qr"
     assert reference_rows[0]["raw_reference"] == "DOC:6176"
 
 
@@ -365,8 +365,8 @@ def test_duplicate_reference_suppression(client, monkeypatch):
 
     duplicate_reference = ExtractedReference(
         page_number=1,
-        source_type="qr",
-        reference_class="url",
+        source_type="image",
+        reference_class="qr",
         raw_reference="https://example.com/dup",
     )
 

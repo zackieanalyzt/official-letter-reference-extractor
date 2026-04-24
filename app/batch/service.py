@@ -109,7 +109,7 @@ def create_document_reference(
         reference_class=reference_class,
         raw_reference=raw_reference,
         final_url=None,
-        resolution_status="raw_only",
+        resolution_status="pending",
         http_status=None,
     )
     session.add(reference)
