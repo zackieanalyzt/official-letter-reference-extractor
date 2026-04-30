@@ -1,11 +1,14 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import fitz
 import httpx
 from sqlalchemy import text
 
 from app.batch import url_resolution
-from app.batch.reference_extraction import ExtractedReference
+from app.batch.error_types import INVALID_PDF, URL_HTTP_ERROR, URL_TIMEOUT
+from app.batch.reference_extraction import ExtractedReference, extract_references_from_pdf
+from app.services.batch_monitor_service import get_batch_run_detail, list_batch_runs
 from app.services.process_batch import fetch_home_batch_summary, run_batch_registration
 
 
@@ -35,7 +38,8 @@ def fetch_references(engine):
     return fetch_all(
         engine,
         """
-        SELECT page_number, source_type, reference_class, raw_reference, resolution_status, final_url
+        SELECT page_number, source_type, reference_class, raw_reference, resolution_status, final_url,
+               resolution_error_type, resolution_error_detail
         FROM document_references
         ORDER BY id
         """,
@@ -191,7 +195,7 @@ def test_fake_pdf_marked_failed_and_moved_to_error(client):
     document_row = fetch_one(
         client.app.state.postgres_engine,
         """
-        SELECT processing_status, processing_error, moved_to_path
+        SELECT processing_status, processing_error, processing_error_type, moved_to_path
         FROM documents
         """
     )
@@ -210,11 +214,12 @@ def test_fake_pdf_marked_failed_and_moved_to_error(client):
     assert summary.status == "completed_with_errors"
     assert document_row["processing_status"] == "failed"
     assert document_row["processing_error"]
-    assert document_row["processing_error"].startswith("PDF validation failed:")
+    assert document_row["processing_error_type"] == INVALID_PDF
+    assert document_row["processing_error"].startswith("[PDF_VALIDATION_FAILED] PDF validation failed:")
     assert not source_path.exists()
     assert len(list(error_dir.glob("fake*.pdf"))) == 1
     assert log_row["step_name"] == "pdf_validation"
-    assert log_row["message"].startswith("PDF validation failed:")
+    assert log_row["message"].startswith("[PDF_VALIDATION_FAILED] PDF validation failed:")
 
 
 def test_batch_summary_reflects_duplicate_and_failed_counts(client):
@@ -310,7 +315,7 @@ def test_qr_url_reference_persisted(client, monkeypatch):
             [
                 ExtractedReference(
                     page_number=1,
-                    source_type="image",
+                    source_type="qr",
                     reference_class="qr",
                     raw_reference="https://t.co/olre-qr",
                 )
@@ -332,7 +337,7 @@ def test_qr_url_reference_persisted(client, monkeypatch):
 
     reference_rows = fetch_references(client.app.state.postgres_engine)
     assert len(reference_rows) == 1
-    assert reference_rows[0]["source_type"] == "image"
+    assert reference_rows[0]["source_type"] == "qr"
     assert reference_rows[0]["reference_class"] == "qr"
     assert reference_rows[0]["raw_reference"] == "https://t.co/olre-qr"
 
@@ -346,7 +351,7 @@ def test_non_url_qr_reference_persisted(client, monkeypatch):
             [
                 ExtractedReference(
                     page_number=1,
-                    source_type="image",
+                    source_type="qr",
                     reference_class="qr",
                     raw_reference="DOC:6176",
                 )
@@ -368,7 +373,7 @@ def test_non_url_qr_reference_persisted(client, monkeypatch):
 
     reference_rows = fetch_references(client.app.state.postgres_engine)
     assert len(reference_rows) == 1
-    assert reference_rows[0]["source_type"] == "image"
+    assert reference_rows[0]["source_type"] == "qr"
     assert reference_rows[0]["reference_class"] == "qr"
     assert reference_rows[0]["raw_reference"] == "DOC:6176"
 
@@ -379,7 +384,7 @@ def test_duplicate_reference_suppression(client, monkeypatch):
 
     duplicate_reference = ExtractedReference(
         page_number=1,
-        source_type="image",
+        source_type="qr",
         reference_class="qr",
         raw_reference="https://example.com/dup",
     )
@@ -489,6 +494,10 @@ def test_pending_http_reference_404_does_not_break_batch(client, monkeypatch):
     assert document_row["processing_status"] == "processed"
     assert reference_row["final_url"] == "https://example.com/missing"
     assert reference_row["resolution_status"] == "failed"
+    assert fetch_one(
+        client.app.state.postgres_engine,
+        "SELECT resolution_error_type FROM document_references ORDER BY id DESC",
+    )["resolution_error_type"] == URL_HTTP_ERROR
 
 
 def test_pending_http_reference_timeout_does_not_break_batch(client, monkeypatch):
@@ -516,7 +525,7 @@ def test_pending_http_reference_timeout_does_not_break_batch(client, monkeypatch
     reference_row = fetch_one(
         client.app.state.postgres_engine,
         """
-        SELECT final_url, resolution_status
+        SELECT final_url, resolution_status, resolution_error_type
         FROM document_references
         ORDER BY id DESC
         """,
@@ -534,6 +543,7 @@ def test_pending_http_reference_timeout_does_not_break_batch(client, monkeypatch
     assert document_row["processing_status"] == "processed"
     assert reference_row["final_url"] is None
     assert reference_row["resolution_status"] == "failed"
+    assert reference_row["resolution_error_type"] == URL_TIMEOUT
 
 
 def test_non_http_reference_skipped_without_network_call(client, monkeypatch, caplog):
@@ -545,7 +555,7 @@ def test_non_http_reference_skipped_without_network_call(client, monkeypatch, ca
             [
                 ExtractedReference(
                     page_number=1,
-                    source_type="image",
+                    source_type="qr",
                     reference_class="qr",
                     raw_reference="DOC:6176",
                 )
@@ -586,43 +596,126 @@ def test_non_http_reference_skipped_without_network_call(client, monkeypatch, ca
     assert "[URL_RESOLVE_SKIP]" in caplog.text
 
 
-def test_missing_http_status_column_does_not_break_resolution(client, monkeypatch, caplog):
+def test_ocr_fallback_extracts_url_from_low_text_pdf(client, monkeypatch):
     input_dir = Path(client.app.state.settings.input_dir)
-    create_valid_pdf(input_dir / "missing-http-status.pdf", "Reference https://example.com/no-http-status")
+    create_valid_pdf(input_dir / "ocr-fallback.pdf", "")
 
-    def fake_resolve_url(raw_url: str):
-        return {
+    monkeypatch.setattr(
+        "app.batch.reference_extraction.extract_text_with_ocr_if_needed",
+        lambda _page, _page_number, _existing_text, _settings: {
+            "used_ocr": True,
+            "text": "Visit https://ocr.example.com/form",
+            "char_count": 34,
+            "engine": "tesseract",
+            "error": None,
+            "error_type": None,
+        },
+    )
+    monkeypatch.setattr(
+        "app.batch.url_resolution.resolve_url",
+        lambda raw_url: {
             "raw_url": raw_url,
-            "final_url": "https://final.example.com/no-http-status",
+            "final_url": raw_url,
             "status": "resolved",
             "http_status_code": 200,
             "error": None,
             "attempts": 1,
-        }
-
-    monkeypatch.setattr("app.batch.url_resolution.has_column", lambda *_args, **_kwargs: False)
-    monkeypatch.setattr("app.batch.url_resolution.resolve_url", fake_resolve_url)
-
-    with caplog.at_level("INFO"):
-        summary = run_batch_registration(
-            client.app.state.settings,
-            client.app.state.postgres_engine,
-            triggered_by="alice",
-        )
-
-    reference_row = fetch_one(
-        client.app.state.postgres_engine,
-        """
-        SELECT final_url, resolution_status
-        FROM document_references
-        ORDER BY id DESC
-        """,
+        },
     )
 
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_rows = fetch_references(client.app.state.postgres_engine)
+    assert len(reference_rows) == 1
+    assert reference_rows[0]["source_type"] == "ocr"
+    assert reference_rows[0]["reference_class"] == "url"
+    assert reference_rows[0]["raw_reference"] == "https://ocr.example.com/form"
+
+    assert reference_rows[0]["resolution_error_type"] is None
+
+
+def test_ocr_disabled_does_not_crash_and_qr_still_works(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "ocr-disabled.pdf", "")
+    client.app.state.settings.ocr_enabled = False
+
+    monkeypatch.setattr(
+        "app.batch.reference_extraction.detect_qr_values_from_page",
+        lambda _page: ["DOC:6176"],
+    )
+
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_rows = fetch_references(client.app.state.postgres_engine)
+    assert len(reference_rows) == 1
+    assert reference_rows[0]["source_type"] == "qr"
+    assert reference_rows[0]["raw_reference"] == "DOC:6176"
+
+
+def test_ocr_unavailable_is_classified_without_failing_batch(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "ocr-unavailable.pdf", "")
+
+    monkeypatch.setattr(
+        "app.batch.reference_extraction.extract_text_with_ocr_if_needed",
+        lambda _page, _page_number, _existing_text, _settings: {
+            "used_ocr": True,
+            "text": "",
+            "char_count": 0,
+            "engine": "tesseract",
+            "error": "tesseract missing",
+            "error_type": "OCR_NOT_AVAILABLE",
+        },
+    )
+
+    summary = run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    document_row = fetch_one(
+        client.app.state.postgres_engine,
+        "SELECT processing_status, processing_error_type FROM documents ORDER BY id DESC",
+    )
     assert summary.total_files_processed == 1
-    assert reference_row["final_url"] == "https://final.example.com/no-http-status"
-    assert reference_row["resolution_status"] == "resolved"
-    assert "[URL_RESOLVE_SCHEMA] http_status column not found, skipping persistence" in caplog.text
+    assert document_row["processing_status"] == "processed"
+    assert document_row["processing_error_type"] == "OCR_NOT_AVAILABLE"
+
+
+def test_batch_monitor_service_returns_runs_and_detail(client):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "batch-monitor.pdf", "Reference https://example.com/monitor")
+
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    with client.app.state.postgres_engine.begin() as connection:
+        batch_run_id = connection.execute(text("SELECT id FROM batch_runs ORDER BY id DESC")).scalar_one()
+
+    from app.db.postgres import create_postgres_session_factory
+
+    session_factory = create_postgres_session_factory(client.app.state.postgres_engine)
+    with session_factory() as session:
+        runs = list_batch_runs(session, page=1, page_size=20)
+        detail = get_batch_run_detail(session, batch_run_id)
+
+    assert runs["items"]
+    assert runs["items"][0]["batch_run_id"] == batch_run_id
+    assert detail is not None
+    assert detail["batch"]["batch_run_id"] == batch_run_id
+    assert detail["documents"]
 
 
 def test_resolve_url_success_on_first_attempt(monkeypatch):
@@ -649,7 +742,12 @@ def test_resolve_url_success_on_first_attempt(monkeypatch):
 
     monkeypatch.setattr(url_resolution.httpx, "Client", FakeClient)
 
-    result = url_resolution.resolve_url("https://example.com/start")
+    settings = SimpleNamespace(
+        url_resolve_timeout_seconds=5.0,
+        url_resolve_max_attempts=2,
+        url_resolve_user_agent="OLRE Test",
+    )
+    result = url_resolution.resolve_url("https://example.com/start", settings=settings)
 
     assert result == {
         "raw_url": "https://example.com/start",
@@ -657,6 +755,7 @@ def test_resolve_url_success_on_first_attempt(monkeypatch):
         "status": "resolved",
         "http_status_code": 200,
         "error": None,
+        "error_type": None,
         "attempts": 1,
     }
     assert attempts == ["https://example.com/start"]
@@ -692,7 +791,12 @@ def test_resolve_url_marks_http_404_as_failed(monkeypatch):
 
     monkeypatch.setattr(url_resolution.httpx, "Client", FakeClient)
 
-    result = url_resolution.resolve_url("https://example.com/missing")
+    settings = SimpleNamespace(
+        url_resolve_timeout_seconds=5.0,
+        url_resolve_max_attempts=2,
+        url_resolve_user_agent="OLRE Test",
+    )
+    result = url_resolution.resolve_url("https://example.com/missing", settings=settings)
 
     assert result == {
         "raw_url": "https://example.com/missing",
@@ -700,6 +804,7 @@ def test_resolve_url_marks_http_404_as_failed(monkeypatch):
         "status": "failed",
         "http_status_code": 404,
         "error": "HTTP status 404",
+        "error_type": URL_HTTP_ERROR,
         "attempts": 1,
     }
 
@@ -723,7 +828,12 @@ def test_resolve_url_retries_timeout_and_fails(monkeypatch):
 
     monkeypatch.setattr(url_resolution.httpx, "Client", FakeClient)
 
-    result = url_resolution.resolve_url("https://example.com/timeout")
+    settings = SimpleNamespace(
+        url_resolve_timeout_seconds=5.0,
+        url_resolve_max_attempts=2,
+        url_resolve_user_agent="OLRE Test",
+    )
+    result = url_resolution.resolve_url("https://example.com/timeout", settings=settings)
 
     assert result == {
         "raw_url": "https://example.com/timeout",
@@ -731,6 +841,7 @@ def test_resolve_url_retries_timeout_and_fails(monkeypatch):
         "status": "failed",
         "http_status_code": None,
         "error": "timed out",
+        "error_type": URL_TIMEOUT,
         "attempts": 2,
     }
     assert attempts == [

@@ -53,6 +53,8 @@ class Document(Base):
     document_number: Mapped[str | None] = mapped_column(String(255), nullable=True)
     processing_status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending")
     processing_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    processing_error_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    processing_error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     moved_to_path: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -91,6 +93,8 @@ class DocumentReference(Base):
     final_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     resolution_status: Mapped[str] = mapped_column(String(50), nullable=False, default="raw_only")
     http_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    resolution_error_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resolution_error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     document: Mapped[Document] = relationship(back_populates="references")
 

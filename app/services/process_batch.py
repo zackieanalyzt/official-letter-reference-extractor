@@ -1,11 +1,22 @@
+import inspect
 from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
+from app.batch.error_types import (
+    DUPLICATE_CONTENT,
+    INVALID_PDF,
+    NO_REFERENCE_FOUND,
+    OCR_FAIL,
+    OCR_NOT_AVAILABLE,
+    QR_EXTRACTION_FAIL,
+    TEXT_EXTRACTION_FAIL,
+    UNKNOWN_ERROR,
+)
 from app.batch.file_ops import ensure_directory, move_file_to_directory
 from app.batch.fingerprint import FileFingerprint, build_file_fingerprint
 from app.batch.pdf_validation import validate_pdf_readable
-from app.batch.reference_extraction import extract_references_from_pdf
+from app.batch.reference_extraction import ExtractionIssue, extract_references_from_pdf
 from app.batch.scanner import discover_pdf_files
 from app.batch.url_resolution import resolve_document_references
 from app.batch.service import (
@@ -20,6 +31,7 @@ from app.batch.service import (
     get_latest_home_batch_summary,
     mark_document_failed,
     mark_document_processed,
+    set_document_processing_issue,
 )
 from app.config import Settings
 from app.db.postgres import create_postgres_session_factory
@@ -28,6 +40,17 @@ from app.services.inbox_paths import get_inbox_path
 
 
 logger = get_logger(__name__)
+
+
+DOCUMENT_ERROR_PRIORITY = {
+    INVALID_PDF: 100,
+    OCR_NOT_AVAILABLE: 80,
+    OCR_FAIL: 70,
+    TEXT_EXTRACTION_FAIL: 60,
+    QR_EXTRACTION_FAIL: 50,
+    NO_REFERENCE_FOUND: 40,
+    UNKNOWN_ERROR: 10,
+}
 
 
 @dataclass
@@ -41,6 +64,21 @@ class BatchProcessSummary:
     status: str
 
 
+def _select_document_issue(issues: list[ExtractionIssue]) -> tuple[str | None, str | None]:
+    selected_type = None
+    selected_message = None
+    selected_priority = -1
+
+    for issue in issues:
+        priority = DOCUMENT_ERROR_PRIORITY.get(issue.error_type, 0)
+        if priority > selected_priority:
+            selected_type = issue.error_type
+            selected_message = issue.message
+            selected_priority = priority
+
+    return selected_type, selected_message
+
+
 def process_registered_document(
     session: Session,
     *,
@@ -48,6 +86,7 @@ def process_registered_document(
     fingerprint: FileFingerprint,
     processed_dir,
     error_dir,
+    settings: Settings,
 ) -> None:
     document = create_document_row(
         session,
@@ -60,7 +99,7 @@ def process_registered_document(
     try:
         validate_pdf_readable(fingerprint.path)
     except Exception as exc:
-        error_message = f"PDF validation failed: {exc}"
+        error_message = f"[PDF_VALIDATION_FAILED] PDF validation failed: {exc}"
         logger.exception("PDF validation failed file=%s", fingerprint.path)
         create_processing_log(
             session,
@@ -75,7 +114,14 @@ def process_registered_document(
             error_dir,
             fingerprint.content_hash,
         )
-        mark_document_failed(session, document, error_message, str(moved_to_error))
+        mark_document_failed(
+            session,
+            document,
+            error_message,
+            str(moved_to_error),
+            error_type=INVALID_PDF,
+            error_detail=str(exc),
+        )
         create_processing_log(
             session,
             level="INFO",
@@ -92,7 +138,14 @@ def process_registered_document(
         extraction_issues: list = []
         persisted_reference_keys: set[tuple[int, str, str]] = set()
         try:
-            references, extraction_issues, page_count = extract_references_from_pdf(fingerprint.path)
+            extraction_signature = inspect.signature(extract_references_from_pdf)
+            if "settings" in extraction_signature.parameters:
+                references, extraction_issues, page_count = extract_references_from_pdf(
+                    fingerprint.path,
+                    settings=settings,
+                )
+            else:
+                references, extraction_issues, page_count = extract_references_from_pdf(fingerprint.path)
             document.page_count = page_count
         except Exception as exc:
             logger.exception("Reference extraction failed file=%s", fingerprint.path)
@@ -100,7 +153,7 @@ def process_registered_document(
                 session,
                 level="ERROR",
                 step_name="reference_extraction",
-                message=f"Reference extraction failed: {exc}",
+                message=f"[REFERENCE_EXTRACTION_FAILED] Reference extraction failed: {exc}",
                 batch_run_id=batch_run_id,
                 document_id=document.id,
             )
@@ -109,9 +162,9 @@ def process_registered_document(
 
         for issue in extraction_issues:
             if issue.page_number is None:
-                message = issue.message
+                message = f"[{issue.error_type}] {issue.message}"
             else:
-                message = f"page={issue.page_number} {issue.message}"
+                message = f"[{issue.error_type}] {issue.message} page={issue.page_number}"
             create_processing_log(
                 session,
                 level="WARNING",
@@ -144,15 +197,25 @@ def process_registered_document(
             document.id,
             len(persisted_reference_keys),
         )
+        error_type, error_detail = _select_document_issue(extraction_issues)
+        if not references and error_type is None:
+            error_type = UNKNOWN_ERROR
+            error_detail = "No references found"
+        set_document_processing_issue(
+            session,
+            document,
+            error_type=error_type,
+            error_detail=error_detail,
+        )
         try:
-            resolve_document_references(session, document.id)
+            resolve_document_references(session, document.id, settings=settings)
         except Exception as exc:
             logger.exception("URL resolution failed document_id=%s file=%s", document.id, fingerprint.path)
             create_processing_log(
                 session,
                 level="ERROR",
                 step_name="url_resolution",
-                message=f"URL resolution failed: {exc}",
+                message=f"[URL_RESOLUTION_FAILED] URL resolution failed: {exc}",
                 batch_run_id=batch_run_id,
                 document_id=document.id,
             )
@@ -173,7 +236,7 @@ def process_registered_document(
         )
         logger.info("File moved to processed file=%s destination=%s", fingerprint.path, moved_path)
     except Exception as exc:
-        error_message = f"Document processing failed: {exc}"
+        error_message = f"[DOCUMENT_PROCESSING_FAILED] Document processing failed: {exc}"
         logger.exception("Document processing failed file=%s", fingerprint.path)
         create_processing_log(
             session,
@@ -188,7 +251,14 @@ def process_registered_document(
             error_dir,
             fingerprint.content_hash,
         )
-        mark_document_failed(session, document, error_message, str(moved_to_error))
+        mark_document_failed(
+            session,
+            document,
+            error_message,
+            str(moved_to_error),
+            error_type=UNKNOWN_ERROR,
+            error_detail=str(exc),
+        )
         create_processing_log(
             session,
             level="INFO",
@@ -240,7 +310,7 @@ def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by:
                         level="INFO",
                         step_name="duplicate_skip",
                         message=(
-                            "Duplicate skipped for content hash "
+                            f"[{DUPLICATE_CONTENT}] Duplicate skipped for content hash "
                             f"{fingerprint.content_hash}; moved to processed: {moved_path}"
                         ),
                         batch_run_id=batch_run.id,
@@ -261,7 +331,7 @@ def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by:
                         level="ERROR",
                         step_name="duplicate_skip",
                         message=(
-                            "Duplicate skipped but move to processed failed; "
+                            "[DUPLICATE_MOVE_FAILED] Duplicate skipped but move to processed failed; "
                             f"moved to error: {moved_to_error}"
                         ),
                         batch_run_id=batch_run.id,
@@ -278,6 +348,7 @@ def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by:
                     fingerprint=fingerprint,
                     processed_dir=processed_dir,
                     error_dir=error_dir,
+                    settings=settings,
                 )
                 session.commit()
                 total_files_processed += 1

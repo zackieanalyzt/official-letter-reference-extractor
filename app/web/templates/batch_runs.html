@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Runs | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">Batch Runs</span>
+                <h1>Batch run history</h1>
+                <p class="lead">Review execution status, counters, and duration for each processing run.</p>
+            </div>
+        </div>
+
+        <article class="info-card table-card">
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Batch ID</th>
+                            <th>Started</th>
+                            <th>Finished</th>
+                            <th>Status</th>
+                            <th>Seen</th>
+                            <th>Processed</th>
+                            <th>Duplicate</th>
+                            <th>Error</th>
+                            <th>References</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in runs["items"] %}
+                        <tr>
+                            <td><a href="/batch/runs/{{ item.batch_run_id }}" class="table-link">#{{ item.batch_run_id }}</a></td>
+                            <td>{{ item.started_at }}</td>
+                            <td>{{ item.finished_at }}</td>
+                            <td>{{ item.status }}</td>
+                            <td>{{ item.total_files_seen }}</td>
+                            <td>{{ item.total_files_processed }}</td>
+                            <td>{{ item.total_files_duplicate }}</td>
+                            <td>{{ item.total_files_error }}</td>
+                            <td>{{ item.total_references_found }}</td>
+                            <td>{{ item.duration }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="table-empty">No batch runs found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-bar">
+                <span class="muted-inline">Total {{ runs.total }} runs</span>
+                <div class="pagination-actions">
+                    {% if runs.has_prev %}
+                    <a href="/batch/runs?page={{ runs.page - 1 }}" class="button button-secondary button-small">Previous</a>
+                    {% endif %}
+                    {% if runs.has_next %}
+                    <a href="/batch/runs?page={{ runs.page + 1 }}" class="button button-secondary button-small">Next</a>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

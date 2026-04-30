@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 from sqlalchemy.engine import URL as EngineURL
@@ -42,6 +42,16 @@ class Settings(BaseSettings):
     input_dir: str = Field(default="data/input", validation_alias="INPUT_DIR")
     processed_dir: str = Field(default="data/processed", validation_alias="PROCESSED_DIR")
     error_dir: str = Field(default="data/error", validation_alias="ERROR_DIR")
+    ocr_enabled: bool = Field(default=True, validation_alias="OCR_ENABLED")
+    ocr_engine: str = Field(default="tesseract", validation_alias=AliasChoices("OCR_ENGINE", "OCR_COMMAND"))
+    ocr_language: str = Field(default="eng", validation_alias=AliasChoices("OCR_LANG", "OCR_LANGUAGE"))
+    ocr_timeout_seconds: int = Field(default=30, validation_alias="OCR_TIMEOUT_SECONDS")
+    ocr_min_text_chars: int = Field(default=25, validation_alias="OCR_MIN_TEXT_CHARS")
+    ocr_render_scale: float = Field(default=3.0, validation_alias=AliasChoices("OCR_DPI_SCALE", "OCR_RENDER_SCALE"))
+    ocr_page_segmentation_mode: int = Field(default=6, validation_alias="OCR_PAGE_SEGMENTATION_MODE")
+    url_resolve_timeout_seconds: float = Field(default=5.0, validation_alias="URL_RESOLVE_TIMEOUT_SECONDS")
+    url_resolve_max_attempts: int = Field(default=2, validation_alias="URL_RESOLVE_MAX_ATTEMPTS")
+    url_resolve_user_agent: str = Field(default="OLRE/0.1 URL Resolver", validation_alias="URL_RESOLVE_USER_AGENT")
 
     model_config = SettingsConfigDict(
         env_file=".env",

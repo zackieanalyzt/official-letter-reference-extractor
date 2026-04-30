@@ -42,6 +42,16 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setenv("INPUT_DIR", str(input_dir))
     monkeypatch.setenv("PROCESSED_DIR", str(processed_dir))
     monkeypatch.setenv("ERROR_DIR", str(error_dir))
+    monkeypatch.setenv("OCR_ENABLED", "true")
+    monkeypatch.setenv("OCR_ENGINE", "tesseract")
+    monkeypatch.setenv("OCR_LANG", "eng")
+    monkeypatch.setenv("OCR_TIMEOUT_SECONDS", "30")
+    monkeypatch.setenv("OCR_MIN_TEXT_CHARS", "20")
+    monkeypatch.setenv("OCR_DPI_SCALE", "3")
+    monkeypatch.setenv("OCR_PAGE_SEGMENTATION_MODE", "6")
+    monkeypatch.setenv("URL_RESOLVE_TIMEOUT_SECONDS", "5")
+    monkeypatch.setenv("URL_RESOLVE_MAX_ATTEMPTS", "2")
+    monkeypatch.setenv("URL_RESOLVE_USER_AGENT", "OLRE Test")
 
     import app.config as config_module
     import app.main as main_module

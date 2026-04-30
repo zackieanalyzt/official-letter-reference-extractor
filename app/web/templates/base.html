@@ -11,20 +11,21 @@
 
     <header class="topbar">
         <div class="shell shell-wide topbar-inner">
-            <a href="/" class="brandmark" aria-label="OLRE หน้าแรก">
+            <a href="/" class="brandmark" aria-label="OLRE Home">
                 <span class="brandmark-icon">
                     <span></span>
                 </span>
                 <span class="brandmark-copy">
                     <strong>OLRE</strong>
-                    <small>ระบบตรวจสอบรายการอ้างอิงจากหนังสือราชการ</small>
+                    <small>Official Letter Reference Extractor</small>
                 </span>
             </a>
 
-            <nav class="main-nav" aria-label="เมนูหลัก">
-                <a href="/" class="nav-link {% if current_page == 'home' %}is-active{% endif %}">หน้าแรก</a>
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="/" class="nav-link {% if current_page == 'home' %}is-active{% endif %}">หน้าหลัก</a>
                 <a href="/imports" class="nav-link {% if current_page == 'imports' %}is-active{% endif %}">นำเข้าไฟล์</a>
                 <a href="/batch" class="nav-link {% if current_page == 'batch' %}is-active{% endif %}">ประมวลผลชุดงาน</a>
+                <a href="/batch/runs" class="nav-link {% if current_page == 'batch_runs' %}is-active{% endif %}">Batch Runs</a>
                 <a href="/results" class="nav-link {% if current_page == 'results' %}is-active{% endif %}">ผลการตรวจสอบ</a>
                 <a href="/exports" class="nav-link {% if current_page == 'exports' %}is-active{% endif %}">ส่งออกข้อมูล</a>
             </nav>

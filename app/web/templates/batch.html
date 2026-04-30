@@ -8,8 +8,8 @@
         <div class="page-heading">
             <div>
                 <span class="eyebrow">ประมวลผลชุดงาน</span>
-                <h1>สั่งประมวลผลไฟล์ใน inbox</h1>
-                <p class="lead">batch ยังคงทำงานแบบ synchronous ตาม flow เดิม โดยอ่านไฟล์จากโฟลเดอร์กลางและบันทึกผลลงฐานข้อมูล</p>
+                <h1>ติดตาม batch ปัจจุบันและประวัติการประมวลผล</h1>
+                <p class="lead">OLRE ยังทำงานแบบ synchronous ตาม flow เดิม แต่หน้านี้จะแสดงสถานะล่าสุด ประวัติ batch และ error intelligence ที่อ่านต่อได้ง่ายขึ้น</p>
             </div>
             <div class="page-heading-side">
                 <span class="metric-chip">รอประมวลผล {{ pending_count }} ไฟล์</span>
@@ -20,7 +20,7 @@
             <article class="info-card action-panel">
                 <span class="card-kicker">เริ่มงาน</span>
                 <h2>เริ่ม batch ทันที</h2>
-                <p class="muted-copy">เมื่อกดปุ่ม ระบบจะสแกน PDF ใน inbox, ตรวจไฟล์ซ้ำ, ดึงข้อมูลอ้างอิง และย้ายไฟล์ไปยังโฟลเดอร์ปลายทางตามผลลัพธ์</p>
+                <p class="muted-copy">ระบบจะสแกน PDF ใน inbox, ตรวจไฟล์ซ้ำ, ดึง URL จาก text layer, QR และ OCR fallback แล้วบันทึกผลลงฐานข้อมูลก่อนย้ายไฟล์ไปยังโฟลเดอร์ปลายทาง</p>
                 <form method="post" action="/batch/process" class="batch-action-form">
                     <button type="submit" class="button button-primary">เริ่มประมวลผลชุดงาน</button>
                 </form>
@@ -57,8 +57,90 @@
                 </div>
                 {% else %}
                 <h2>ยังไม่มีข้อมูล batch</h2>
-                <p class="muted-copy">อัปโหลดไฟล์เข้าหน้านำเข้าไฟล์ก่อน แล้วกลับมาที่หน้านี้เพื่อเริ่มประมวลผล</p>
+                <p class="muted-copy">อัปโหลดไฟล์เข้า inbox ก่อน แล้วกลับมาหน้านี้เพื่อเริ่มประมวลผลและติดตามผล</p>
                 {% endif %}
+            </article>
+        </div>
+
+        <div class="dashboard-main-grid">
+            <article class="info-card table-card">
+                <div class="section-head">
+                    <div>
+                        <span class="card-kicker">Batch Monitor</span>
+                        <h2>ประวัติ batch ล่าสุด</h2>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Batch</th>
+                                <th>ผู้สั่งงาน</th>
+                                <th>สถานะ</th>
+                                <th>ไฟล์</th>
+                                <th>อ้างอิง</th>
+                                <th>เริ่ม</th>
+                                <th>จบ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in recent_batches %}
+                            <tr>
+                                <td class="cell-strong">#{{ item.batch_run_id }}</td>
+                                <td>{{ item.triggered_by }}</td>
+                                <td>{{ item.status }}</td>
+                                <td>{{ item.total_files_processed }}/{{ item.total_files_seen }} สำเร็จ, ซ้ำ {{ item.duplicate_files_skipped }}, ผิดพลาด {{ item.failed_files }}</td>
+                                <td>{{ item.total_references_found }}</td>
+                                <td>{{ item.started_at }}</td>
+                                <td>{{ item.finished_at }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="table-empty">ยังไม่มีประวัติ batch</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="info-card table-card">
+                <div class="section-head">
+                    <div>
+                        <span class="card-kicker">Error Intelligence</span>
+                        <h2>เหตุการณ์ผิดปกติล่าสุด</h2>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>เวลา</th>
+                                <th>ระดับ</th>
+                                <th>Code</th>
+                                <th>ขั้นตอน</th>
+                                <th>ไฟล์</th>
+                                <th>รายละเอียด</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in error_insights %}
+                            <tr>
+                                <td>{{ item.created_at }}</td>
+                                <td>{{ item.level }}</td>
+                                <td><span class="metric-chip">{{ item.code }}</span></td>
+                                <td>{{ item.step_name }}</td>
+                                <td class="cell-wrap">{{ item.document_name }}</td>
+                                <td class="cell-wrap">{{ item.message }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="table-empty">ยังไม่มี warning หรือ error log</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </article>
         </div>
     </div>

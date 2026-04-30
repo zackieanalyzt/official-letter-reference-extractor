@@ -6,7 +6,13 @@ from app.auth.session import SessionManager
 from app.config import BASE_DIR
 from app.dependencies import get_session_manager
 from app.services.process_batch import run_batch_registration
-from app.services.ui_views import count_pending_inbox_files, fetch_latest_batch, localize_batch_summary
+from app.services.ui_views import (
+    count_pending_inbox_files,
+    fetch_latest_batch,
+    fetch_recent_batches,
+    fetch_recent_error_insights,
+    localize_batch_summary,
+)
 
 
 router = APIRouter()
@@ -34,6 +40,8 @@ async def process_batch(request: Request, session_manager: SessionManager = Depe
             "current_page": "batch",
             "batch_summary": batch_summary,
             "latest_batch": latest_batch,
+            "recent_batches": fetch_recent_batches(request.app.state.postgres_engine),
+            "error_insights": fetch_recent_error_insights(request.app.state.postgres_engine),
             "pending_count": count_pending_inbox_files(
                 request.app.state.settings,
                 request.app.state.postgres_engine,

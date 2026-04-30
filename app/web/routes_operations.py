@@ -13,6 +13,7 @@ from app.config import BASE_DIR
 from app.db.postgres import create_postgres_session_factory
 from app.dependencies import get_session_manager
 from app.logging_config import get_logger
+from app.services.batch_monitor_service import get_batch_run_detail, list_batch_runs
 from app.services.export_service import export_csv, export_markdown
 from app.services.inbox_paths import get_inbox_path
 from app.services.results_service import DEFAULT_PAGE_SIZE, get_references
@@ -20,6 +21,8 @@ from app.services.ui_views import (
     count_pending_inbox_files,
     fetch_export_summary,
     fetch_latest_batch,
+    fetch_recent_batches,
+    fetch_recent_error_insights,
     list_inbox_files,
     safe_inbox_file_path,
 )
@@ -213,10 +216,65 @@ async def batch_page(request: Request, session_manager: SessionManager = Depends
         context={
             "batch_summary": None,
             "latest_batch": fetch_latest_batch(request.app.state.postgres_engine),
+            "recent_batches": fetch_recent_batches(request.app.state.postgres_engine),
+            "error_insights": fetch_recent_error_insights(request.app.state.postgres_engine),
             "pending_count": count_pending_inbox_files(
                 request.app.state.settings,
                 request.app.state.postgres_engine,
             ),
+        },
+    )
+
+
+@router.get("/batch/runs")
+async def batch_runs_page(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    session_manager: SessionManager = Depends(get_session_manager),
+):
+    user, redirect_response = _require_user(request, session_manager)
+    if redirect_response:
+        return redirect_response
+
+    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    with session_factory() as session:
+        runs = list_batch_runs(session, page=page, page_size=20)
+
+    return _render(
+        request,
+        name="batch_runs.html",
+        user=user,
+        current_page="batch_runs",
+        context={
+            "runs": runs,
+        },
+    )
+
+
+@router.get("/batch/runs/{batch_run_id}")
+async def batch_run_detail_page(
+    request: Request,
+    batch_run_id: int,
+    session_manager: SessionManager = Depends(get_session_manager),
+):
+    user, redirect_response = _require_user(request, session_manager)
+    if redirect_response:
+        return redirect_response
+
+    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    with session_factory() as session:
+        detail = get_batch_run_detail(session, batch_run_id)
+
+    if detail is None:
+        return RedirectResponse(url="/batch/runs", status_code=303)
+
+    return _render(
+        request,
+        name="batch_run_detail.html",
+        user=user,
+        current_page="batch_runs",
+        context={
+            "detail": detail,
         },
     )
 

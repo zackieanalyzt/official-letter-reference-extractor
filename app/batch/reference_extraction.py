@@ -6,6 +6,12 @@ from typing import Callable
 
 import fitz
 
+from app.batch.error_types import (
+    NO_REFERENCE_FOUND,
+    QR_EXTRACTION_FAIL,
+    TEXT_EXTRACTION_FAIL,
+)
+from app.batch.ocr import extract_text_with_ocr_if_needed
 from app.logging_config import get_logger
 
 
@@ -27,6 +33,7 @@ class ExtractedReference:
 class ExtractionIssue:
     page_number: int | None
     step_name: str
+    error_type: str
     message: str
 
 
@@ -34,7 +41,7 @@ def normalize_reference(raw_reference: str) -> str:
     return raw_reference.strip().strip(TRAILING_PUNCTUATION)
 
 
-def extract_urls_from_text(page_text: str, page_number: int) -> list[ExtractedReference]:
+def extract_urls_from_text(page_text: str, page_number: int, *, source_type: str = "text") -> list[ExtractedReference]:
     references: list[ExtractedReference] = []
     seen: set[tuple[int, str, str, str]] = set()
 
@@ -45,7 +52,7 @@ def extract_urls_from_text(page_text: str, page_number: int) -> list[ExtractedRe
 
         reference = ExtractedReference(
             page_number=page_number,
-            source_type="text",
+            source_type=source_type,
             reference_class="url",
             raw_reference=normalized,
         )
@@ -63,20 +70,15 @@ def extract_urls_from_text(page_text: str, page_number: int) -> list[ExtractedRe
     return references
 
 
-def render_page_to_rgb_array(page: fitz.Page):
+def render_page_to_rgb_array(page: fitz.Page, *, scale: float = 3.0):
     import numpy as np
 
-    pixmap = page.get_pixmap(matrix=fitz.Matrix(3, 3), alpha=False)
+    pixmap = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
     channels = 3 if pixmap.n >= 3 else 1
     image = np.frombuffer(pixmap.samples, dtype=np.uint8).reshape(pixmap.height, pixmap.width, channels)
     if channels == 1:
         image = np.repeat(image, 3, axis=2)
     return image
-
-
-def extract_text_with_ocr_if_needed(file_path) -> str:
-    logger.info("[OCR_STUB] file=%s status=not_implemented", file_path)
-    return ""
 
 
 def detect_qr_values_from_page(page: fitz.Page) -> list[str]:
@@ -122,6 +124,7 @@ def extract_references_from_pdf(
     file_path,
     *,
     qr_detector: Callable[[fitz.Page], list[str]] | None = None,
+    settings=None,
 ) -> tuple[list[ExtractedReference], list[ExtractionIssue], int]:
     references: list[ExtractedReference] = []
     issues: list[ExtractionIssue] = []
@@ -137,7 +140,7 @@ def extract_references_from_pdf(
             import numpy  # noqa: F401
         except Exception as exc:
             qr_detection_available = False
-            qr_error = f"QR extraction unavailable: {exc}"
+            qr_error = str(exc)
         else:
             qr_detection_available = True
             qr_error = ""
@@ -149,34 +152,18 @@ def extract_references_from_pdf(
         page_count = document.page_count
         for page_index in range(page_count):
             page_number = page_index + 1
-
-            try:
-                page = document.load_page(page_index)
-            except Exception as exc:
-                issues.append(
-                    ExtractionIssue(
-                        page_number=page_number,
-                        step_name="reference_page_load",
-                        message=f"Page load failed: {exc}",
-                    )
-                )
-                continue
+            page = document.load_page(page_index)
 
             try:
                 page_text = page.get_text()
             except Exception as exc:
-                issues.append(
-                    ExtractionIssue(
-                        page_number=page_number,
-                        step_name="reference_text_extraction",
-                        message=f"Text extraction failed: {exc}",
-                    )
-                )
                 page_text = ""
+                issues.append(
+                    ExtractionIssue(page_number, "reference_text_extraction", TEXT_EXTRACTION_FAIL, str(exc))
+                )
 
-            text_references = extract_urls_from_text(page_text, page_number)
             total_text_chars += len(page_text)
-            logger.info("[TEXT] file=%s page=%s chars=%s urls=%s", file_path, page_number, len(page_text), len(text_references))
+            text_references = extract_urls_from_text(page_text, page_number, source_type="text")
             for reference in text_references:
                 dedupe_key = (
                     reference.page_number,
@@ -189,39 +176,52 @@ def extract_references_from_pdf(
                 seen.add(dedupe_key)
                 references.append(reference)
 
-            if not qr_detection_available:
-                if page_number == 1:
+            if settings is not None:
+                ocr_result = extract_text_with_ocr_if_needed(page, page_number, page_text, settings)
+                if ocr_result["used_ocr"] and ocr_result["error_type"]:
                     issues.append(
                         ExtractionIssue(
-                            page_number=None,
-                            step_name="reference_qr_extraction",
-                            message=qr_error,
+                            page_number,
+                            "reference_ocr",
+                            ocr_result["error_type"],
+                            ocr_result["error"] or "",
                         )
                     )
-                    logger.warning("[QR] file=%s found=0 reason=%s", file_path, qr_error)
-                continue
-
-            try:
-                qr_values = detector(page)
-            except Exception as exc:
-                issues.append(
-                    ExtractionIssue(
-                        page_number=page_number,
-                        step_name="reference_qr_extraction",
-                        message=f"QR extraction failed: {exc}",
+                if ocr_result["used_ocr"] and not ocr_result["error"]:
+                    ocr_references = extract_urls_from_text(
+                        ocr_result["text"],
+                        page_number,
+                        source_type="ocr",
                     )
-                )
-                logger.exception("[QR] file=%s page=%s found=0 error=%s", file_path, page_number, exc)
-                continue
+                    for reference in ocr_references:
+                        dedupe_key = (
+                            reference.page_number,
+                            reference.source_type,
+                            reference.raw_reference,
+                            reference.reference_class,
+                        )
+                        if dedupe_key in seen:
+                            continue
+                        seen.add(dedupe_key)
+                        references.append(reference)
 
-            logger.info("[QR] file=%s page=%s found=%s", file_path, page_number, len(qr_values))
+            if qr_detection_available:
+                try:
+                    qr_values = detector(page)
+                except Exception as exc:
+                    issues.append(ExtractionIssue(page_number, "reference_qr_extraction", QR_EXTRACTION_FAIL, str(exc)))
+                    qr_values = []
+            else:
+                issues.append(ExtractionIssue(None, "reference_qr_extraction", QR_EXTRACTION_FAIL, qr_error))
+                qr_values = []
+
             for raw_value in qr_values:
                 normalized = normalize_reference(raw_value)
                 if not normalized:
                     continue
                 reference = ExtractedReference(
                     page_number=page_number,
-                    source_type="image",
+                    source_type="qr",
                     reference_class="qr",
                     raw_reference=normalized,
                 )
@@ -238,7 +238,9 @@ def extract_references_from_pdf(
 
         if total_text_chars == 0:
             logger.info("[IMAGE_ONLY_PDF] file=%s pages=%s", file_path, page_count)
-            _ = extract_text_with_ocr_if_needed(file_path)
+
+    if not references:
+        issues.append(ExtractionIssue(None, "reference_summary", NO_REFERENCE_FOUND, "No references found"))
 
     logger.info("[EXTRACT_DONE] file=%s total_refs=%s", file_path, len(references))
     return references, issues, page_count

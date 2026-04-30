@@ -85,10 +85,33 @@ def mark_document_processed(session: Session, document: Document, moved_to_path:
     return document
 
 
-def mark_document_failed(session: Session, document: Document, error_message: str, moved_to_path: str) -> Document:
+def mark_document_failed(
+    session: Session,
+    document: Document,
+    error_message: str,
+    moved_to_path: str,
+    *,
+    error_type: str | None = None,
+    error_detail: str | None = None,
+) -> Document:
     document.processing_status = "failed"
     document.processing_error = error_message
+    document.processing_error_type = error_type
+    document.processing_error_detail = error_detail
     document.moved_to_path = moved_to_path
+    session.flush()
+    return document
+
+
+def set_document_processing_issue(
+    session: Session,
+    document: Document,
+    *,
+    error_type: str | None,
+    error_detail: str | None,
+) -> Document:
+    document.processing_error_type = error_type
+    document.processing_error_detail = error_detail
     session.flush()
     return document
 
@@ -111,6 +134,8 @@ def create_document_reference(
         final_url=None,
         resolution_status="pending",
         http_status=None,
+        resolution_error_type=None,
+        resolution_error_detail=None,
     )
     session.add(reference)
     session.flush()

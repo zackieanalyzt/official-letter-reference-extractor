@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Run Detail | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">Batch Detail</span>
+                <h1>Batch #{{ detail.batch.batch_run_id }}</h1>
+                <p class="lead">Inspect batch-level counters and per-document processing outcomes.</p>
+            </div>
+            <div class="page-heading-side">
+                <a href="/batch/runs" class="button button-secondary">Back to runs</a>
+            </div>
+        </div>
+
+        <div class="dashboard-main-grid">
+            <article class="info-card summary-card">
+                <span class="card-kicker">Summary</span>
+                <h2>Batch overview</h2>
+                <div class="summary-metrics">
+                    <div class="summary-metric">
+                        <span>Status</span>
+                        <strong>{{ detail.batch.status }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>Triggered By</span>
+                        <strong>{{ detail.batch.triggered_by }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>Seen</span>
+                        <strong>{{ detail.batch.total_files_seen }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>Processed</span>
+                        <strong>{{ detail.batch.total_files_processed }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>Duplicate</span>
+                        <strong>{{ detail.batch.total_files_duplicate }}</strong>
+                    </div>
+                    <div class="summary-metric">
+                        <span>Error</span>
+                        <strong>{{ detail.batch.total_files_error }}</strong>
+                    </div>
+                </div>
+                <div class="status-inline">
+                    <span>Started: {{ detail.batch.started_at }}</span>
+                    <span>Finished: {{ detail.batch.finished_at }}</span>
+                    <span>Duration: {{ detail.batch.duration }}</span>
+                    <span>References: {{ detail.batch.total_references_found }}</span>
+                </div>
+            </article>
+        </div>
+
+        <article class="info-card table-card">
+            <div class="section-head">
+                <div>
+                    <span class="card-kicker">Documents</span>
+                    <h2>Documents in this batch</h2>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Document ID</th>
+                            <th>Filename</th>
+                            <th>Content Hash</th>
+                            <th>Processing Status</th>
+                            <th>Processing Error Type</th>
+                            <th>Reference Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in detail.documents %}
+                        <tr>
+                            <td>{{ item.document_id }}</td>
+                            <td class="cell-wrap">{{ item.filename }}</td>
+                            <td class="cell-wrap">{{ item.content_hash }}</td>
+                            <td>{{ item.processing_status }}</td>
+                            <td>{{ item.processing_error_type or "-" }}</td>
+                            <td>{{ item.reference_count }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="table-empty">No documents found for this batch.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}
