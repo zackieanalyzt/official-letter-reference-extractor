@@ -4,6 +4,7 @@ from pathlib import Path
 import fitz
 from sqlalchemy import text
 
+from app.i18n.th import LABELS
 from app.services.inbox_paths import get_inbox_path
 
 
@@ -147,7 +148,7 @@ def test_results_page_loads(client):
     response = client.get("/results")
 
     assert response.status_code == 200
-    assert "Extracted References" in response.text
+    assert LABELS["results_title"] in response.text
     assert "alpha-letter.pdf" in response.text
     assert "beta-scan.pdf" in response.text
 
@@ -271,8 +272,8 @@ def test_batch_page_shows_monitoring_and_error_intelligence(client):
     response = client.get("/batch")
 
     assert response.status_code == 200
-    assert "Batch Monitor" in response.text
-    assert "Error Intelligence" in response.text
+    assert LABELS["batch_monitor"] in response.text
+    assert LABELS["error_intelligence"] in response.text
     assert "OCR_TIMEOUT" in response.text
     assert "scan-001.pdf" in response.text
 

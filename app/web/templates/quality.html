@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ labels.quality }} | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">{{ labels.quality_eyebrow }}</span>
+                <h1>{{ labels.quality_report }}</h1>
+                <p class="lead">{{ labels.quality_lead }}</p>
+            </div>
+        </div>
+
+        <div class="quality-grid">
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.documents }}</span><h2>{{ labels.zero_references }}</h2></div><a href="/results?processing_error_type=NO_REFERENCE_FOUND" class="button button-secondary button-small">{{ labels.filter }}</a></div>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>{{ labels.id }}</th><th>{{ labels.file_name }}</th><th>{{ labels.status }}</th></tr></thead><tbody>
+                    {% for row in quality.zero_reference_documents %}
+                    <tr><td>{{ row.id }}</td><td>{{ row.original_file_name }}</td><td>{{ labels.get(row.processing_status, row.processing_status) }}</td></tr>
+                    {% else %}<tr><td colspan="3" class="table-empty">{{ labels.no_rows }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            </article>
+
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.documents }}</span><h2>{{ labels.ocr_failed }}</h2></div><a href="/results?processing_error_type=OCR" class="button button-secondary button-small">{{ labels.filter }}</a></div>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>{{ labels.id }}</th><th>{{ labels.file_name }}</th><th>{{ labels.error }}</th></tr></thead><tbody>
+                    {% for row in quality.ocr_failed_documents %}
+                    <tr><td>{{ row.id }}</td><td>{{ row.original_file_name }}</td><td>{{ row.processing_error_type }}</td></tr>
+                    {% else %}<tr><td colspan="3" class="table-empty">{{ labels.no_rows }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            </article>
+
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.documents }}</span><h2>{{ labels.failed_documents_section }}</h2></div><a href="/results?processing_status=failed" class="button button-secondary button-small">{{ labels.filter }}</a></div>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>{{ labels.id }}</th><th>{{ labels.file_name }}</th><th>{{ labels.error }}</th></tr></thead><tbody>
+                    {% for row in quality.failed_documents %}
+                    <tr><td>{{ row.id }}</td><td>{{ row.original_file_name }}</td><td>{{ row.processing_error_type }}</td></tr>
+                    {% else %}<tr><td colspan="3" class="table-empty">{{ labels.no_rows }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            </article>
+
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.references }}</span><h2>{{ labels.failed_resolution }}</h2></div><a href="/results?status=failed" class="button button-secondary button-small">{{ labels.filter }}</a></div>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>{{ labels.id }}</th><th>{{ labels.document_id }}</th><th>{{ labels.raw_reference }}</th></tr></thead><tbody>
+                    {% for row in quality.failed_references %}
+                    <tr><td>{{ row.id }}</td><td>{{ row.document_id }}</td><td class="cell-wrap">{{ row.raw_reference }}</td></tr>
+                    {% else %}<tr><td colspan="3" class="table-empty">{{ labels.no_rows }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            </article>
+
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.documents }}</span><h2>{{ labels.duplicate_content_hashes }}</h2></div></div>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>{{ labels.content_hash }}</th><th>{{ labels.count }}</th></tr></thead><tbody>
+                    {% for row in quality.duplicate_documents %}
+                    <tr><td class="cell-wrap">{{ row.content_hash }}</td><td>{{ row.count }}</td></tr>
+                    {% else %}<tr><td colspan="2" class="table-empty">{{ labels.no_rows }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            </article>
+
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.documents }}</span><h2>{{ labels.missing_page_count }}</h2></div></div>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>{{ labels.id }}</th><th>{{ labels.file_name }}</th></tr></thead><tbody>
+                    {% for row in quality.missing_page_count %}
+                    <tr><td>{{ row.id }}</td><td>{{ row.original_file_name }}</td></tr>
+                    {% else %}<tr><td colspan="2" class="table-empty">{{ labels.no_rows }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            </article>
+
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.references }}</span><h2>{{ labels.missing_resolved_url }}</h2></div><a href="/results?status=pending" class="button button-secondary button-small">{{ labels.filter }}</a></div>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>{{ labels.id }}</th><th>{{ labels.document_id }}</th><th>{{ labels.raw_reference }}</th></tr></thead><tbody>
+                    {% for row in quality.missing_resolved_url %}
+                    <tr><td>{{ row.id }}</td><td>{{ row.document_id }}</td><td class="cell-wrap">{{ row.raw_reference }}</td></tr>
+                    {% else %}<tr><td colspan="3" class="table-empty">{{ labels.no_rows }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            </article>
+
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.documents }}</span><h2>{{ labels.image_only_no_reference }}</h2></div></div>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>{{ labels.id }}</th><th>{{ labels.file_name }}</th><th>{{ labels.error }}</th></tr></thead><tbody>
+                    {% for row in quality.image_only_documents %}
+                    <tr><td>{{ row.id }}</td><td>{{ row.original_file_name }}</td><td>{{ row.processing_error_type }}</td></tr>
+                    {% else %}<tr><td colspan="3" class="table-empty">{{ labels.no_rows }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            </article>
+        </div>
+    </div>
+</section>
+{% endblock %}

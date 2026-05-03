@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{{ labels.dashboard }} | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">{{ labels.dashboard_eyebrow }}</span>
+                <h1>{{ labels.dashboard_title }}</h1>
+                <p class="lead">{{ labels.dashboard_lead }}</p>
+            </div>
+        </div>
+
+        <div class="kpi-grid">
+            {% for label, value in [
+                (labels.total_documents, summary.total_documents),
+                (labels.total_references, summary.total_references),
+                (labels.processed_documents, summary.processed_documents),
+                (labels.failed_documents, summary.failed_documents),
+                (labels.duplicate_documents, summary.duplicate_documents),
+                (labels.resolved_urls, summary.resolved_urls),
+                (labels.failed_url_resolutions, summary.failed_urls),
+                (labels.qr_references, summary.qr_count),
+                (labels.text_references, summary.text_count),
+                (labels.ocr_references, summary.ocr_count),
+                (labels.broken_link_rate, summary.broken_link_rate ~ "%"),
+                (labels.ocr_usage_rate, summary.ocr_usage_rate ~ "%"),
+                (labels.qr_detection_rate, summary.qr_detection_rate ~ "%")
+            ] %}
+            <article class="info-card stat-card">
+                <span class="card-kicker">{{ label }}</span>
+                <strong class="stat-value">{{ value }}</strong>
+            </article>
+            {% endfor %}
+        </div>
+
+        <div class="dashboard-main-grid">
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.domains }}</span><h2>{{ labels.top_url_domains }}</h2></div></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>{{ labels.domain }}</th><th>{{ labels.total }}</th><th>{{ labels.resolved }}</th><th>{{ labels.failed }}</th><th>{{ labels.success_rate }}</th><th>{{ labels.source_breakdown }}</th></tr></thead>
+                        <tbody>
+                            {% for row in domain_summary %}
+                            <tr>
+                                <td class="cell-strong">{{ row.domain }}</td>
+                                <td>{{ row.total_references }}</td>
+                                <td>{{ row.resolved_count }}</td>
+                                <td>{{ row.failed_count }}</td>
+                                <td>{{ row.success_rate }}%</td>
+                                <td>{{ labels.text }} {{ row.text_count }}, {{ labels.qr }} {{ row.qr_count }}, {{ labels.ocr }} {{ row.ocr_count }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" class="table-empty">{{ labels.no_url_domains_found }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.sources }}</span><h2>{{ labels.reference_sources }}</h2></div></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>{{ labels.source }}</th><th>{{ labels.count }}</th></tr></thead>
+                        <tbody>
+                            {% for row in source_summary %}
+                            <tr><td>{{ labels.get(row.source_type, row.source_type) }}</td><td>{{ row.count }}</td></tr>
+                            {% else %}
+                            <tr><td colspan="2" class="table-empty">{{ labels.no_references_found }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </div>
+
+        <div class="dashboard-main-grid">
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.errors }}</span><h2>{{ labels.top_processing_errors }}</h2></div></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>{{ labels.error }}</th><th>{{ labels.count }}</th></tr></thead>
+                        <tbody>
+                            {% for row in error_summary.processing_errors %}
+                            <tr><td>{{ row.error_type }}</td><td>{{ row.count }}</td></tr>
+                            {% else %}
+                            <tr><td colspan="2" class="table-empty">{{ labels.no_processing_errors }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="info-card table-card">
+                <div class="section-head"><div><span class="card-kicker">{{ labels.errors }}</span><h2>{{ labels.top_resolution_errors }}</h2></div></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>{{ labels.error }}</th><th>{{ labels.count }}</th></tr></thead>
+                        <tbody>
+                            {% for row in error_summary.resolution_errors %}
+                            <tr><td>{{ row.error_type }}</td><td>{{ row.count }}</td></tr>
+                            {% else %}
+                            <tr><td colspan="2" class="table-empty">{{ labels.no_resolution_errors }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </div>
+
+        <article class="info-card table-card">
+            <div class="section-head"><div><span class="card-kicker">{{ labels.trend }}</span><h2>{{ labels.daily_activity }}</h2></div></div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>{{ labels.date }}</th><th>{{ labels.documents }}</th><th>{{ labels.references }}</th><th>{{ labels.failed_documents }}</th><th>{{ labels.resolved_urls }}</th></tr></thead>
+                    <tbody>
+                        {% for row in daily_trend %}
+                        <tr><td>{{ row.date }}</td><td>{{ row.documents }}</td><td>{{ row.references }}</td><td>{{ row.failed_documents }}</td><td>{{ row.resolved_urls }}</td></tr>
+                        {% else %}
+                        <tr><td colspan="5" class="table-empty">{{ labels.no_daily_trend_data }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

@@ -1,26 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}QR Debug | OLRE{% endblock %}
+{% block title %}{{ labels.qr_debug }} | OLRE{% endblock %}
 
 {% block content %}
 <section class="page-section">
     <div class="shell shell-wide page-stack">
         <div class="page-heading">
             <div>
-                <span class="eyebrow">QR Debug</span>
+                <span class="eyebrow">{{ labels.qr_debug }}</span>
                 <h1>{{ document.filename }}</h1>
-                <p class="lead">Inspect QR detection attempts captured for this document. Debug export is {% if debug_enabled %}enabled{% else %}disabled{% endif %}.</p>
+                <p class="lead">{{ labels.qr_debug_lead }} {% if debug_enabled %}{{ labels.enabled }}{% else %}{{ labels.disabled }}{% endif %}</p>
             </div>
             <div class="page-heading-side">
-                <a href="/results" class="button button-secondary button-small">Back to Results</a>
+                <a href="/results" class="button button-secondary button-small">{{ labels.back_to_results }}</a>
             </div>
         </div>
 
         {% if not pages %}
         <article class="info-card">
-            <span class="card-kicker">No Debug Records</span>
-            <h2>No QR debug attempts found</h2>
-            <p class="muted-copy">Enable QR_DEBUG_EXPORT and process the PDF again to capture QR detection images and metadata.</p>
+            <span class="card-kicker">{{ labels.no_debug_records }}</span>
+            <h2>{{ labels.no_qr_debug_attempts }}</h2>
+            <p class="muted-copy">{{ labels.enable_qr_debug_help }}</p>
         </article>
         {% endif %}
 
@@ -28,8 +28,8 @@
         <article class="info-card debug-page-card">
             <div class="section-head">
                 <div>
-                    <span class="card-kicker">Page {{ page.page }}</span>
-                    <h2>{{ page.attempts|length }} attempts</h2>
+                    <span class="card-kicker">{{ labels.page_label }} {{ page.page }}</span>
+                    <h2>{{ page.attempts|length }} {{ labels.attempts }}</h2>
                 </div>
             </div>
 
@@ -40,9 +40,9 @@
                         <div>
                             <strong>{{ attempt.zone }} | {{ attempt.variant }}</strong>
                             {% if attempt.success %}
-                            <span class="status-badge status-badge-resolved">SUCCESS</span>
+                            <span class="status-badge status-badge-resolved">{{ labels.success }}</span>
                             {% else %}
-                            <span class="status-badge status-badge-failed">FAIL</span>
+                            <span class="status-badge status-badge-failed">{{ labels.fail }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -51,10 +51,10 @@
                     {% endif %}
                     {% if attempt.image_url %}
                     <a href="{{ attempt.image_url }}" target="_blank" rel="noopener noreferrer">
-                        <img class="debug-image" src="{{ attempt.image_url }}" alt="QR debug {{ attempt.zone }} {{ attempt.variant }}">
+                        <img class="debug-image" src="{{ attempt.image_url }}" alt="{{ labels.qr_debug }} {{ attempt.zone }} {{ attempt.variant }}">
                     </a>
                     {% else %}
-                    <div class="debug-image-placeholder">No image captured</div>
+                    <div class="debug-image-placeholder">{{ labels.no_image_captured }}</div>
                     {% endif %}
                 </section>
                 {% endfor %}

@@ -204,11 +204,25 @@ def iter_references(
     search: str | None,
     status: str | None,
     source_type: str | None,
+    filename: str | None = None,
+    processing_status: str | None = None,
+    processing_error_type: str | None = None,
+    resolution_error_type: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    domain: str | None = None,
 ):
     statement = _build_reference_statement(
         search=search,
         status=status,
         source_type=source_type,
+        filename=filename,
+        processing_status=processing_status,
+        processing_error_type=processing_error_type,
+        resolution_error_type=resolution_error_type,
+        date_from=date_from,
+        date_to=date_to,
+        domain=domain,
     ).order_by(Document.original_file_name.asc(), DocumentReference.page_number.asc(), DocumentReference.id.asc())
 
     return session.execute(statement.execution_options(yield_per=200))
@@ -220,11 +234,25 @@ def get_reference_summary(
     search: str | None,
     status: str | None,
     source_type: str | None,
+    filename: str | None = None,
+    processing_status: str | None = None,
+    processing_error_type: str | None = None,
+    resolution_error_type: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    domain: str | None = None,
 ) -> dict:
     base_statement = _build_reference_statement(
         search=search,
         status=status,
         source_type=source_type,
+        filename=filename,
+        processing_status=processing_status,
+        processing_error_type=processing_error_type,
+        resolution_error_type=resolution_error_type,
+        date_from=date_from,
+        date_to=date_to,
+        domain=domain,
     ).subquery()
 
     totals = session.execute(

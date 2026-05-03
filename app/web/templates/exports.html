@@ -1,65 +1,81 @@
 {% extends "base.html" %}
 
-{% block title %}Exports | OLRE{% endblock %}
+{% block title %}{{ labels.exports }} | OLRE{% endblock %}
 
 {% block content %}
 <section class="page-section">
     <div class="shell shell-wide page-stack">
         <div class="page-heading">
             <div>
-                <span class="eyebrow">Exports</span>
-                <h1>Export Results</h1>
-                <p class="lead">เลือกช่วงข้อมูลที่ต้องการ แล้วดาวน์โหลดได้ทันทีทั้งแบบ CSV สำหรับใช้งานต่อ และ Markdown สำหรับรายงานสรุป</p>
+                <span class="eyebrow">{{ labels.exports }}</span>
+                <h1>{{ labels.export_results }}</h1>
+                <p class="lead">{{ labels.exports_lead }}</p>
             </div>
         </div>
 
         <div class="stats-grid">
             <article class="info-card stat-card">
-                <span class="card-kicker">Processed Documents</span>
+                <span class="card-kicker">{{ labels.processed_documents }}</span>
                 <strong class="stat-value">{{ export_summary.processed_documents }}</strong>
-                <p>จำนวนเอกสารที่ผ่านการประมวลผลและพร้อมใช้งาน</p>
             </article>
             <article class="info-card stat-card">
-                <span class="card-kicker">Total References</span>
+                <span class="card-kicker">{{ labels.total_references }}</span>
                 <strong class="stat-value">{{ export_summary.total_references }}</strong>
-                <p>จำนวน QR และ URL ที่อยู่ในระบบตอนนี้</p>
             </article>
         </div>
 
         <article class="info-card summary-card">
-            <span class="card-kicker">Filter Before Export</span>
+            <span class="card-kicker">{{ labels.filter_before_export }}</span>
             <form method="get" action="/exports" class="filters-bar">
                 <label class="filter-field">
-                    <span>Search</span>
-                    <input type="search" name="search" value="{{ search }}" placeholder="Search file name or URL">
+                    <span>{{ labels.filename }}</span>
+                    <input type="search" name="filename" value="{{ filename }}" placeholder="{{ labels.file_name }}">
                 </label>
                 <label class="filter-field">
-                    <span>Status</span>
+                    <span>{{ labels.search }}</span>
+                    <input type="search" name="search" value="{{ search }}" placeholder="{{ labels.search }}">
+                </label>
+                <label class="filter-field">
+                    <span>{{ labels.processing }}</span>
+                    <select name="processing_status">
+                        <option value="">{{ labels.all }}</option>
+                        <option value="pending" {% if processing_status == "pending" %}selected{% endif %}>{{ labels.pending }}</option>
+                        <option value="processed" {% if processing_status == "processed" %}selected{% endif %}>{{ labels.processed }}</option>
+                        <option value="failed" {% if processing_status == "failed" %}selected{% endif %}>{{ labels.failed }}</option>
+                    </select>
+                </label>
+                <label class="filter-field">
+                    <span>{{ labels.resolution }}</span>
                     <select name="status">
-                        <option value="">All</option>
-                        <option value="pending" {% if status == "pending" %}selected{% endif %}>pending</option>
-                        <option value="resolved" {% if status == "resolved" %}selected{% endif %}>resolved</option>
-                        <option value="failed" {% if status == "failed" %}selected{% endif %}>failed</option>
+                        <option value="">{{ labels.all }}</option>
+                        <option value="pending" {% if status == "pending" %}selected{% endif %}>{{ labels.pending }}</option>
+                        <option value="resolved" {% if status == "resolved" %}selected{% endif %}>{{ labels.resolved }}</option>
+                        <option value="failed" {% if status == "failed" %}selected{% endif %}>{{ labels.failed }}</option>
                     </select>
                 </label>
                 <label class="filter-field">
-                    <span>Source</span>
+                    <span>{{ labels.source }}</span>
                     <select name="source_type">
-                        <option value="">All</option>
-                        <option value="text" {% if source_type == "text" %}selected{% endif %}>text</option>
-                        <option value="image" {% if source_type == "image" %}selected{% endif %}>image</option>
+                        <option value="">{{ labels.all }}</option>
+                        <option value="text" {% if source_type == "text" %}selected{% endif %}>{{ labels.text }}</option>
+                        <option value="image" {% if source_type == "image" %}selected{% endif %}>{{ labels.image }}</option>
                     </select>
+                </label>
+                <label class="filter-field">
+                    <span>{{ labels.url_contains }}</span>
+                    <input type="search" name="domain" value="{{ domain }}" placeholder="{{ labels.domain_placeholder }}">
                 </label>
                 <div class="filters-actions">
-                    <button type="submit" class="button button-primary button-small">Preview Filters</button>
-                    <a href="/exports" class="button button-secondary button-small">Reset</a>
+                    <button type="submit" class="button button-primary button-small">{{ labels.preview_filters }}</button>
+                    <a href="/exports" class="button button-secondary button-small">{{ labels.reset }}</a>
                 </div>
             </form>
 
             <div class="export-actions">
-                <a class="button button-primary" href="/exports/csv?search={{ search }}&status={{ status }}&source_type={{ source_type }}">Download CSV</a>
-                <a class="button button-secondary" href="/exports/markdown?search={{ search }}&status={{ status }}&source_type={{ source_type }}">Download Markdown</a>
-                <a class="button button-ghost" href="/results?search={{ search }}&status={{ status }}&source_type={{ source_type }}">View Matching Results</a>
+                <a class="button button-primary" href="/exports/csv?{{ filter_query }}">{{ labels.download_csv }}</a>
+                <a class="button button-secondary" href="/exports/markdown?{{ filter_query }}">{{ labels.download_markdown }}</a>
+                <a class="button button-secondary" href="/exports/excel?{{ filter_query }}">{{ labels.download_excel }}</a>
+                <a class="button button-ghost" href="/results?{{ filter_query }}">{{ labels.view_matching_results }}</a>
             </div>
         </article>
     </div>

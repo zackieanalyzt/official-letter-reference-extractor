@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Batch Runs | OLRE{% endblock %}
+{% block title %}{{ labels.batch_runs }} | OLRE{% endblock %}
 
 {% block content %}
 <section class="page-section">
     <div class="shell shell-wide page-stack">
         <div class="page-heading">
             <div>
-                <span class="eyebrow">Batch Runs</span>
-                <h1>Batch run history</h1>
-                <p class="lead">Review execution status, counters, and duration for each processing run.</p>
+                <span class="eyebrow">{{ labels.batch_runs }}</span>
+                <h1>{{ labels.batch_history_title }}</h1>
+                <p class="lead">{{ labels.batch_history_lead }}</p>
             </div>
         </div>
 
@@ -18,16 +18,16 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Batch ID</th>
-                            <th>Started</th>
-                            <th>Finished</th>
-                            <th>Status</th>
-                            <th>Seen</th>
-                            <th>Processed</th>
-                            <th>Duplicate</th>
-                            <th>Error</th>
-                            <th>References</th>
-                            <th>Duration</th>
+                            <th>{{ labels.batch_id }}</th>
+                            <th>{{ labels.started }}</th>
+                            <th>{{ labels.finished }}</th>
+                            <th>{{ labels.status }}</th>
+                            <th>{{ labels.seen }}</th>
+                            <th>{{ labels.processed_count }}</th>
+                            <th>{{ labels.duplicate }}</th>
+                            <th>{{ labels.error }}</th>
+                            <th>{{ labels.references }}</th>
+                            <th>{{ labels.duration }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -36,7 +36,7 @@
                             <td><a href="/batch/runs/{{ item.batch_run_id }}" class="table-link">#{{ item.batch_run_id }}</a></td>
                             <td>{{ item.started_at }}</td>
                             <td>{{ item.finished_at }}</td>
-                            <td>{{ item.status }}</td>
+                            <td>{{ labels.get(item.status, item.status) }}</td>
                             <td>{{ item.total_files_seen }}</td>
                             <td>{{ item.total_files_processed }}</td>
                             <td>{{ item.total_files_duplicate }}</td>
@@ -46,7 +46,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="10" class="table-empty">No batch runs found.</td>
+                            <td colspan="10" class="table-empty">{{ labels.no_batch_runs_found }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -54,13 +54,13 @@
             </div>
 
             <div class="pagination-bar">
-                <span class="muted-inline">Total {{ runs.total }} runs</span>
+                <span class="muted-inline">{{ labels.total }} {{ runs.total }} {{ labels.batch_runs }}</span>
                 <div class="pagination-actions">
                     {% if runs.has_prev %}
-                    <a href="/batch/runs?page={{ runs.page - 1 }}" class="button button-secondary button-small">Previous</a>
+                    <a href="/batch/runs?page={{ runs.page - 1 }}" class="button button-secondary button-small">{{ labels.previous }}</a>
                     {% endif %}
                     {% if runs.has_next %}
-                    <a href="/batch/runs?page={{ runs.page + 1 }}" class="button button-secondary button-small">Next</a>
+                    <a href="/batch/runs?page={{ runs.page + 1 }}" class="button button-secondary button-small">{{ labels.next }}</a>
                     {% endif %}
                 </div>
             </div>

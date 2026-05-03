@@ -1,89 +1,92 @@
 {% extends "base.html" %}
 
-{% block title %}Results | OLRE{% endblock %}
+{% block title %}{{ labels.results }} | OLRE{% endblock %}
 
 {% block content %}
 <section class="page-section">
     <div class="shell shell-wide page-stack">
         <div class="page-heading">
             <div>
-                <span class="eyebrow">Results</span>
-                <h1>Extracted References</h1>
-                <p class="lead">ดูผลที่สกัดได้จากเอกสารแต่ละไฟล์ ค้นหาได้ทันที และตรวจสอบสถานะการ resolve ก่อนนำไปใช้งานต่อ</p>
+                <span class="eyebrow">{{ labels.results_eyebrow }}</span>
+                <h1>{{ labels.results_title }}</h1>
+                <p class="lead">{{ labels.results_lead }}</p>
             </div>
         </div>
 
         <article class="info-card table-card">
             <form method="get" action="/results" class="filters-bar">
                 <label class="filter-field">
-                    <span>Filename</span>
-                    <input type="search" name="filename" value="{{ filename }}" placeholder="File name">
+                    <span>{{ labels.filename }}</span>
+                    <input type="search" name="filename" value="{{ filename }}" placeholder="{{ labels.file_name }}">
                 </label>
                 <label class="filter-field">
-                    <span>Search</span>
-                    <input type="search" name="search" value="{{ search }}" placeholder="Search file name or URL">
+                    <span>{{ labels.search }}</span>
+                    <input type="search" name="search" value="{{ search }}" placeholder="{{ labels.search }}">
                 </label>
                 <label class="filter-field">
-                    <span>Processing</span>
+                    <span>{{ labels.processing }}</span>
                     <select name="processing_status">
-                        <option value="">All</option>
-                        <option value="pending" {% if processing_status == "pending" %}selected{% endif %}>pending</option>
-                        <option value="processed" {% if processing_status == "processed" %}selected{% endif %}>processed</option>
-                        <option value="failed" {% if processing_status == "failed" %}selected{% endif %}>failed</option>
+                        <option value="">{{ labels.all }}</option>
+                        <option value="pending" {% if processing_status == "pending" %}selected{% endif %}>{{ labels.pending }}</option>
+                        <option value="processed" {% if processing_status == "processed" %}selected{% endif %}>{{ labels.processed }}</option>
+                        <option value="failed" {% if processing_status == "failed" %}selected{% endif %}>{{ labels.failed }}</option>
                     </select>
                 </label>
                 <label class="filter-field">
-                    <span>Process Error</span>
-                    <input type="search" name="processing_error_type" value="{{ processing_error_type }}" placeholder="OCR_TIMEOUT">
+                    <span>{{ labels.process_error }}</span>
+                    <input type="search" name="processing_error_type" value="{{ processing_error_type }}" placeholder="{{ labels.process_error_placeholder }}">
                 </label>
                 <label class="filter-field">
-                    <span>Resolution</span>
+                    <span>{{ labels.resolution }}</span>
                     <select name="status">
-                        <option value="">All</option>
-                        <option value="pending" {% if status == "pending" %}selected{% endif %}>pending</option>
-                        <option value="resolved" {% if status == "resolved" %}selected{% endif %}>resolved</option>
-                        <option value="failed" {% if status == "failed" %}selected{% endif %}>failed</option>
+                        <option value="">{{ labels.all }}</option>
+                        <option value="pending" {% if status == "pending" %}selected{% endif %}>{{ labels.pending }}</option>
+                        <option value="resolved" {% if status == "resolved" %}selected{% endif %}>{{ labels.resolved }}</option>
+                        <option value="failed" {% if status == "failed" %}selected{% endif %}>{{ labels.failed }}</option>
                     </select>
                 </label>
                 <label class="filter-field">
-                    <span>Resolve Error</span>
-                    <input type="search" name="resolution_error_type" value="{{ resolution_error_type }}" placeholder="URL_TIMEOUT">
+                    <span>{{ labels.resolve_error }}</span>
+                    <input type="search" name="resolution_error_type" value="{{ resolution_error_type }}" placeholder="{{ labels.resolve_error_placeholder }}">
                 </label>
                 <label class="filter-field">
-                    <span>Source</span>
+                    <span>{{ labels.source }}</span>
                     <select name="source_type">
-                        <option value="">All</option>
-                        <option value="text" {% if source_type == "text" %}selected{% endif %}>text</option>
-                        <option value="qr" {% if source_type == "qr" %}selected{% endif %}>qr</option>
-                        <option value="ocr" {% if source_type == "ocr" %}selected{% endif %}>ocr</option>
-                        <option value="image" {% if source_type == "image" %}selected{% endif %}>image</option>
+                        <option value="">{{ labels.all }}</option>
+                        <option value="text" {% if source_type == "text" %}selected{% endif %}>{{ labels.text }}</option>
+                        <option value="qr" {% if source_type == "qr" %}selected{% endif %}>{{ labels.qr }}</option>
+                        <option value="ocr" {% if source_type == "ocr" %}selected{% endif %}>{{ labels.ocr }}</option>
+                        <option value="image" {% if source_type == "image" %}selected{% endif %}>{{ labels.image }}</option>
                     </select>
                 </label>
                 <label class="filter-field">
-                    <span>URL Contains</span>
-                    <input type="search" name="domain" value="{{ domain }}" placeholder="moph.go.th">
+                    <span>{{ labels.url_contains }}</span>
+                    <input type="search" name="domain" value="{{ domain }}" placeholder="{{ labels.domain_placeholder }}">
                 </label>
                 <label class="filter-field">
-                    <span>From</span>
+                    <span>{{ labels.from_date }}</span>
                     <input type="date" name="date_from" value="{{ date_from }}">
                 </label>
                 <label class="filter-field">
-                    <span>To</span>
+                    <span>{{ labels.to_date }}</span>
                     <input type="date" name="date_to" value="{{ date_to }}">
                 </label>
                 <div class="filters-actions">
-                    <button type="submit" class="button button-primary button-small">Apply</button>
-                    <a href="/results" class="button button-secondary button-small">Reset</a>
+                    <button type="submit" class="button button-primary button-small">{{ labels.apply }}</button>
+                    <a href="/results" class="button button-secondary button-small">{{ labels.reset }}</a>
                 </div>
             </form>
 
             <div class="section-head">
                 <div class="results-meta">
                     <strong>{{ total }}</strong>
-                    <span>references found</span>
+                    <span>{{ labels.references_found }}</span>
                 </div>
                 <div class="results-actions">
-                    <a class="button button-secondary button-small" href="/exports?search={{ search }}&status={{ status }}&source_type={{ source_type }}">Open Exports</a>
+                    <a class="button button-secondary button-small" href="/exports?{{ filter_query }}">{{ labels.open_exports }}</a>
+                    <a class="button button-secondary button-small" href="/exports/csv?{{ filter_query }}">{{ labels.export_csv }}</a>
+                    <a class="button button-secondary button-small" href="/exports/markdown?{{ filter_query }}">{{ labels.export_markdown }}</a>
+                    <a class="button button-primary button-small" href="/exports/excel?{{ filter_query }}">{{ labels.export_excel }}</a>
                 </div>
             </div>
 
@@ -91,16 +94,16 @@
                 <table class="data-table results-table">
                     <thead>
                         <tr>
-                            <th>File Name</th>
-                            <th>Page</th>
-                            <th>Type</th>
-                            <th>Source</th>
-                            <th>Processing</th>
-                            <th>Raw Reference</th>
-                            <th>Final URL</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                            <th>Debug</th>
+                            <th>{{ labels.file_name }}</th>
+                            <th>{{ labels.page }}</th>
+                            <th>{{ labels.type }}</th>
+                            <th>{{ labels.source }}</th>
+                            <th>{{ labels.processing }}</th>
+                            <th>{{ labels.raw_reference }}</th>
+                            <th>{{ labels.final_url }}</th>
+                            <th>{{ labels.status }}</th>
+                            <th>{{ labels.created }}</th>
+                            <th>{{ labels.debug }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -109,9 +112,9 @@
                             <td class="cell-strong">{{ row.filename }}</td>
                             <td>{{ row.page_number or "-" }}</td>
                             <td>{{ row.reference_class or "-" }}</td>
-                            <td>{{ row.source_type or "-" }}</td>
+                            <td>{{ labels.get(row.source_type, row.source_type) if row.source_type else "-" }}</td>
                             <td>
-                                <span class="status-badge">{{ row.processing_status }}</span>
+                                <span class="status-badge">{{ labels.get(row.processing_status, row.processing_status) }}</span>
                                 {% if row.processing_error_type %}
                                 <span class="metric-chip">{{ row.processing_error_type }}</span>
                                 {% endif %}
@@ -134,7 +137,7 @@
                             </td>
                             <td>
                                 {% if row.resolution_status %}
-                                <span class="status-badge status-badge-{{ row.resolution_status }}">{{ row.resolution_status }}</span>
+                                <span class="status-badge status-badge-{{ row.resolution_status }}">{{ labels.get(row.resolution_status, row.resolution_status) }}</span>
                                 {% if row.resolution_error_type %}
                                 <span class="metric-chip">{{ row.resolution_error_type }}</span>
                                 {% endif %}
@@ -144,17 +147,17 @@
                             </td>
                             <td>{{ row.created_at.strftime("%d/%m/%Y %H:%M") if row.created_at else "-" }}</td>
                             <td>
-                                <a class="button button-secondary button-small" href="/debug/document/{{ row.document_id }}">Debug</a>
+                                <a class="button button-secondary button-small" href="/debug/document/{{ row.document_id }}">{{ labels.debug }}</a>
                                 {% if row.retryable %}
                                 <form method="post" action="/documents/{{ row.document_id }}/retry" class="inline-form">
-                                    <button class="button button-ghost button-small" type="submit">Retry</button>
+                                    <button class="button button-ghost button-small" type="submit">{{ labels.retry }}</button>
                                 </form>
                                 {% endif %}
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="10" class="table-empty">No extracted references match the current filters.</td>
+                            <td colspan="10" class="table-empty">{{ labels.no_references_match_filters }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -162,13 +165,13 @@
             </div>
 
             <div class="pagination-bar">
-                <span class="muted-inline">Page {{ page }}</span>
+                <span class="muted-inline">{{ labels.page_label }} {{ page }}</span>
                 <div class="pagination-actions">
                     {% if has_prev %}
-                    <a class="button button-secondary button-small" href="/results?{{ prev_query }}">Previous</a>
+                    <a class="button button-secondary button-small" href="/results?{{ prev_query }}">{{ labels.previous }}</a>
                     {% endif %}
                     {% if has_next %}
-                    <a class="button button-secondary button-small" href="/results?{{ next_query }}">Next</a>
+                    <a class="button button-secondary button-small" href="/results?{{ next_query }}">{{ labels.next }}</a>
                     {% endif %}
                 </div>
             </div>

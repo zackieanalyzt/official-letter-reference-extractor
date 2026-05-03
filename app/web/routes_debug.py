@@ -7,6 +7,7 @@ from app.batch.qr_debug import load_debug_payload
 from app.config import BASE_DIR
 from app.db.models import Document
 from app.db.postgres import create_postgres_session_factory
+from app.web.context import base_context
 
 
 router = APIRouter()
@@ -66,9 +67,10 @@ async def debug_view(
     return templates.TemplateResponse(
         request=request,
         name="debug_document.html",
-        context={
-            "user": None,
-            "current_page": "debug",
+        context=base_context(
+            request,
+            user=None,
+            current_page="debug",
             **response_payload,
-        },
+        ),
     )

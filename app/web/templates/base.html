@@ -11,22 +11,23 @@
 
     <header class="topbar">
         <div class="shell shell-wide topbar-inner">
-            <a href="/" class="brandmark" aria-label="OLRE Home">
+            <a href="/" class="brandmark" aria-label="OLRE {{ labels.home }}">
                 <span class="brandmark-icon">
                     <span></span>
                 </span>
                 <span class="brandmark-copy">
                     <strong>OLRE</strong>
-                    <small>Official Letter Reference Extractor</small>
+                    <small>{{ labels.app_full_name }}</small>
                 </span>
             </a>
 
-            <nav class="main-nav" aria-label="Main navigation">
-                <a href="/imports" class="nav-link {% if current_page == 'imports' %}is-active{% endif %}">นำเข้าไฟล์</a>
-                <a href="/batch" class="nav-link {% if current_page == 'batch' %}is-active{% endif %}">ประมวลผลชุดงาน</a>
-                <a href="/batch/runs" class="nav-link {% if current_page == 'batch_runs' %}is-active{% endif %}">Batch Runs</a>
-                <a href="/results" class="nav-link {% if current_page == 'results' %}is-active{% endif %}">ผลการตรวจสอบ</a>
-                <a href="/exports" class="nav-link {% if current_page == 'exports' %}is-active{% endif %}">ส่งออกข้อมูล</a>
+            <nav class="main-nav" aria-label="{{ labels.app_full_name }}">
+                <a href="/dashboard" class="nav-link {% if current_page == 'dashboard' %}is-active{% endif %}">{{ labels.dashboard }}</a>
+                <a href="/results" class="nav-link {% if current_page == 'results' %}is-active{% endif %}">{{ labels.results }}</a>
+                <a href="/quality" class="nav-link {% if current_page == 'quality' %}is-active{% endif %}">{{ labels.quality }}</a>
+                <a href="/exports" class="nav-link {% if current_page == 'exports' %}is-active{% endif %}">{{ labels.exports }}</a>
+                <a href="/batch" class="nav-link {% if current_page == 'batch' %}is-active{% endif %}">{{ labels.batch }}</a>
+                <a href="/imports" class="nav-link {% if current_page == 'imports' %}is-active{% endif %}">{{ labels.imports }}</a>
             </nav>
 
             <div class="topbar-actions">

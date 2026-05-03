@@ -11,6 +11,7 @@ from app.services.ui_views import (
     fetch_recent_error_insights,
     localize_batch_summary,
 )
+from app.web.context import base_context
 
 
 router = APIRouter()
@@ -29,16 +30,17 @@ async def process_batch(request: Request, _: None = Depends(verify_token)):
     return templates.TemplateResponse(
         request=request,
         name="batch.html",
-        context={
-            "user": None,
-            "current_page": "batch",
-            "batch_summary": batch_summary,
-            "latest_batch": latest_batch,
-            "recent_batches": fetch_recent_batches(request.app.state.postgres_engine),
-            "error_insights": fetch_recent_error_insights(request.app.state.postgres_engine),
-            "pending_count": count_pending_inbox_files(
+        context=base_context(
+            request,
+            user=None,
+            current_page="batch",
+            batch_summary=batch_summary,
+            latest_batch=latest_batch,
+            recent_batches=fetch_recent_batches(request.app.state.postgres_engine),
+            error_insights=fetch_recent_error_insights(request.app.state.postgres_engine),
+            pending_count=count_pending_inbox_files(
                 request.app.state.settings,
                 request.app.state.postgres_engine,
             ),
-        },
+        ),
     )

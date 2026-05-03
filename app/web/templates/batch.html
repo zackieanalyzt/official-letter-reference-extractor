@@ -1,63 +1,63 @@
 {% extends "base.html" %}
 
-{% block title %}ประมวลผลชุดงาน | OLRE{% endblock %}
+{% block title %}{{ labels.batch }} | OLRE{% endblock %}
 
 {% block content %}
 <section class="page-section">
     <div class="shell shell-wide page-stack">
         <div class="page-heading">
             <div>
-                <span class="eyebrow">ประมวลผลชุดงาน</span>
-                <h1>ติดตาม batch ปัจจุบันและประวัติการประมวลผล</h1>
-                <p class="lead">OLRE ยังทำงานแบบ synchronous ตาม flow เดิม แต่หน้านี้จะแสดงสถานะล่าสุด ประวัติ batch และ error intelligence ที่อ่านต่อได้ง่ายขึ้น</p>
+                <span class="eyebrow">{{ labels.batch }}</span>
+                <h1>{{ labels.batch_title }}</h1>
+                <p class="lead">{{ labels.batch_lead }}</p>
             </div>
             <div class="page-heading-side">
-                <span class="metric-chip">รอประมวลผล {{ pending_count }} ไฟล์</span>
+                <span class="metric-chip">{{ pending_count }} {{ labels.pending_files }}</span>
             </div>
         </div>
 
         <div class="dashboard-main-grid">
             <article class="info-card action-panel">
-                <span class="card-kicker">เริ่มงาน</span>
-                <h2>เริ่ม batch ทันที</h2>
-                <p class="muted-copy">ระบบจะสแกน PDF ใน inbox, ตรวจไฟล์ซ้ำ, ดึง URL จาก text layer, QR และ OCR fallback แล้วบันทึกผลลงฐานข้อมูลก่อนย้ายไฟล์ไปยังโฟลเดอร์ปลายทาง</p>
+                <span class="card-kicker">{{ labels.start_job }}</span>
+                <h2>{{ labels.start_batch_now }}</h2>
+                <p class="muted-copy">{{ labels.start_batch_description }}</p>
                 <form method="post" action="/batch/process" class="batch-action-form">
-                    <button type="submit" class="button button-primary">เริ่มประมวลผลชุดงาน</button>
+                    <button type="submit" class="button button-primary">{{ labels.start_batch }}</button>
                 </form>
             </article>
 
             <article class="info-card summary-card">
-                <span class="card-kicker">ผลล่าสุด</span>
+                <span class="card-kicker">{{ labels.latest_result }}</span>
                 {% set active_batch = batch_summary or latest_batch %}
                 {% if active_batch %}
-                <h2>ชุดงาน #{{ active_batch.batch_run_id }}</h2>
+                <h2>{{ labels.batch }} #{{ active_batch.batch_run_id }}</h2>
                 <div class="summary-metrics">
                     <div class="summary-metric">
-                        <span>ไฟล์ทั้งหมด</span>
+                        <span>{{ labels.total }}</span>
                         <strong>{{ active_batch.total_files_seen }}</strong>
                     </div>
                     <div class="summary-metric">
-                        <span>ประมวลผลสำเร็จ</span>
+                        <span>{{ labels.processed_count }}</span>
                         <strong>{{ active_batch.total_files_processed }}</strong>
                     </div>
                     <div class="summary-metric">
-                        <span>ไฟล์ซ้ำ</span>
+                        <span>{{ labels.duplicate }}</span>
                         <strong>{{ active_batch.duplicate_files_skipped }}</strong>
                     </div>
                     <div class="summary-metric">
-                        <span>ไฟล์ผิดพลาด</span>
+                        <span>{{ labels.error }}</span>
                         <strong>{{ active_batch.failed_files }}</strong>
                     </div>
                 </div>
                 <div class="status-inline">
-                    <span class="status-badge">{{ active_batch.status }}</span>
+                    <span class="status-badge">{{ labels.get(active_batch.status, active_batch.status) }}</span>
                     {% if active_batch.total_references_found is defined %}
-                    <span>จำนวนรายการอ้างอิง: {{ active_batch.total_references_found }}</span>
+                    <span>{{ labels.references_count }}: {{ active_batch.total_references_found }}</span>
                     {% endif %}
                 </div>
                 {% else %}
-                <h2>ยังไม่มีข้อมูล batch</h2>
-                <p class="muted-copy">อัปโหลดไฟล์เข้า inbox ก่อน แล้วกลับมาหน้านี้เพื่อเริ่มประมวลผลและติดตามผล</p>
+                <h2>{{ labels.no_batch_data }}</h2>
+                <p class="muted-copy">{{ labels.no_batch_data_help }}</p>
                 {% endif %}
             </article>
         </div>
@@ -66,21 +66,21 @@
             <article class="info-card table-card">
                 <div class="section-head">
                     <div>
-                        <span class="card-kicker">Batch Monitor</span>
-                        <h2>ประวัติ batch ล่าสุด</h2>
+                        <span class="card-kicker">{{ labels.batch_monitor }}</span>
+                        <h2>{{ labels.latest_batch_history }}</h2>
                     </div>
                 </div>
                 <div class="table-wrap">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Batch</th>
-                                <th>ผู้สั่งงาน</th>
-                                <th>สถานะ</th>
-                                <th>ไฟล์</th>
-                                <th>อ้างอิง</th>
-                                <th>เริ่ม</th>
-                                <th>จบ</th>
+                                <th>{{ labels.batch }}</th>
+                                <th>{{ labels.triggered_by }}</th>
+                                <th>{{ labels.status }}</th>
+                                <th>{{ labels.file }}</th>
+                                <th>{{ labels.references }}</th>
+                                <th>{{ labels.started }}</th>
+                                <th>{{ labels.finished }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -88,15 +88,15 @@
                             <tr>
                                 <td class="cell-strong">#{{ item.batch_run_id }}</td>
                                 <td>{{ item.triggered_by }}</td>
-                                <td>{{ item.status }}</td>
-                                <td>{{ item.total_files_processed }}/{{ item.total_files_seen }} สำเร็จ, ซ้ำ {{ item.duplicate_files_skipped }}, ผิดพลาด {{ item.failed_files }}</td>
+                                <td>{{ labels.get(item.status, item.status) }}</td>
+                                <td>{{ item.total_files_processed }}/{{ item.total_files_seen }} {{ labels.processed }}, {{ labels.duplicate }} {{ item.duplicate_files_skipped }}, {{ labels.error }} {{ item.failed_files }}</td>
                                 <td>{{ item.total_references_found }}</td>
                                 <td>{{ item.started_at }}</td>
                                 <td>{{ item.finished_at }}</td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="7" class="table-empty">ยังไม่มีประวัติ batch</td>
+                                <td colspan="7" class="table-empty">{{ labels.no_batch_runs_found }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -107,20 +107,20 @@
             <article class="info-card table-card">
                 <div class="section-head">
                     <div>
-                        <span class="card-kicker">Error Intelligence</span>
-                        <h2>เหตุการณ์ผิดปกติล่าสุด</h2>
+                        <span class="card-kicker">{{ labels.error_intelligence }}</span>
+                        <h2>{{ labels.recent_error_events }}</h2>
                     </div>
                 </div>
                 <div class="table-wrap">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>เวลา</th>
-                                <th>ระดับ</th>
-                                <th>Code</th>
-                                <th>ขั้นตอน</th>
-                                <th>ไฟล์</th>
-                                <th>รายละเอียด</th>
+                                <th>{{ labels.time }}</th>
+                                <th>{{ labels.level }}</th>
+                                <th>{{ labels.code }}</th>
+                                <th>{{ labels.step }}</th>
+                                <th>{{ labels.file }}</th>
+                                <th>{{ labels.message }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -135,7 +135,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="6" class="table-empty">ยังไม่มี warning หรือ error log</td>
+                                <td colspan="6" class="table-empty">{{ labels.no_recent_errors }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

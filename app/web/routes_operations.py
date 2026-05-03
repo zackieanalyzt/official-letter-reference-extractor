@@ -12,7 +12,15 @@ from app.config import BASE_DIR
 from app.db.postgres import create_postgres_session_factory
 from app.logging_config import get_logger
 from app.services.batch_monitor_service import get_batch_run_detail, list_batch_runs
-from app.services.export_service import export_csv, export_markdown
+from app.services.analytics_service import (
+    get_dashboard_summary,
+    get_daily_document_trend,
+    get_domain_summary,
+    get_error_summary,
+    get_quality_report,
+    get_reference_source_summary,
+)
+from app.services.export_service import export_csv, export_excel, export_markdown
 from app.services.inbox_paths import get_inbox_path
 from app.services.results_service import DEFAULT_PAGE_SIZE, get_references
 from app.services.retry_service import retry_failed_document
@@ -25,6 +33,7 @@ from app.services.ui_views import (
     list_inbox_files,
     safe_inbox_file_path,
 )
+from app.web.context import base_context
 
 
 router = APIRouter()
@@ -42,7 +51,7 @@ def _render(
     merged_context = {"user": None, "current_page": current_page}
     if context:
         merged_context.update(context)
-    return templates.TemplateResponse(request=request, name=name, context=merged_context)
+    return templates.TemplateResponse(request=request, name=name, context=base_context(request, **merged_context))
 
 
 def _normalize_optional_query(value: str | None) -> str | None:
@@ -62,6 +71,37 @@ def _build_results_query_string(
         if value:
             params[key] = value
     return urlencode(params)
+
+
+def _collect_result_filters(
+    *,
+    search: str | None = None,
+    status: str | None = None,
+    source_type: str | None = None,
+    filename: str | None = None,
+    processing_status: str | None = None,
+    processing_error_type: str | None = None,
+    resolution_error_type: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    domain: str | None = None,
+) -> dict[str, str | None]:
+    return {
+        "search": _normalize_optional_query(search),
+        "status": _normalize_optional_query(status),
+        "source_type": _normalize_optional_query(source_type),
+        "filename": _normalize_optional_query(filename),
+        "processing_status": _normalize_optional_query(processing_status),
+        "processing_error_type": _normalize_optional_query(processing_error_type),
+        "resolution_error_type": _normalize_optional_query(resolution_error_type),
+        "date_from": _normalize_optional_query(date_from),
+        "date_to": _normalize_optional_query(date_to),
+        "domain": _normalize_optional_query(domain),
+    }
+
+
+def _export_filter_context(filters: dict[str, str | None]) -> dict[str, str]:
+    return {key: value or "" for key, value in filters.items()}
 
 
 def _save_uploaded_file(target_dir: Path, upload: UploadFile) -> tuple[bool, str]:
@@ -104,6 +144,44 @@ async def imports_page(request: Request):
             ),
             "upload_summary": None,
         },
+    )
+
+
+@router.get("/dashboard")
+async def dashboard_page(request: Request):
+    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    with session_factory() as session:
+        summary = get_dashboard_summary(session)
+        domain_summary = get_domain_summary(session)
+        source_summary = get_reference_source_summary(session)
+        error_summary = get_error_summary(session)
+        daily_trend = get_daily_document_trend(session)
+
+    return _render(
+        request,
+        name="dashboard.html",
+        current_page="dashboard",
+        context={
+            "summary": summary,
+            "domain_summary": domain_summary,
+            "source_summary": source_summary,
+            "error_summary": error_summary,
+            "daily_trend": daily_trend,
+        },
+    )
+
+
+@router.get("/quality")
+async def quality_page(request: Request):
+    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    with session_factory() as session:
+        quality = get_quality_report(session)
+
+    return _render(
+        request,
+        name="quality.html",
+        current_page="quality",
+        context={"quality": quality},
     )
 
 
@@ -253,29 +331,26 @@ async def results_page(
     domain: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
 ):
-    normalized_search = _normalize_optional_query(search)
-    normalized_status = _normalize_optional_query(status)
-    normalized_source_type = _normalize_optional_query(source_type)
-    filters = {
-        "search": normalized_search,
-        "status": normalized_status,
-        "source_type": normalized_source_type,
-        "filename": _normalize_optional_query(filename),
-        "processing_status": _normalize_optional_query(processing_status),
-        "processing_error_type": _normalize_optional_query(processing_error_type),
-        "resolution_error_type": _normalize_optional_query(resolution_error_type),
-        "date_from": _normalize_optional_query(date_from),
-        "date_to": _normalize_optional_query(date_to),
-        "domain": _normalize_optional_query(domain),
-    }
+    filters = _collect_result_filters(
+        search=search,
+        status=status,
+        source_type=source_type,
+        filename=filename,
+        processing_status=processing_status,
+        processing_error_type=processing_error_type,
+        resolution_error_type=resolution_error_type,
+        date_from=date_from,
+        date_to=date_to,
+        domain=domain,
+    )
     offset = (page - 1) * DEFAULT_PAGE_SIZE
     session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
     with session_factory() as session:
         results = get_references(
             session,
-            search=normalized_search,
-            status=normalized_status,
-            source_type=normalized_source_type,
+            search=filters["search"],
+            status=filters["status"],
+            source_type=filters["source_type"],
             filename=filters["filename"],
             processing_status=filters["processing_status"],
             processing_error_type=filters["processing_error_type"],
@@ -300,16 +375,8 @@ async def results_page(
             "total": total,
             "page": page,
             "page_size": DEFAULT_PAGE_SIZE,
-            "search": normalized_search or "",
-            "status": normalized_status or "",
-            "source_type": normalized_source_type or "",
-            "filename": filters["filename"] or "",
-            "processing_status": filters["processing_status"] or "",
-            "processing_error_type": filters["processing_error_type"] or "",
-            "resolution_error_type": filters["resolution_error_type"] or "",
-            "date_from": filters["date_from"] or "",
-            "date_to": filters["date_to"] or "",
-            "domain": filters["domain"] or "",
+            **_export_filter_context(filters),
+            "filter_query": urlencode({key: value for key, value in filters.items() if value}),
             "has_prev": has_prev,
             "has_next": has_next,
             "prev_query": _build_results_query_string(
@@ -344,10 +411,26 @@ async def exports_page(
     search: str | None = Query(default=None),
     status: str | None = Query(default=None),
     source_type: str | None = Query(default=None),
+    filename: str | None = Query(default=None),
+    processing_status: str | None = Query(default=None),
+    processing_error_type: str | None = Query(default=None),
+    resolution_error_type: str | None = Query(default=None),
+    date_from: str | None = Query(default=None),
+    date_to: str | None = Query(default=None),
+    domain: str | None = Query(default=None),
 ):
-    normalized_search = _normalize_optional_query(search)
-    normalized_status = _normalize_optional_query(status)
-    normalized_source_type = _normalize_optional_query(source_type)
+    filters = _collect_result_filters(
+        search=search,
+        status=status,
+        source_type=source_type,
+        filename=filename,
+        processing_status=processing_status,
+        processing_error_type=processing_error_type,
+        resolution_error_type=resolution_error_type,
+        date_from=date_from,
+        date_to=date_to,
+        domain=domain,
+    )
 
     return _render(
         request,
@@ -355,9 +438,8 @@ async def exports_page(
         current_page="exports",
         context={
             "export_summary": fetch_export_summary(request.app.state.postgres_engine),
-            "search": normalized_search or "",
-            "status": normalized_status or "",
-            "source_type": normalized_source_type or "",
+            **_export_filter_context(filters),
+            "filter_query": urlencode({key: value for key, value in filters.items() if value}),
         },
     )
 
@@ -368,17 +450,32 @@ async def export_csv_route(
     search: str | None = Query(default=None),
     status: str | None = Query(default=None),
     source_type: str | None = Query(default=None),
+    filename: str | None = Query(default=None),
+    processing_status: str | None = Query(default=None),
+    processing_error_type: str | None = Query(default=None),
+    resolution_error_type: str | None = Query(default=None),
+    date_from: str | None = Query(default=None),
+    date_to: str | None = Query(default=None),
+    domain: str | None = Query(default=None),
 ):
+    filters = _collect_result_filters(
+        search=search,
+        status=status,
+        source_type=source_type,
+        filename=filename,
+        processing_status=processing_status,
+        processing_error_type=processing_error_type,
+        resolution_error_type=resolution_error_type,
+        date_from=date_from,
+        date_to=date_to,
+        domain=domain,
+    )
     session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
     session = session_factory()
     try:
         response = export_csv(
             session,
-            {
-                "search": _normalize_optional_query(search),
-                "status": _normalize_optional_query(status),
-                "source_type": _normalize_optional_query(source_type),
-            },
+            filters,
         )
     except Exception:
         session.close()
@@ -394,17 +491,32 @@ async def export_markdown_route(
     search: str | None = Query(default=None),
     status: str | None = Query(default=None),
     source_type: str | None = Query(default=None),
+    filename: str | None = Query(default=None),
+    processing_status: str | None = Query(default=None),
+    processing_error_type: str | None = Query(default=None),
+    resolution_error_type: str | None = Query(default=None),
+    date_from: str | None = Query(default=None),
+    date_to: str | None = Query(default=None),
+    domain: str | None = Query(default=None),
 ):
+    filters = _collect_result_filters(
+        search=search,
+        status=status,
+        source_type=source_type,
+        filename=filename,
+        processing_status=processing_status,
+        processing_error_type=processing_error_type,
+        resolution_error_type=resolution_error_type,
+        date_from=date_from,
+        date_to=date_to,
+        domain=domain,
+    )
     session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
     session = session_factory()
     try:
         response = export_markdown(
             session,
-            {
-                "search": _normalize_optional_query(search),
-                "status": _normalize_optional_query(status),
-                "source_type": _normalize_optional_query(source_type),
-            },
+            filters,
         )
     except Exception:
         session.close()
@@ -412,3 +524,34 @@ async def export_markdown_route(
 
     response.background = BackgroundTask(session.close)
     return response
+
+
+@router.get("/exports/excel")
+async def export_excel_route(
+    request: Request,
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    source_type: str | None = Query(default=None),
+    filename: str | None = Query(default=None),
+    processing_status: str | None = Query(default=None),
+    processing_error_type: str | None = Query(default=None),
+    resolution_error_type: str | None = Query(default=None),
+    date_from: str | None = Query(default=None),
+    date_to: str | None = Query(default=None),
+    domain: str | None = Query(default=None),
+):
+    filters = _collect_result_filters(
+        search=search,
+        status=status,
+        source_type=source_type,
+        filename=filename,
+        processing_status=processing_status,
+        processing_error_type=processing_error_type,
+        resolution_error_type=resolution_error_type,
+        date_from=date_from,
+        date_to=date_to,
+        domain=domain,
+    )
+    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    with session_factory() as session:
+        return export_excel(session, filters)
