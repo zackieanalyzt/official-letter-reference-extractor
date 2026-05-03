@@ -3,15 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
+from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.background import BackgroundTask
 
-from app.auth.session import SessionManager
 from app.config import BASE_DIR
 from app.db.postgres import create_postgres_session_factory
-from app.dependencies import get_session_manager
 from app.logging_config import get_logger
 from app.services.batch_monitor_service import get_batch_run_detail, list_batch_runs
 from app.services.export_service import export_csv, export_markdown
@@ -33,22 +31,14 @@ templates = Jinja2Templates(directory=BASE_DIR / "app" / "web" / "templates")
 logger = get_logger(__name__)
 
 
-def _require_user(request: Request, session_manager: SessionManager):
-    user = session_manager.get_session_from_request(request)
-    if not user:
-        return None, RedirectResponse(url=f"/login?next={request.url.path}", status_code=303)
-    return user, None
-
-
 def _render(
     request: Request,
     *,
     name: str,
-    user,
     current_page: str,
     context: dict | None = None,
 ):
-    merged_context = {"user": user, "current_page": current_page}
+    merged_context = {"user": None, "current_page": current_page}
     if context:
         merged_context.update(context)
     return templates.TemplateResponse(request=request, name=name, context=merged_context)
@@ -98,16 +88,11 @@ def _save_uploaded_file(target_dir: Path, upload: UploadFile) -> tuple[bool, str
 
 
 @router.get("/imports")
-async def imports_page(request: Request, session_manager: SessionManager = Depends(get_session_manager)):
-    user, redirect_response = _require_user(request, session_manager)
-    if redirect_response:
-        return redirect_response
-
+async def imports_page(request: Request):
     inbox_items = list_inbox_files(request.app.state.settings, request.app.state.postgres_engine)
     return _render(
         request,
         name="imports.html",
-        user=user,
         current_page="imports",
         context={
             "inbox_items": inbox_items,
@@ -124,12 +109,7 @@ async def imports_page(request: Request, session_manager: SessionManager = Depen
 async def upload_imports(
     request: Request,
     files: list[UploadFile] = File(...),
-    session_manager: SessionManager = Depends(get_session_manager),
 ):
-    user, redirect_response = _require_user(request, session_manager)
-    if redirect_response:
-        return redirect_response
-
     saved_files: list[str] = []
     failed_files: list[str] = []
     target_dir = get_inbox_path(request.app.state.settings)
@@ -164,7 +144,6 @@ async def upload_imports(
     return _render(
         request,
         name="imports.html",
-        user=user,
         current_page="imports",
         context={
             "inbox_items": inbox_items,
@@ -186,12 +165,7 @@ async def upload_imports(
 async def delete_import_file(
     request: Request,
     file_name: str = Form(...),
-    session_manager: SessionManager = Depends(get_session_manager),
 ):
-    user, redirect_response = _require_user(request, session_manager)
-    if redirect_response:
-        return redirect_response
-
     target_path = safe_inbox_file_path(request.app.state.settings, file_name)
     if target_path:
         target_path.unlink(missing_ok=True)
@@ -203,15 +177,10 @@ async def delete_import_file(
 
 
 @router.get("/batch")
-async def batch_page(request: Request, session_manager: SessionManager = Depends(get_session_manager)):
-    user, redirect_response = _require_user(request, session_manager)
-    if redirect_response:
-        return redirect_response
-
+async def batch_page(request: Request):
     return _render(
         request,
         name="batch.html",
-        user=user,
         current_page="batch",
         context={
             "batch_summary": None,
@@ -230,12 +199,7 @@ async def batch_page(request: Request, session_manager: SessionManager = Depends
 async def batch_runs_page(
     request: Request,
     page: int = Query(default=1, ge=1),
-    session_manager: SessionManager = Depends(get_session_manager),
 ):
-    user, redirect_response = _require_user(request, session_manager)
-    if redirect_response:
-        return redirect_response
-
     session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
     with session_factory() as session:
         runs = list_batch_runs(session, page=page, page_size=20)
@@ -243,7 +207,6 @@ async def batch_runs_page(
     return _render(
         request,
         name="batch_runs.html",
-        user=user,
         current_page="batch_runs",
         context={
             "runs": runs,
@@ -255,12 +218,7 @@ async def batch_runs_page(
 async def batch_run_detail_page(
     request: Request,
     batch_run_id: int,
-    session_manager: SessionManager = Depends(get_session_manager),
 ):
-    user, redirect_response = _require_user(request, session_manager)
-    if redirect_response:
-        return redirect_response
-
     session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
     with session_factory() as session:
         detail = get_batch_run_detail(session, batch_run_id)
@@ -271,7 +229,6 @@ async def batch_run_detail_page(
     return _render(
         request,
         name="batch_run_detail.html",
-        user=user,
         current_page="batch_runs",
         context={
             "detail": detail,
@@ -286,12 +243,7 @@ async def results_page(
     status: str | None = Query(default=None),
     source_type: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
-    session_manager: SessionManager = Depends(get_session_manager),
 ):
-    user, redirect_response = _require_user(request, session_manager)
-    if redirect_response:
-        return redirect_response
-
     normalized_search = _normalize_optional_query(search)
     normalized_status = _normalize_optional_query(status)
     normalized_source_type = _normalize_optional_query(source_type)
@@ -314,7 +266,6 @@ async def results_page(
     return _render(
         request,
         name="results.html",
-        user=user,
         current_page="results",
         context={
             "rows": results["rows"],
@@ -348,12 +299,7 @@ async def exports_page(
     search: str | None = Query(default=None),
     status: str | None = Query(default=None),
     source_type: str | None = Query(default=None),
-    session_manager: SessionManager = Depends(get_session_manager),
 ):
-    user, redirect_response = _require_user(request, session_manager)
-    if redirect_response:
-        return redirect_response
-
     normalized_search = _normalize_optional_query(search)
     normalized_status = _normalize_optional_query(status)
     normalized_source_type = _normalize_optional_query(source_type)
@@ -361,7 +307,6 @@ async def exports_page(
     return _render(
         request,
         name="exports.html",
-        user=user,
         current_page="exports",
         context={
             "export_summary": fetch_export_summary(request.app.state.postgres_engine),
@@ -378,12 +323,7 @@ async def export_csv_route(
     search: str | None = Query(default=None),
     status: str | None = Query(default=None),
     source_type: str | None = Query(default=None),
-    session_manager: SessionManager = Depends(get_session_manager),
 ):
-    user, redirect_response = _require_user(request, session_manager)
-    if redirect_response:
-        return redirect_response
-
     session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
     session = session_factory()
     try:
@@ -409,12 +349,7 @@ async def export_markdown_route(
     search: str | None = Query(default=None),
     status: str | None = Query(default=None),
     source_type: str | None = Query(default=None),
-    session_manager: SessionManager = Depends(get_session_manager),
 ):
-    user, redirect_response = _require_user(request, session_manager)
-    if redirect_response:
-        return redirect_response
-
     session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
     session = session_factory()
     try:

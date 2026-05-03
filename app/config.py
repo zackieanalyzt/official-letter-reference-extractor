@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     app_env: str = Field(default="development", validation_alias="APP_ENV")
     app_host: str = Field(default="0.0.0.0", validation_alias="APP_HOST")
     app_port: int = Field(default=8080, validation_alias="APP_PORT")
+    enable_auth: bool = Field(default=False, validation_alias="ENABLE_AUTH")
+    app_token: str | None = Field(default=None, validation_alias="APP_TOKEN")
     secret_key: str = Field(default="change-me", validation_alias="SECRET_KEY")
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
     session_cookie_name: str = Field(default="olre_session", validation_alias="SESSION_COOKIE_NAME")
@@ -33,11 +35,11 @@ class Settings(BaseSettings):
     postgres_user: str = Field(validation_alias="POSTGRES_USER")
     postgres_password: str = Field(validation_alias="POSTGRES_PASSWORD")
 
-    mariadb_host: str = Field(validation_alias="MARIADB_HOST")
+    mariadb_host: str | None = Field(default=None, validation_alias="MARIADB_HOST")
     mariadb_port: int = Field(default=3306, validation_alias="MARIADB_PORT")
-    mariadb_db: str = Field(validation_alias="MARIADB_DB")
-    mariadb_user: str = Field(validation_alias="MARIADB_USER")
-    mariadb_password: str = Field(validation_alias="MARIADB_PASSWORD")
+    mariadb_db: str | None = Field(default=None, validation_alias="MARIADB_DB")
+    mariadb_user: str | None = Field(default=None, validation_alias="MARIADB_USER")
+    mariadb_password: str | None = Field(default=None, validation_alias="MARIADB_PASSWORD")
 
     input_dir: str = Field(default="data/input", validation_alias="INPUT_DIR")
     processed_dir: str = Field(default="data/processed", validation_alias="PROCESSED_DIR")
@@ -85,6 +87,15 @@ class Settings(BaseSettings):
 
     @property
     def mariadb_dsn(self) -> EngineURL:
+        if not all(
+            [
+                self.mariadb_host,
+                self.mariadb_db,
+                self.mariadb_user,
+                self.mariadb_password,
+            ]
+        ):
+            raise ValueError("MariaDB settings are required when authentication is enabled.")
         return URL.create(
             drivername="mysql+pymysql",
             username=self.mariadb_user,

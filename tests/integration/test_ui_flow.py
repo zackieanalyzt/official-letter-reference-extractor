@@ -7,11 +7,6 @@ from sqlalchemy import text
 from app.services.inbox_paths import get_inbox_path
 
 
-def authenticate_client(client, username: str = "alice", display_name: str = "OLRE User"):
-    token = client.app.state.session_manager.create_session(username=username, display_name=display_name)
-    client.cookies.set("olre_session", token)
-
-
 def build_pdf_bytes(text_content: str) -> bytes:
     document = fitz.open()
     page = document.new_page()
@@ -78,9 +73,7 @@ def seed_reference_rows(engine):
 
 
 def test_home_navigation_rendered_in_thai(client):
-    authenticate_client(client)
-
-    response = client.get("/")
+    response = client.get("/", follow_redirects=True)
 
     assert response.status_code == 200
     assert "/imports" in response.text
@@ -90,8 +83,6 @@ def test_home_navigation_rendered_in_thai(client):
 
 
 def test_imports_page_supports_multiple_pdf_uploads(client):
-    authenticate_client(client)
-
     response = client.post(
         "/imports/upload",
         files=[
@@ -106,8 +97,6 @@ def test_imports_page_supports_multiple_pdf_uploads(client):
 
 
 def test_upload_to_batch_uses_same_inbox_directory(client):
-    authenticate_client(client)
-
     upload_response = client.post(
         "/imports/upload",
         files=[
@@ -153,7 +142,6 @@ def test_upload_to_batch_uses_same_inbox_directory(client):
 
 
 def test_results_page_loads(client):
-    authenticate_client(client)
     seed_reference_rows(client.app.state.postgres_engine)
 
     response = client.get("/results")
@@ -165,7 +153,6 @@ def test_results_page_loads(client):
 
 
 def test_results_filtering_works(client):
-    authenticate_client(client)
     seed_reference_rows(client.app.state.postgres_engine)
 
     response = client.get("/results?status=failed&source_type=text")
@@ -177,7 +164,6 @@ def test_results_filtering_works(client):
 
 
 def test_results_search_works(client):
-    authenticate_client(client)
     seed_reference_rows(client.app.state.postgres_engine)
 
     response = client.get("/results?search=beta-scan")
@@ -189,7 +175,6 @@ def test_results_search_works(client):
 
 
 def test_csv_export_returns_filtered_rows(client):
-    authenticate_client(client)
     seed_reference_rows(client.app.state.postgres_engine)
 
     response = client.get("/exports/csv?status=resolved")
@@ -205,7 +190,6 @@ def test_csv_export_returns_filtered_rows(client):
 
 
 def test_markdown_export_format_is_valid(client):
-    authenticate_client(client)
     seed_reference_rows(client.app.state.postgres_engine)
 
     response = client.get("/exports/markdown?source_type=qr")
@@ -222,8 +206,6 @@ def test_markdown_export_format_is_valid(client):
 
 
 def test_batch_page_shows_monitoring_and_error_intelligence(client):
-    authenticate_client(client)
-
     with client.app.state.postgres_engine.begin() as connection:
         connection.execute(
             text(
@@ -296,8 +278,6 @@ def test_batch_page_shows_monitoring_and_error_intelligence(client):
 
 
 def test_batch_run_pages_render(client):
-    authenticate_client(client)
-
     with client.app.state.postgres_engine.begin() as connection:
         connection.execute(
             text(

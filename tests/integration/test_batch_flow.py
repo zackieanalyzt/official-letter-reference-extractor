@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from app.batch import url_resolution
 from app.batch.error_types import INVALID_PDF, URL_HTTP_ERROR, URL_TIMEOUT
-from app.batch.reference_extraction import ExtractedReference, extract_references_from_pdf
+from app.batch.reference_extraction import ExtractedReference
 from app.services.batch_monitor_service import get_batch_run_detail, list_batch_runs
 from app.services.process_batch import fetch_home_batch_summary, run_batch_registration
 

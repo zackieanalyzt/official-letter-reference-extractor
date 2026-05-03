@@ -24,16 +24,21 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     app.state.settings = settings
     app.state.postgres_engine = create_postgres_engine(settings)
-    app.state.mariadb_engine = create_mariadb_engine(settings)
-    app.state.session_manager = SessionManager(
-        secret_key=settings.secret_key,
-        cookie_name=settings.session_cookie_name,
-        max_age_seconds=settings.session_max_age_seconds,
-    )
+    if settings.enable_auth:
+        app.state.mariadb_engine = create_mariadb_engine(settings)
+        app.state.session_manager = SessionManager(
+            secret_key=settings.secret_key,
+            cookie_name=settings.session_cookie_name,
+            max_age_seconds=settings.session_max_age_seconds,
+        )
+    else:
+        app.state.mariadb_engine = None
+        app.state.session_manager = None
     logger.info("Application startup complete")
     yield
     app.state.postgres_engine.dispose()
-    app.state.mariadb_engine.dispose()
+    if app.state.mariadb_engine is not None:
+        app.state.mariadb_engine.dispose()
     logger.info("Application shutdown complete")
 
 
@@ -71,7 +76,8 @@ async def readyz(request: Request) -> JSONResponse:
     )
 
 
-app.include_router(auth_router)
+if settings.enable_auth:
+    app.include_router(auth_router)
 app.include_router(batch_router)
 app.include_router(home_router)
 app.include_router(operations_router)

@@ -22,7 +22,6 @@
             </a>
 
             <nav class="main-nav" aria-label="Main navigation">
-                <a href="/" class="nav-link {% if current_page == 'home' %}is-active{% endif %}">หน้าหลัก</a>
                 <a href="/imports" class="nav-link {% if current_page == 'imports' %}is-active{% endif %}">นำเข้าไฟล์</a>
                 <a href="/batch" class="nav-link {% if current_page == 'batch' %}is-active{% endif %}">ประมวลผลชุดงาน</a>
                 <a href="/batch/runs" class="nav-link {% if current_page == 'batch_runs' %}is-active{% endif %}">Batch Runs</a>
@@ -32,17 +31,6 @@
 
             <div class="topbar-actions">
                 {% block topbar_actions %}
-                {% if user %}
-                <div class="user-pill">
-                    <span class="user-pill-label">เข้าสู่ระบบแล้ว</span>
-                    <strong>{{ user.display_name }}</strong>
-                </div>
-                <form method="post" action="/logout">
-                    <button type="submit" class="button button-primary">ออกจากระบบ</button>
-                </form>
-                {% else %}
-                <a href="/login" class="button button-primary">เข้าสู่ระบบ</a>
-                {% endif %}
                 {% endblock %}
             </div>
         </div>
