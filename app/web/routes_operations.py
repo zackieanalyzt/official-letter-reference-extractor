@@ -11,6 +11,8 @@ from starlette.background import BackgroundTask
 from app.config import BASE_DIR
 from app.db.postgres import create_postgres_session_factory
 from app.logging_config import get_logger
+from app.i18n import normalize_lang
+from app.security import safe_redirect_target
 from app.services.batch_monitor_service import get_batch_run_detail, list_batch_runs
 from app.services.analytics_service import (
     get_dashboard_summary,
@@ -127,6 +129,24 @@ def _save_uploaded_file(target_dir: Path, upload: UploadFile) -> tuple[bool, str
                 break
             output_file.write(chunk)
     return True, str(candidate.resolve())
+
+
+@router.post("/settings/language")
+async def set_language(
+    lang: str = Form(...),
+    next_url: str | None = Form(default=None, alias="next"),
+):
+    normalized_lang = normalize_lang(lang)
+    redirect_url = safe_redirect_target(next_url, default="/dashboard")
+    response = RedirectResponse(url=redirect_url, status_code=303)
+    response.set_cookie(
+        key="lang",
+        value=normalized_lang,
+        max_age=31_536_000,
+        httponly=False,
+        samesite="lax",
+    )
+    return response
 
 
 @router.get("/imports")

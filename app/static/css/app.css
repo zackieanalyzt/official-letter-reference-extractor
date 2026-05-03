@@ -192,6 +192,35 @@ select {
     gap: 0.75rem;
 }
 
+.language-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+}
+
+.language-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.language-option {
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font: inherit;
+    padding: 0.35rem 0.55rem;
+}
+
+.language-option:hover,
+.language-option.is-active {
+    background: var(--accent-100);
+    color: var(--brand-700);
+}
+
 .topbar-note,
 .user-pill {
     display: inline-flex;

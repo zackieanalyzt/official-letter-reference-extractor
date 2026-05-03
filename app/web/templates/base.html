@@ -31,6 +31,19 @@
             </nav>
 
             <div class="topbar-actions">
+                <div class="language-switcher" aria-label="{{ labels.language }}">
+                    <span>{{ labels.language }}:</span>
+                    <form method="post" action="/settings/language" class="language-form">
+                        <input type="hidden" name="lang" value="th">
+                        <input type="hidden" name="next" value="{{ request.url.path }}">
+                        <button type="submit" class="language-option {% if current_lang == 'th' %}is-active{% endif %}">{{ labels.thai }}</button>
+                    </form>
+                    <form method="post" action="/settings/language" class="language-form">
+                        <input type="hidden" name="lang" value="en">
+                        <input type="hidden" name="next" value="{{ request.url.path }}">
+                        <button type="submit" class="language-option {% if current_lang == 'en' %}is-active{% endif %}">{{ labels.english }}</button>
+                    </form>
+                </div>
                 {% block topbar_actions %}
                 {% endblock %}
             </div>

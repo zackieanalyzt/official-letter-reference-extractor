@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     app_env: str = Field(default="development", validation_alias="APP_ENV")
     app_host: str = Field(default="0.0.0.0", validation_alias="APP_HOST")
     app_port: int = Field(default=8080, validation_alias="APP_PORT")
+    app_lang: str = Field(default="th", validation_alias="APP_LANG")
     enable_auth: bool = Field(default=False, validation_alias="ENABLE_AUTH")
     app_token: str | None = Field(default=None, validation_alias="APP_TOKEN")
     secret_key: str = Field(default="change-me", validation_alias="SECRET_KEY")
