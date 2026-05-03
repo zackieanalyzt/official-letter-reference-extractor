@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     ocr_page_segmentation_mode: int = Field(default=6, validation_alias="OCR_PAGE_SEGMENTATION_MODE")
     qr_debug_export: bool = Field(default=False, validation_alias="QR_DEBUG_EXPORT")
     qr_debug_dir: str = Field(default="data/debug/qr", validation_alias="QR_DEBUG_DIR")
+    qr_fallback_decoder: str = Field(default="none", validation_alias="QR_FALLBACK_DECODER")
     url_resolve_timeout_seconds: float = Field(default=5.0, validation_alias="URL_RESOLVE_TIMEOUT_SECONDS")
     url_resolve_max_attempts: int = Field(default=2, validation_alias="URL_RESOLVE_MAX_ATTEMPTS")
     url_resolve_user_agent: str = Field(default="OLRE/0.1 URL Resolver", validation_alias="URL_RESOLVE_USER_AGENT")

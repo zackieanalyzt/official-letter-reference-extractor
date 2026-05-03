@@ -83,6 +83,86 @@ def render_page_to_rgb_array(page: fitz.Page, *, scale: float = 3.0):
     return image
 
 
+def _decode_with_opencv(detector, variant) -> list[str]:
+    decoded_values: list[str] = []
+    try:
+        found, values, _, _ = detector.detectAndDecodeMulti(variant)
+    except Exception:
+        found, values = False, ()
+
+    if found and values:
+        decoded_values.extend(value for value in values if value)
+
+    try:
+        single_value, _, _ = detector.detectAndDecode(variant)
+    except Exception:
+        single_value = ""
+    if single_value:
+        decoded_values.append(single_value)
+
+    return decoded_values
+
+
+def _dedupe_qr_values(decoded_values: list[str]) -> list[str]:
+    unique_values: list[str] = []
+    seen: set[str] = set()
+    for value in decoded_values:
+        normalized = normalize_reference(value)
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        unique_values.append(normalized)
+    return unique_values
+
+
+def _build_debug_attempt_variants(image, grayscale, thresholded):
+    import cv2
+
+    height, width = grayscale.shape[:2]
+    bottom_start = int(height * 0.55)
+    bottom_crop = grayscale[bottom_start:height, :]
+    third_width = max(width // 3, 1)
+
+    variants = [
+        ("full_page", "full_original", image),
+        ("full_page", "grayscale", grayscale),
+        ("full_page", "upscaled_6x", cv2.resize(grayscale, None, fx=6, fy=6, interpolation=cv2.INTER_CUBIC)),
+        ("full_page", "threshold", thresholded),
+        (
+            "full_page",
+            "adaptive_threshold",
+            cv2.adaptiveThreshold(grayscale, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 35, 11),
+        ),
+        ("bottom_crop", "grayscale", bottom_crop),
+        ("bottom_left", "grayscale", bottom_crop[:, :third_width]),
+        ("bottom_center", "grayscale", bottom_crop[:, third_width : third_width * 2]),
+        ("bottom_right", "grayscale", bottom_crop[:, third_width * 2 :]),
+    ]
+    return [(zone, variant_name, variant) for zone, variant_name, variant in variants if variant.size]
+
+
+def _decode_with_pyzbar(image) -> list[str]:
+    try:
+        from pyzbar.pyzbar import decode
+    except Exception:
+        logger.info("[QR_FALLBACK_UNAVAILABLE] decoder=pyzbar reason=import_failed")
+        return []
+
+    try:
+        decoded = decode(image)
+    except Exception as exc:
+        logger.info("[QR_FALLBACK_UNAVAILABLE] decoder=pyzbar reason=%s", exc)
+        return []
+
+    values: list[str] = []
+    for item in decoded:
+        try:
+            values.append(item.data.decode("utf-8"))
+        except Exception:
+            values.append(item.data.decode("utf-8", errors="ignore"))
+    return values
+
+
 def detect_qr_values_from_page(
     page: fitz.Page,
     *,
@@ -97,41 +177,21 @@ def detect_qr_values_from_page(
     grayscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     _, thresholded = cv2.threshold(grayscale, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     variants = [
-        ("rgb", image),
+        ("full_original", image),
         ("grayscale", grayscale),
-        ("thresholded", thresholded),
+        ("threshold", thresholded),
     ]
 
     detector = cv2.QRCodeDetector()
     decoded_values: list[str] = []
+    debug_enabled = bool(settings is not None and getattr(settings, "qr_debug_export", False))
 
     for variant_name, variant in variants:
-        variant_values: list[str] = []
-        try:
-            found, values, _, _ = detector.detectAndDecodeMulti(variant)
-        except Exception:
-            found, values = False, ()
-
-        if found and values:
-            variant_values.extend(value for value in values if value)
-
-        try:
-            single_value, _, _ = detector.detectAndDecode(variant)
-        except Exception:
-            single_value = ""
-        if single_value:
-            variant_values.append(single_value)
-
+        variant_values = _decode_with_opencv(detector, variant)
         decoded_values.extend(variant_values)
 
-        if (
-            debug_records is not None
-            and settings is not None
-            and getattr(settings, "qr_debug_export", False)
-            and document_id is not None
-            and page_number is not None
-        ):
-            normalized_values = [normalize_reference(value) for value in variant_values if normalize_reference(value)]
+        if debug_records is not None and debug_enabled and document_id is not None and page_number is not None:
+            normalized_values = _dedupe_qr_values(variant_values)
             meta = {
                 "document_id": document_id,
                 "page": page_number,
@@ -150,14 +210,40 @@ def detect_qr_values_from_page(
                 }
             )
 
-    unique_values: list[str] = []
-    seen: set[str] = set()
-    for value in decoded_values:
-        normalized = normalize_reference(value)
-        if not normalized or normalized in seen:
-            continue
-        seen.add(normalized)
-        unique_values.append(normalized)
+    unique_values = _dedupe_qr_values(decoded_values)
+
+    if debug_records is not None and debug_enabled and document_id is not None and page_number is not None:
+        output_variant_keys = {("full_page", variant_name) for variant_name, _ in variants}
+        for zone, variant_name, variant in _build_debug_attempt_variants(image, grayscale, thresholded):
+            if (zone, variant_name) in output_variant_keys:
+                continue
+            variant_values = _decode_with_opencv(detector, variant)
+            normalized_values = _dedupe_qr_values(variant_values)
+            meta = {
+                "document_id": document_id,
+                "page": page_number,
+                "zone": zone,
+                "variant": variant_name,
+            }
+            debug_path = save_debug_image(variant, meta, settings)
+            debug_records.append(
+                {
+                    "page": page_number,
+                    "zone": zone,
+                    "variant": variant_name,
+                    "success": bool(normalized_values),
+                    "decoded_value": " | ".join(normalized_values),
+                    "image_path": debug_path,
+                }
+            )
+
+    fallback_decoder = getattr(settings, "qr_fallback_decoder", "none") if settings is not None else "none"
+    if not unique_values and fallback_decoder == "pyzbar":
+        logger.info("[QR_FALLBACK_START] decoder=pyzbar page=%s", page_number)
+        fallback_values = _dedupe_qr_values(_decode_with_pyzbar(image))
+        if fallback_values:
+            logger.info("[QR_FALLBACK_SUCCESS] decoder=pyzbar page=%s values=%s", page_number, len(fallback_values))
+            unique_values.extend(fallback_values)
 
     return unique_values
 

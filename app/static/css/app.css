@@ -702,7 +702,7 @@ select:focus {
 
 .filters-bar {
     display: grid;
-    grid-template-columns: minmax(260px, 1.8fr) repeat(2, minmax(150px, 0.8fr)) auto;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 0.9rem;
     align-items: end;
     margin-bottom: 1.2rem;

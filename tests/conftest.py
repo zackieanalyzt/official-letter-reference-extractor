@@ -48,6 +48,7 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setenv("OCR_PAGE_SEGMENTATION_MODE", "6")
     monkeypatch.setenv("QR_DEBUG_EXPORT", "false")
     monkeypatch.setenv("QR_DEBUG_DIR", str(qr_debug_dir))
+    monkeypatch.setenv("QR_FALLBACK_DECODER", "none")
     monkeypatch.setenv("URL_RESOLVE_TIMEOUT_SECONDS", "5")
     monkeypatch.setenv("URL_RESOLVE_MAX_ATTEMPTS", "2")
     monkeypatch.setenv("URL_RESOLVE_USER_AGENT", "OLRE Test")

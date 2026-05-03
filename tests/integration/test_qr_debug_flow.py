@@ -1,10 +1,14 @@
 import json
+import sys
+import types
 from types import SimpleNamespace
 
 import numpy as np
+import fitz
 from sqlalchemy import text
 
 from app.batch.qr_debug import load_debug_payload, save_debug_image, save_debug_records
+from app.batch.reference_extraction import detect_qr_values_from_page
 
 
 def test_qr_debug_image_export_is_disabled_by_default(tmp_path):
@@ -51,6 +55,55 @@ def test_qr_debug_records_group_by_page_when_enabled(tmp_path):
     assert payload["pages"][0]["page"] == 2
     assert payload["pages"][0]["attempts"][0]["success"] is True
     assert payload["pages"][0]["attempts"][0]["image_url"].endswith("doc_7_page_2_full_page_grayscale.png")
+
+
+def test_qr_debug_capture_includes_real_world_variants(tmp_path):
+    settings = SimpleNamespace(qr_debug_export=True, qr_debug_dir=str(tmp_path / "qr"), qr_fallback_decoder="none")
+    records = []
+    document = fitz.open()
+    page = document.new_page()
+
+    detect_qr_values_from_page(
+        page,
+        settings=settings,
+        document_id=8,
+        page_number=1,
+        debug_records=records,
+    )
+    document.close()
+
+    attempts = {(record["zone"], record["variant"]) for record in records}
+    assert ("full_page", "full_original") in attempts
+    assert ("full_page", "grayscale") in attempts
+    assert ("full_page", "upscaled_6x") in attempts
+    assert ("full_page", "threshold") in attempts
+    assert ("full_page", "adaptive_threshold") in attempts
+    assert ("bottom_crop", "grayscale") in attempts
+    assert ("bottom_left", "grayscale") in attempts
+    assert ("bottom_center", "grayscale") in attempts
+    assert ("bottom_right", "grayscale") in attempts
+    assert list((tmp_path / "qr").glob("*.png"))
+
+
+def test_qr_pyzbar_fallback_is_optional_and_safe(monkeypatch):
+    pyzbar_package = types.ModuleType("pyzbar")
+    pyzbar_module = types.ModuleType("pyzbar.pyzbar")
+
+    class Decoded:
+        data = b"https://fallback.example/qr"
+
+    pyzbar_module.decode = lambda _image: [Decoded()]
+    monkeypatch.setitem(sys.modules, "pyzbar", pyzbar_package)
+    monkeypatch.setitem(sys.modules, "pyzbar.pyzbar", pyzbar_module)
+
+    settings = SimpleNamespace(qr_debug_export=False, qr_fallback_decoder="pyzbar")
+    document = fitz.open()
+    page = document.new_page()
+
+    values = detect_qr_values_from_page(page, settings=settings)
+    document.close()
+
+    assert values == ["https://fallback.example/qr"]
 
 
 def test_debug_document_api_returns_sidecar_payload(client):

@@ -15,6 +15,7 @@ from app.services.batch_monitor_service import get_batch_run_detail, list_batch_
 from app.services.export_service import export_csv, export_markdown
 from app.services.inbox_paths import get_inbox_path
 from app.services.results_service import DEFAULT_PAGE_SIZE, get_references
+from app.services.retry_service import retry_failed_document
 from app.services.ui_views import (
     count_pending_inbox_files,
     fetch_export_summary,
@@ -51,14 +52,15 @@ def _normalize_optional_query(value: str | None) -> str | None:
     return normalized or None
 
 
-def _build_results_query_string(*, search: str | None, status: str | None, source_type: str | None, page: int) -> str:
+def _build_results_query_string(
+    *,
+    filters: dict[str, str | None],
+    page: int,
+) -> str:
     params = {"page": page}
-    if search:
-        params["search"] = search
-    if status:
-        params["status"] = status
-    if source_type:
-        params["source_type"] = source_type
+    for key, value in filters.items():
+        if value:
+            params[key] = value
     return urlencode(params)
 
 
@@ -242,11 +244,30 @@ async def results_page(
     search: str | None = Query(default=None),
     status: str | None = Query(default=None),
     source_type: str | None = Query(default=None),
+    filename: str | None = Query(default=None),
+    processing_status: str | None = Query(default=None),
+    processing_error_type: str | None = Query(default=None),
+    resolution_error_type: str | None = Query(default=None),
+    date_from: str | None = Query(default=None),
+    date_to: str | None = Query(default=None),
+    domain: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
 ):
     normalized_search = _normalize_optional_query(search)
     normalized_status = _normalize_optional_query(status)
     normalized_source_type = _normalize_optional_query(source_type)
+    filters = {
+        "search": normalized_search,
+        "status": normalized_status,
+        "source_type": normalized_source_type,
+        "filename": _normalize_optional_query(filename),
+        "processing_status": _normalize_optional_query(processing_status),
+        "processing_error_type": _normalize_optional_query(processing_error_type),
+        "resolution_error_type": _normalize_optional_query(resolution_error_type),
+        "date_from": _normalize_optional_query(date_from),
+        "date_to": _normalize_optional_query(date_to),
+        "domain": _normalize_optional_query(domain),
+    }
     offset = (page - 1) * DEFAULT_PAGE_SIZE
     session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
     with session_factory() as session:
@@ -255,6 +276,13 @@ async def results_page(
             search=normalized_search,
             status=normalized_status,
             source_type=normalized_source_type,
+            filename=filters["filename"],
+            processing_status=filters["processing_status"],
+            processing_error_type=filters["processing_error_type"],
+            resolution_error_type=filters["resolution_error_type"],
+            date_from=filters["date_from"],
+            date_to=filters["date_to"],
+            domain=filters["domain"],
             limit=DEFAULT_PAGE_SIZE,
             offset=offset,
         )
@@ -275,22 +303,39 @@ async def results_page(
             "search": normalized_search or "",
             "status": normalized_status or "",
             "source_type": normalized_source_type or "",
+            "filename": filters["filename"] or "",
+            "processing_status": filters["processing_status"] or "",
+            "processing_error_type": filters["processing_error_type"] or "",
+            "resolution_error_type": filters["resolution_error_type"] or "",
+            "date_from": filters["date_from"] or "",
+            "date_to": filters["date_to"] or "",
+            "domain": filters["domain"] or "",
             "has_prev": has_prev,
             "has_next": has_next,
             "prev_query": _build_results_query_string(
-                search=normalized_search,
-                status=normalized_status,
-                source_type=normalized_source_type,
+                filters=filters,
                 page=page - 1,
             ),
             "next_query": _build_results_query_string(
-                search=normalized_search,
-                status=normalized_status,
-                source_type=normalized_source_type,
+                filters=filters,
                 page=page + 1,
             ),
         },
     )
+
+
+@router.post("/documents/{document_id}/retry")
+async def retry_document(request: Request, document_id: int):
+    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    with session_factory() as session:
+        result = retry_failed_document(session, request.app.state.settings, document_id)
+
+    if result.success:
+        logger.info("Retry queued document_id=%s destination=%s", document_id, result.destination_path)
+        return RedirectResponse(url="/imports", status_code=303)
+
+    logger.warning("Retry skipped document_id=%s reason=%s", document_id, result.reason)
+    return RedirectResponse(url=f"/results?retry_status={result.reason}", status_code=303)
 
 
 @router.get("/exports")

@@ -16,17 +16,38 @@
         <article class="info-card table-card">
             <form method="get" action="/results" class="filters-bar">
                 <label class="filter-field">
+                    <span>Filename</span>
+                    <input type="search" name="filename" value="{{ filename }}" placeholder="File name">
+                </label>
+                <label class="filter-field">
                     <span>Search</span>
                     <input type="search" name="search" value="{{ search }}" placeholder="Search file name or URL">
                 </label>
                 <label class="filter-field">
-                    <span>Status</span>
+                    <span>Processing</span>
+                    <select name="processing_status">
+                        <option value="">All</option>
+                        <option value="pending" {% if processing_status == "pending" %}selected{% endif %}>pending</option>
+                        <option value="processed" {% if processing_status == "processed" %}selected{% endif %}>processed</option>
+                        <option value="failed" {% if processing_status == "failed" %}selected{% endif %}>failed</option>
+                    </select>
+                </label>
+                <label class="filter-field">
+                    <span>Process Error</span>
+                    <input type="search" name="processing_error_type" value="{{ processing_error_type }}" placeholder="OCR_TIMEOUT">
+                </label>
+                <label class="filter-field">
+                    <span>Resolution</span>
                     <select name="status">
                         <option value="">All</option>
                         <option value="pending" {% if status == "pending" %}selected{% endif %}>pending</option>
                         <option value="resolved" {% if status == "resolved" %}selected{% endif %}>resolved</option>
                         <option value="failed" {% if status == "failed" %}selected{% endif %}>failed</option>
                     </select>
+                </label>
+                <label class="filter-field">
+                    <span>Resolve Error</span>
+                    <input type="search" name="resolution_error_type" value="{{ resolution_error_type }}" placeholder="URL_TIMEOUT">
                 </label>
                 <label class="filter-field">
                     <span>Source</span>
@@ -37,6 +58,18 @@
                         <option value="ocr" {% if source_type == "ocr" %}selected{% endif %}>ocr</option>
                         <option value="image" {% if source_type == "image" %}selected{% endif %}>image</option>
                     </select>
+                </label>
+                <label class="filter-field">
+                    <span>URL Contains</span>
+                    <input type="search" name="domain" value="{{ domain }}" placeholder="moph.go.th">
+                </label>
+                <label class="filter-field">
+                    <span>From</span>
+                    <input type="date" name="date_from" value="{{ date_from }}">
+                </label>
+                <label class="filter-field">
+                    <span>To</span>
+                    <input type="date" name="date_to" value="{{ date_to }}">
                 </label>
                 <div class="filters-actions">
                     <button type="submit" class="button button-primary button-small">Apply</button>
@@ -62,6 +95,7 @@
                             <th>Page</th>
                             <th>Type</th>
                             <th>Source</th>
+                            <th>Processing</th>
                             <th>Raw Reference</th>
                             <th>Final URL</th>
                             <th>Status</th>
@@ -73,14 +107,22 @@
                         {% for row in rows %}
                         <tr>
                             <td class="cell-strong">{{ row.filename }}</td>
-                            <td>{{ row.page_number }}</td>
-                            <td>{{ row.reference_class }}</td>
-                            <td>{{ row.source_type }}</td>
+                            <td>{{ row.page_number or "-" }}</td>
+                            <td>{{ row.reference_class or "-" }}</td>
+                            <td>{{ row.source_type or "-" }}</td>
+                            <td>
+                                <span class="status-badge">{{ row.processing_status }}</span>
+                                {% if row.processing_error_type %}
+                                <span class="metric-chip">{{ row.processing_error_type }}</span>
+                                {% endif %}
+                            </td>
                             <td class="cell-wrap">
-                                {% if row.raw_reference.startswith("http://") or row.raw_reference.startswith("https://") %}
+                                {% if row.raw_reference and (row.raw_reference.startswith("http://") or row.raw_reference.startswith("https://")) %}
                                 <a class="table-link ellipsis-link" href="{{ row.raw_reference }}" target="_blank" rel="noopener noreferrer" title="{{ row.raw_reference }}">{{ row.raw_reference }}</a>
-                                {% else %}
+                                {% elif row.raw_reference %}
                                 <span class="ellipsis-link" title="{{ row.raw_reference }}">{{ row.raw_reference }}</span>
+                                {% else %}
+                                <span class="muted-inline">-</span>
                                 {% endif %}
                             </td>
                             <td class="cell-wrap">
@@ -91,16 +133,28 @@
                                 {% endif %}
                             </td>
                             <td>
+                                {% if row.resolution_status %}
                                 <span class="status-badge status-badge-{{ row.resolution_status }}">{{ row.resolution_status }}</span>
+                                {% if row.resolution_error_type %}
+                                <span class="metric-chip">{{ row.resolution_error_type }}</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="muted-inline">-</span>
+                                {% endif %}
                             </td>
                             <td>{{ row.created_at.strftime("%d/%m/%Y %H:%M") if row.created_at else "-" }}</td>
                             <td>
                                 <a class="button button-secondary button-small" href="/debug/document/{{ row.document_id }}">Debug</a>
+                                {% if row.retryable %}
+                                <form method="post" action="/documents/{{ row.document_id }}/retry" class="inline-form">
+                                    <button class="button button-ghost button-small" type="submit">Retry</button>
+                                </form>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="9" class="table-empty">No extracted references match the current filters.</td>
+                            <td colspan="10" class="table-empty">No extracted references match the current filters.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
