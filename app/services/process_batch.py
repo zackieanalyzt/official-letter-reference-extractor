@@ -139,13 +139,15 @@ def process_registered_document(
         persisted_reference_keys: set[tuple[int, str, str]] = set()
         try:
             extraction_signature = inspect.signature(extract_references_from_pdf)
+            extraction_kwargs = {}
             if "settings" in extraction_signature.parameters:
-                references, extraction_issues, page_count = extract_references_from_pdf(
-                    fingerprint.path,
-                    settings=settings,
-                )
-            else:
-                references, extraction_issues, page_count = extract_references_from_pdf(fingerprint.path)
+                extraction_kwargs["settings"] = settings
+            if "document_id" in extraction_signature.parameters:
+                extraction_kwargs["document_id"] = document.id
+            references, extraction_issues, page_count = extract_references_from_pdf(
+                fingerprint.path,
+                **extraction_kwargs,
+            )
             document.page_count = page_count
         except Exception as exc:
             logger.exception("Reference extraction failed file=%s", fingerprint.path)

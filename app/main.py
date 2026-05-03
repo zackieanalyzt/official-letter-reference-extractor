@@ -11,6 +11,7 @@ from app.db.postgres import create_postgres_engine
 from app.logging_config import configure_logging, get_logger
 from app.web.routes_auth import router as auth_router
 from app.web.routes_batch import router as batch_router
+from app.web.routes_debug import router as debug_router
 from app.web.routes_home import router as home_router
 from app.web.routes_operations import router as operations_router
 
@@ -44,6 +45,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "app" / "static"), name="static")
+app.mount("/debug/qr", StaticFiles(directory=settings.qr_debug_path, check_dir=False), name="debug_qr")
 
 
 @app.middleware("http")
@@ -79,5 +81,6 @@ async def readyz(request: Request) -> JSONResponse:
 if settings.enable_auth:
     app.include_router(auth_router)
 app.include_router(batch_router)
+app.include_router(debug_router)
 app.include_router(home_router)
 app.include_router(operations_router)

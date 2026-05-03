@@ -745,6 +745,61 @@ select:focus {
     font-weight: 700;
 }
 
+.debug-page-card {
+    display: grid;
+    gap: 1rem;
+}
+
+.debug-attempt-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.debug-attempt {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid rgba(14, 83, 104, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.68);
+}
+
+.debug-attempt-head > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.debug-decoded {
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--ink-strong);
+    font-size: 0.9rem;
+}
+
+.debug-image,
+.debug-image-placeholder {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border: 1px solid rgba(14, 83, 104, 0.12);
+    border-radius: 8px;
+    background: #f7fafb;
+}
+
+.debug-image {
+    display: block;
+    object-fit: contain;
+}
+
+.debug-image-placeholder {
+    display: grid;
+    place-items: center;
+    color: var(--ink-soft);
+}
+
 .ellipsis-link {
     display: inline-block;
     max-width: 280px;

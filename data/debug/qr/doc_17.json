@@ -1,0 +1,30 @@
+{
+  "document_id": 17,
+  "generated_at": "2026-05-03T15:16:33.030849+00:00",
+  "attempts": [
+    {
+      "page": 1,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_17_page_1_full_page_rgb.png"
+    },
+    {
+      "page": 1,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_17_page_1_full_page_grayscale.png"
+    },
+    {
+      "page": 1,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_17_page_1_full_page_thresholded.png"
+    }
+  ]
+}

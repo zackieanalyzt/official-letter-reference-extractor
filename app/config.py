@@ -51,6 +51,8 @@ class Settings(BaseSettings):
     ocr_min_text_chars: int = Field(default=25, validation_alias="OCR_MIN_TEXT_CHARS")
     ocr_render_scale: float = Field(default=3.0, validation_alias=AliasChoices("OCR_DPI_SCALE", "OCR_RENDER_SCALE"))
     ocr_page_segmentation_mode: int = Field(default=6, validation_alias="OCR_PAGE_SEGMENTATION_MODE")
+    qr_debug_export: bool = Field(default=False, validation_alias="QR_DEBUG_EXPORT")
+    qr_debug_dir: str = Field(default="data/debug/qr", validation_alias="QR_DEBUG_DIR")
     url_resolve_timeout_seconds: float = Field(default=5.0, validation_alias="URL_RESOLVE_TIMEOUT_SECONDS")
     url_resolve_max_attempts: int = Field(default=2, validation_alias="URL_RESOLVE_MAX_ATTEMPTS")
     url_resolve_user_agent: str = Field(default="OLRE/0.1 URL Resolver", validation_alias="URL_RESOLVE_USER_AGENT")
@@ -73,6 +75,10 @@ class Settings(BaseSettings):
     @property
     def error_path(self) -> Path:
         return resolve_path(self.error_dir)
+
+    @property
+    def qr_debug_path(self) -> Path:
+        return resolve_path(self.qr_debug_dir)
 
     @property
     def postgres_dsn(self) -> EngineURL:

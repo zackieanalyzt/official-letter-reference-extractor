@@ -23,6 +23,7 @@ def client(monkeypatch, tmp_path):
     input_dir = tmp_path / "input"
     processed_dir = tmp_path / "processed"
     error_dir = tmp_path / "error"
+    qr_debug_dir = tmp_path / "debug" / "qr"
     input_dir.mkdir()
     processed_dir.mkdir()
     error_dir.mkdir()
@@ -45,6 +46,8 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setenv("OCR_MIN_TEXT_CHARS", "20")
     monkeypatch.setenv("OCR_DPI_SCALE", "3")
     monkeypatch.setenv("OCR_PAGE_SEGMENTATION_MODE", "6")
+    monkeypatch.setenv("QR_DEBUG_EXPORT", "false")
+    monkeypatch.setenv("QR_DEBUG_DIR", str(qr_debug_dir))
     monkeypatch.setenv("URL_RESOLVE_TIMEOUT_SECONDS", "5")
     monkeypatch.setenv("URL_RESOLVE_MAX_ATTEMPTS", "2")
     monkeypatch.setenv("URL_RESOLVE_USER_AGENT", "OLRE Test")

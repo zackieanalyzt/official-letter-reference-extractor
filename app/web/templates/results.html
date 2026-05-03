@@ -33,6 +33,8 @@
                     <select name="source_type">
                         <option value="">All</option>
                         <option value="text" {% if source_type == "text" %}selected{% endif %}>text</option>
+                        <option value="qr" {% if source_type == "qr" %}selected{% endif %}>qr</option>
+                        <option value="ocr" {% if source_type == "ocr" %}selected{% endif %}>ocr</option>
                         <option value="image" {% if source_type == "image" %}selected{% endif %}>image</option>
                     </select>
                 </label>
@@ -64,6 +66,7 @@
                             <th>Final URL</th>
                             <th>Status</th>
                             <th>Created</th>
+                            <th>Debug</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -91,10 +94,13 @@
                                 <span class="status-badge status-badge-{{ row.resolution_status }}">{{ row.resolution_status }}</span>
                             </td>
                             <td>{{ row.created_at.strftime("%d/%m/%Y %H:%M") if row.created_at else "-" }}</td>
+                            <td>
+                                <a class="button button-secondary button-small" href="/debug/document/{{ row.document_id }}">Debug</a>
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="8" class="table-empty">No extracted references match the current filters.</td>
+                            <td colspan="9" class="table-empty">No extracted references match the current filters.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

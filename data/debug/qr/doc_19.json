@@ -1,0 +1,2262 @@
+{
+  "document_id": 19,
+  "generated_at": "2026-05-03T15:17:58.587387+00:00",
+  "attempts": [
+    {
+      "page": 1,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_1_full_page_rgb.png"
+    },
+    {
+      "page": 1,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_1_full_page_grayscale.png"
+    },
+    {
+      "page": 1,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_1_full_page_thresholded.png"
+    },
+    {
+      "page": 2,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_2_full_page_rgb.png"
+    },
+    {
+      "page": 2,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_2_full_page_grayscale.png"
+    },
+    {
+      "page": 2,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_2_full_page_thresholded.png"
+    },
+    {
+      "page": 3,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_3_full_page_rgb.png"
+    },
+    {
+      "page": 3,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_3_full_page_grayscale.png"
+    },
+    {
+      "page": 3,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_3_full_page_thresholded.png"
+    },
+    {
+      "page": 4,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_4_full_page_rgb.png"
+    },
+    {
+      "page": 4,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_4_full_page_grayscale.png"
+    },
+    {
+      "page": 4,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_4_full_page_thresholded.png"
+    },
+    {
+      "page": 5,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_5_full_page_rgb.png"
+    },
+    {
+      "page": 5,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_5_full_page_grayscale.png"
+    },
+    {
+      "page": 5,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_5_full_page_thresholded.png"
+    },
+    {
+      "page": 6,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_6_full_page_rgb.png"
+    },
+    {
+      "page": 6,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_6_full_page_grayscale.png"
+    },
+    {
+      "page": 6,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_6_full_page_thresholded.png"
+    },
+    {
+      "page": 7,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_7_full_page_rgb.png"
+    },
+    {
+      "page": 7,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_7_full_page_grayscale.png"
+    },
+    {
+      "page": 7,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_7_full_page_thresholded.png"
+    },
+    {
+      "page": 8,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_8_full_page_rgb.png"
+    },
+    {
+      "page": 8,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_8_full_page_grayscale.png"
+    },
+    {
+      "page": 8,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_8_full_page_thresholded.png"
+    },
+    {
+      "page": 9,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_9_full_page_rgb.png"
+    },
+    {
+      "page": 9,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_9_full_page_grayscale.png"
+    },
+    {
+      "page": 9,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_9_full_page_thresholded.png"
+    },
+    {
+      "page": 10,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_10_full_page_rgb.png"
+    },
+    {
+      "page": 10,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_10_full_page_grayscale.png"
+    },
+    {
+      "page": 10,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_10_full_page_thresholded.png"
+    },
+    {
+      "page": 11,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_11_full_page_rgb.png"
+    },
+    {
+      "page": 11,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_11_full_page_grayscale.png"
+    },
+    {
+      "page": 11,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_11_full_page_thresholded.png"
+    },
+    {
+      "page": 12,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_12_full_page_rgb.png"
+    },
+    {
+      "page": 12,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_12_full_page_grayscale.png"
+    },
+    {
+      "page": 12,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_12_full_page_thresholded.png"
+    },
+    {
+      "page": 13,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_13_full_page_rgb.png"
+    },
+    {
+      "page": 13,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_13_full_page_grayscale.png"
+    },
+    {
+      "page": 13,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_13_full_page_thresholded.png"
+    },
+    {
+      "page": 14,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_14_full_page_rgb.png"
+    },
+    {
+      "page": 14,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_14_full_page_grayscale.png"
+    },
+    {
+      "page": 14,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_14_full_page_thresholded.png"
+    },
+    {
+      "page": 15,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_15_full_page_rgb.png"
+    },
+    {
+      "page": 15,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_15_full_page_grayscale.png"
+    },
+    {
+      "page": 15,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_15_full_page_thresholded.png"
+    },
+    {
+      "page": 16,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_16_full_page_rgb.png"
+    },
+    {
+      "page": 16,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_16_full_page_grayscale.png"
+    },
+    {
+      "page": 16,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_16_full_page_thresholded.png"
+    },
+    {
+      "page": 17,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_17_full_page_rgb.png"
+    },
+    {
+      "page": 17,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_17_full_page_grayscale.png"
+    },
+    {
+      "page": 17,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_17_full_page_thresholded.png"
+    },
+    {
+      "page": 18,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_18_full_page_rgb.png"
+    },
+    {
+      "page": 18,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_18_full_page_grayscale.png"
+    },
+    {
+      "page": 18,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_18_full_page_thresholded.png"
+    },
+    {
+      "page": 19,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_19_full_page_rgb.png"
+    },
+    {
+      "page": 19,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_19_full_page_grayscale.png"
+    },
+    {
+      "page": 19,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_19_full_page_thresholded.png"
+    },
+    {
+      "page": 20,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_20_full_page_rgb.png"
+    },
+    {
+      "page": 20,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_20_full_page_grayscale.png"
+    },
+    {
+      "page": 20,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_20_full_page_thresholded.png"
+    },
+    {
+      "page": 21,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_21_full_page_rgb.png"
+    },
+    {
+      "page": 21,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_21_full_page_grayscale.png"
+    },
+    {
+      "page": 21,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_21_full_page_thresholded.png"
+    },
+    {
+      "page": 22,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_22_full_page_rgb.png"
+    },
+    {
+      "page": 22,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_22_full_page_grayscale.png"
+    },
+    {
+      "page": 22,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_22_full_page_thresholded.png"
+    },
+    {
+      "page": 23,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_23_full_page_rgb.png"
+    },
+    {
+      "page": 23,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_23_full_page_grayscale.png"
+    },
+    {
+      "page": 23,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_23_full_page_thresholded.png"
+    },
+    {
+      "page": 24,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_24_full_page_rgb.png"
+    },
+    {
+      "page": 24,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_24_full_page_grayscale.png"
+    },
+    {
+      "page": 24,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_24_full_page_thresholded.png"
+    },
+    {
+      "page": 25,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_25_full_page_rgb.png"
+    },
+    {
+      "page": 25,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_25_full_page_grayscale.png"
+    },
+    {
+      "page": 25,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_25_full_page_thresholded.png"
+    },
+    {
+      "page": 26,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_26_full_page_rgb.png"
+    },
+    {
+      "page": 26,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_26_full_page_grayscale.png"
+    },
+    {
+      "page": 26,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_26_full_page_thresholded.png"
+    },
+    {
+      "page": 27,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_27_full_page_rgb.png"
+    },
+    {
+      "page": 27,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_27_full_page_grayscale.png"
+    },
+    {
+      "page": 27,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_27_full_page_thresholded.png"
+    },
+    {
+      "page": 28,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_28_full_page_rgb.png"
+    },
+    {
+      "page": 28,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_28_full_page_grayscale.png"
+    },
+    {
+      "page": 28,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_28_full_page_thresholded.png"
+    },
+    {
+      "page": 29,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_29_full_page_rgb.png"
+    },
+    {
+      "page": 29,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_29_full_page_grayscale.png"
+    },
+    {
+      "page": 29,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_29_full_page_thresholded.png"
+    },
+    {
+      "page": 30,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_30_full_page_rgb.png"
+    },
+    {
+      "page": 30,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_30_full_page_grayscale.png"
+    },
+    {
+      "page": 30,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_30_full_page_thresholded.png"
+    },
+    {
+      "page": 31,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_31_full_page_rgb.png"
+    },
+    {
+      "page": 31,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_31_full_page_grayscale.png"
+    },
+    {
+      "page": 31,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_31_full_page_thresholded.png"
+    },
+    {
+      "page": 32,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_32_full_page_rgb.png"
+    },
+    {
+      "page": 32,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_32_full_page_grayscale.png"
+    },
+    {
+      "page": 32,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_32_full_page_thresholded.png"
+    },
+    {
+      "page": 33,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_33_full_page_rgb.png"
+    },
+    {
+      "page": 33,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_33_full_page_grayscale.png"
+    },
+    {
+      "page": 33,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_33_full_page_thresholded.png"
+    },
+    {
+      "page": 34,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_34_full_page_rgb.png"
+    },
+    {
+      "page": 34,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_34_full_page_grayscale.png"
+    },
+    {
+      "page": 34,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_34_full_page_thresholded.png"
+    },
+    {
+      "page": 35,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_35_full_page_rgb.png"
+    },
+    {
+      "page": 35,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_35_full_page_grayscale.png"
+    },
+    {
+      "page": 35,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_35_full_page_thresholded.png"
+    },
+    {
+      "page": 36,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_36_full_page_rgb.png"
+    },
+    {
+      "page": 36,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_36_full_page_grayscale.png"
+    },
+    {
+      "page": 36,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_36_full_page_thresholded.png"
+    },
+    {
+      "page": 37,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_37_full_page_rgb.png"
+    },
+    {
+      "page": 37,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_37_full_page_grayscale.png"
+    },
+    {
+      "page": 37,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_37_full_page_thresholded.png"
+    },
+    {
+      "page": 38,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_38_full_page_rgb.png"
+    },
+    {
+      "page": 38,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_38_full_page_grayscale.png"
+    },
+    {
+      "page": 38,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_38_full_page_thresholded.png"
+    },
+    {
+      "page": 39,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_39_full_page_rgb.png"
+    },
+    {
+      "page": 39,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_39_full_page_grayscale.png"
+    },
+    {
+      "page": 39,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_39_full_page_thresholded.png"
+    },
+    {
+      "page": 40,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_40_full_page_rgb.png"
+    },
+    {
+      "page": 40,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_40_full_page_grayscale.png"
+    },
+    {
+      "page": 40,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_40_full_page_thresholded.png"
+    },
+    {
+      "page": 41,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_41_full_page_rgb.png"
+    },
+    {
+      "page": 41,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_41_full_page_grayscale.png"
+    },
+    {
+      "page": 41,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_41_full_page_thresholded.png"
+    },
+    {
+      "page": 42,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_42_full_page_rgb.png"
+    },
+    {
+      "page": 42,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_42_full_page_grayscale.png"
+    },
+    {
+      "page": 42,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_42_full_page_thresholded.png"
+    },
+    {
+      "page": 43,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_43_full_page_rgb.png"
+    },
+    {
+      "page": 43,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_43_full_page_grayscale.png"
+    },
+    {
+      "page": 43,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_43_full_page_thresholded.png"
+    },
+    {
+      "page": 44,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_44_full_page_rgb.png"
+    },
+    {
+      "page": 44,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_44_full_page_grayscale.png"
+    },
+    {
+      "page": 44,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_44_full_page_thresholded.png"
+    },
+    {
+      "page": 45,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_45_full_page_rgb.png"
+    },
+    {
+      "page": 45,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_45_full_page_grayscale.png"
+    },
+    {
+      "page": 45,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_45_full_page_thresholded.png"
+    },
+    {
+      "page": 46,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_46_full_page_rgb.png"
+    },
+    {
+      "page": 46,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_46_full_page_grayscale.png"
+    },
+    {
+      "page": 46,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_46_full_page_thresholded.png"
+    },
+    {
+      "page": 47,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_47_full_page_rgb.png"
+    },
+    {
+      "page": 47,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_47_full_page_grayscale.png"
+    },
+    {
+      "page": 47,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_47_full_page_thresholded.png"
+    },
+    {
+      "page": 48,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_48_full_page_rgb.png"
+    },
+    {
+      "page": 48,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_48_full_page_grayscale.png"
+    },
+    {
+      "page": 48,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_48_full_page_thresholded.png"
+    },
+    {
+      "page": 49,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_49_full_page_rgb.png"
+    },
+    {
+      "page": 49,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_49_full_page_grayscale.png"
+    },
+    {
+      "page": 49,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_49_full_page_thresholded.png"
+    },
+    {
+      "page": 50,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_50_full_page_rgb.png"
+    },
+    {
+      "page": 50,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_50_full_page_grayscale.png"
+    },
+    {
+      "page": 50,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_50_full_page_thresholded.png"
+    },
+    {
+      "page": 51,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_51_full_page_rgb.png"
+    },
+    {
+      "page": 51,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_51_full_page_grayscale.png"
+    },
+    {
+      "page": 51,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_51_full_page_thresholded.png"
+    },
+    {
+      "page": 52,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_52_full_page_rgb.png"
+    },
+    {
+      "page": 52,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_52_full_page_grayscale.png"
+    },
+    {
+      "page": 52,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_52_full_page_thresholded.png"
+    },
+    {
+      "page": 53,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_53_full_page_rgb.png"
+    },
+    {
+      "page": 53,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_53_full_page_grayscale.png"
+    },
+    {
+      "page": 53,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_53_full_page_thresholded.png"
+    },
+    {
+      "page": 54,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_54_full_page_rgb.png"
+    },
+    {
+      "page": 54,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_54_full_page_grayscale.png"
+    },
+    {
+      "page": 54,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_54_full_page_thresholded.png"
+    },
+    {
+      "page": 55,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_55_full_page_rgb.png"
+    },
+    {
+      "page": 55,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_55_full_page_grayscale.png"
+    },
+    {
+      "page": 55,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_55_full_page_thresholded.png"
+    },
+    {
+      "page": 56,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_56_full_page_rgb.png"
+    },
+    {
+      "page": 56,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_56_full_page_grayscale.png"
+    },
+    {
+      "page": 56,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_56_full_page_thresholded.png"
+    },
+    {
+      "page": 57,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_57_full_page_rgb.png"
+    },
+    {
+      "page": 57,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_57_full_page_grayscale.png"
+    },
+    {
+      "page": 57,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_57_full_page_thresholded.png"
+    },
+    {
+      "page": 58,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_58_full_page_rgb.png"
+    },
+    {
+      "page": 58,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_58_full_page_grayscale.png"
+    },
+    {
+      "page": 58,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_58_full_page_thresholded.png"
+    },
+    {
+      "page": 59,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_59_full_page_rgb.png"
+    },
+    {
+      "page": 59,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_59_full_page_grayscale.png"
+    },
+    {
+      "page": 59,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_59_full_page_thresholded.png"
+    },
+    {
+      "page": 60,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_60_full_page_rgb.png"
+    },
+    {
+      "page": 60,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_60_full_page_grayscale.png"
+    },
+    {
+      "page": 60,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_60_full_page_thresholded.png"
+    },
+    {
+      "page": 61,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_61_full_page_rgb.png"
+    },
+    {
+      "page": 61,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_61_full_page_grayscale.png"
+    },
+    {
+      "page": 61,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_61_full_page_thresholded.png"
+    },
+    {
+      "page": 62,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_62_full_page_rgb.png"
+    },
+    {
+      "page": 62,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_62_full_page_grayscale.png"
+    },
+    {
+      "page": 62,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_62_full_page_thresholded.png"
+    },
+    {
+      "page": 63,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_63_full_page_rgb.png"
+    },
+    {
+      "page": 63,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_63_full_page_grayscale.png"
+    },
+    {
+      "page": 63,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_63_full_page_thresholded.png"
+    },
+    {
+      "page": 64,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_64_full_page_rgb.png"
+    },
+    {
+      "page": 64,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_64_full_page_grayscale.png"
+    },
+    {
+      "page": 64,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_64_full_page_thresholded.png"
+    },
+    {
+      "page": 65,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_65_full_page_rgb.png"
+    },
+    {
+      "page": 65,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_65_full_page_grayscale.png"
+    },
+    {
+      "page": 65,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_65_full_page_thresholded.png"
+    },
+    {
+      "page": 66,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_66_full_page_rgb.png"
+    },
+    {
+      "page": 66,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_66_full_page_grayscale.png"
+    },
+    {
+      "page": 66,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_66_full_page_thresholded.png"
+    },
+    {
+      "page": 67,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_67_full_page_rgb.png"
+    },
+    {
+      "page": 67,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_67_full_page_grayscale.png"
+    },
+    {
+      "page": 67,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_67_full_page_thresholded.png"
+    },
+    {
+      "page": 68,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_68_full_page_rgb.png"
+    },
+    {
+      "page": 68,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_68_full_page_grayscale.png"
+    },
+    {
+      "page": 68,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_68_full_page_thresholded.png"
+    },
+    {
+      "page": 69,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_69_full_page_rgb.png"
+    },
+    {
+      "page": 69,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_69_full_page_grayscale.png"
+    },
+    {
+      "page": 69,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_69_full_page_thresholded.png"
+    },
+    {
+      "page": 70,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_70_full_page_rgb.png"
+    },
+    {
+      "page": 70,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_70_full_page_grayscale.png"
+    },
+    {
+      "page": 70,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_70_full_page_thresholded.png"
+    },
+    {
+      "page": 71,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_71_full_page_rgb.png"
+    },
+    {
+      "page": 71,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_71_full_page_grayscale.png"
+    },
+    {
+      "page": 71,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_71_full_page_thresholded.png"
+    },
+    {
+      "page": 72,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_72_full_page_rgb.png"
+    },
+    {
+      "page": 72,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_72_full_page_grayscale.png"
+    },
+    {
+      "page": 72,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_72_full_page_thresholded.png"
+    },
+    {
+      "page": 73,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_73_full_page_rgb.png"
+    },
+    {
+      "page": 73,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_73_full_page_grayscale.png"
+    },
+    {
+      "page": 73,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_73_full_page_thresholded.png"
+    },
+    {
+      "page": 74,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_74_full_page_rgb.png"
+    },
+    {
+      "page": 74,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_74_full_page_grayscale.png"
+    },
+    {
+      "page": 74,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_74_full_page_thresholded.png"
+    },
+    {
+      "page": 75,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_75_full_page_rgb.png"
+    },
+    {
+      "page": 75,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_75_full_page_grayscale.png"
+    },
+    {
+      "page": 75,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_75_full_page_thresholded.png"
+    },
+    {
+      "page": 76,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_76_full_page_rgb.png"
+    },
+    {
+      "page": 76,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_76_full_page_grayscale.png"
+    },
+    {
+      "page": 76,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_76_full_page_thresholded.png"
+    },
+    {
+      "page": 77,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_77_full_page_rgb.png"
+    },
+    {
+      "page": 77,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_77_full_page_grayscale.png"
+    },
+    {
+      "page": 77,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_77_full_page_thresholded.png"
+    },
+    {
+      "page": 78,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_78_full_page_rgb.png"
+    },
+    {
+      "page": 78,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_78_full_page_grayscale.png"
+    },
+    {
+      "page": 78,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_78_full_page_thresholded.png"
+    },
+    {
+      "page": 79,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_79_full_page_rgb.png"
+    },
+    {
+      "page": 79,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_79_full_page_grayscale.png"
+    },
+    {
+      "page": 79,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_79_full_page_thresholded.png"
+    },
+    {
+      "page": 80,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_80_full_page_rgb.png"
+    },
+    {
+      "page": 80,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_80_full_page_grayscale.png"
+    },
+    {
+      "page": 80,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_80_full_page_thresholded.png"
+    },
+    {
+      "page": 81,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_81_full_page_rgb.png"
+    },
+    {
+      "page": 81,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_81_full_page_grayscale.png"
+    },
+    {
+      "page": 81,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_81_full_page_thresholded.png"
+    },
+    {
+      "page": 82,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_82_full_page_rgb.png"
+    },
+    {
+      "page": 82,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_82_full_page_grayscale.png"
+    },
+    {
+      "page": 82,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_82_full_page_thresholded.png"
+    },
+    {
+      "page": 83,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_83_full_page_rgb.png"
+    },
+    {
+      "page": 83,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_83_full_page_grayscale.png"
+    },
+    {
+      "page": 83,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_83_full_page_thresholded.png"
+    },
+    {
+      "page": 84,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_84_full_page_rgb.png"
+    },
+    {
+      "page": 84,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_84_full_page_grayscale.png"
+    },
+    {
+      "page": 84,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_84_full_page_thresholded.png"
+    },
+    {
+      "page": 85,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_85_full_page_rgb.png"
+    },
+    {
+      "page": 85,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_85_full_page_grayscale.png"
+    },
+    {
+      "page": 85,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_85_full_page_thresholded.png"
+    },
+    {
+      "page": 86,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_86_full_page_rgb.png"
+    },
+    {
+      "page": 86,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_86_full_page_grayscale.png"
+    },
+    {
+      "page": 86,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_86_full_page_thresholded.png"
+    },
+    {
+      "page": 87,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_87_full_page_rgb.png"
+    },
+    {
+      "page": 87,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_87_full_page_grayscale.png"
+    },
+    {
+      "page": 87,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_87_full_page_thresholded.png"
+    },
+    {
+      "page": 88,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_88_full_page_rgb.png"
+    },
+    {
+      "page": 88,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_88_full_page_grayscale.png"
+    },
+    {
+      "page": 88,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_88_full_page_thresholded.png"
+    },
+    {
+      "page": 89,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_89_full_page_rgb.png"
+    },
+    {
+      "page": 89,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_89_full_page_grayscale.png"
+    },
+    {
+      "page": 89,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_89_full_page_thresholded.png"
+    },
+    {
+      "page": 90,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_90_full_page_rgb.png"
+    },
+    {
+      "page": 90,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_90_full_page_grayscale.png"
+    },
+    {
+      "page": 90,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_90_full_page_thresholded.png"
+    },
+    {
+      "page": 91,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_91_full_page_rgb.png"
+    },
+    {
+      "page": 91,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_91_full_page_grayscale.png"
+    },
+    {
+      "page": 91,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_91_full_page_thresholded.png"
+    },
+    {
+      "page": 92,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_92_full_page_rgb.png"
+    },
+    {
+      "page": 92,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_92_full_page_grayscale.png"
+    },
+    {
+      "page": 92,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_92_full_page_thresholded.png"
+    },
+    {
+      "page": 93,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_93_full_page_rgb.png"
+    },
+    {
+      "page": 93,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_93_full_page_grayscale.png"
+    },
+    {
+      "page": 93,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_93_full_page_thresholded.png"
+    },
+    {
+      "page": 94,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_94_full_page_rgb.png"
+    },
+    {
+      "page": 94,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_94_full_page_grayscale.png"
+    },
+    {
+      "page": 94,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_19_page_94_full_page_thresholded.png"
+    }
+  ]
+}

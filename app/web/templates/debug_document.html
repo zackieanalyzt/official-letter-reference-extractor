@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}QR Debug | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">QR Debug</span>
+                <h1>{{ document.filename }}</h1>
+                <p class="lead">Inspect QR detection attempts captured for this document. Debug export is {% if debug_enabled %}enabled{% else %}disabled{% endif %}.</p>
+            </div>
+            <div class="page-heading-side">
+                <a href="/results" class="button button-secondary button-small">Back to Results</a>
+            </div>
+        </div>
+
+        {% if not pages %}
+        <article class="info-card">
+            <span class="card-kicker">No Debug Records</span>
+            <h2>No QR debug attempts found</h2>
+            <p class="muted-copy">Enable QR_DEBUG_EXPORT and process the PDF again to capture QR detection images and metadata.</p>
+        </article>
+        {% endif %}
+
+        {% for page in pages %}
+        <article class="info-card debug-page-card">
+            <div class="section-head">
+                <div>
+                    <span class="card-kicker">Page {{ page.page }}</span>
+                    <h2>{{ page.attempts|length }} attempts</h2>
+                </div>
+            </div>
+
+            <div class="debug-attempt-grid">
+                {% for attempt in page.attempts %}
+                <section class="debug-attempt">
+                    <div class="debug-attempt-head">
+                        <div>
+                            <strong>{{ attempt.zone }} | {{ attempt.variant }}</strong>
+                            {% if attempt.success %}
+                            <span class="status-badge status-badge-resolved">SUCCESS</span>
+                            {% else %}
+                            <span class="status-badge status-badge-failed">FAIL</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if attempt.decoded_value %}
+                    <p class="debug-decoded">{{ attempt.decoded_value }}</p>
+                    {% endif %}
+                    {% if attempt.image_url %}
+                    <a href="{{ attempt.image_url }}" target="_blank" rel="noopener noreferrer">
+                        <img class="debug-image" src="{{ attempt.image_url }}" alt="QR debug {{ attempt.zone }} {{ attempt.variant }}">
+                    </a>
+                    {% else %}
+                    <div class="debug-image-placeholder">No image captured</div>
+                    {% endif %}
+                </section>
+                {% endfor %}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

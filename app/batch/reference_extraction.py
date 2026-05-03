@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import inspect
 from dataclasses import dataclass
 from typing import Callable
 
@@ -12,6 +13,7 @@ from app.batch.error_types import (
     TEXT_EXTRACTION_FAIL,
 )
 from app.batch.ocr import extract_text_with_ocr_if_needed
+from app.batch.qr_debug import save_debug_image, save_debug_records
 from app.logging_config import get_logger
 
 
@@ -81,32 +83,72 @@ def render_page_to_rgb_array(page: fitz.Page, *, scale: float = 3.0):
     return image
 
 
-def detect_qr_values_from_page(page: fitz.Page) -> list[str]:
+def detect_qr_values_from_page(
+    page: fitz.Page,
+    *,
+    settings=None,
+    document_id: int | None = None,
+    page_number: int | None = None,
+    debug_records: list[dict] | None = None,
+) -> list[str]:
     import cv2
 
     image = render_page_to_rgb_array(page)
     grayscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     _, thresholded = cv2.threshold(grayscale, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    variants = [image, grayscale, thresholded]
+    variants = [
+        ("rgb", image),
+        ("grayscale", grayscale),
+        ("thresholded", thresholded),
+    ]
 
     detector = cv2.QRCodeDetector()
     decoded_values: list[str] = []
 
-    for variant in variants:
+    for variant_name, variant in variants:
+        variant_values: list[str] = []
         try:
             found, values, _, _ = detector.detectAndDecodeMulti(variant)
         except Exception:
             found, values = False, ()
 
         if found and values:
-            decoded_values.extend(value for value in values if value)
+            variant_values.extend(value for value in values if value)
 
         try:
             single_value, _, _ = detector.detectAndDecode(variant)
         except Exception:
             single_value = ""
         if single_value:
-            decoded_values.append(single_value)
+            variant_values.append(single_value)
+
+        decoded_values.extend(variant_values)
+
+        if (
+            debug_records is not None
+            and settings is not None
+            and getattr(settings, "qr_debug_export", False)
+            and document_id is not None
+            and page_number is not None
+        ):
+            normalized_values = [normalize_reference(value) for value in variant_values if normalize_reference(value)]
+            meta = {
+                "document_id": document_id,
+                "page": page_number,
+                "zone": "full_page",
+                "variant": variant_name,
+            }
+            debug_path = save_debug_image(variant, meta, settings)
+            debug_records.append(
+                {
+                    "page": page_number,
+                    "zone": "full_page",
+                    "variant": variant_name,
+                    "success": bool(normalized_values),
+                    "decoded_value": " | ".join(normalized_values),
+                    "image_path": debug_path,
+                }
+            )
 
     unique_values: list[str] = []
     seen: set[str] = set()
@@ -120,16 +162,40 @@ def detect_qr_values_from_page(page: fitz.Page) -> list[str]:
     return unique_values
 
 
+def _call_qr_detector(
+    detector: Callable,
+    page: fitz.Page,
+    *,
+    settings,
+    document_id: int | None,
+    page_number: int,
+    debug_records: list[dict],
+) -> list[str]:
+    signature = inspect.signature(detector)
+    kwargs = {}
+    if "settings" in signature.parameters:
+        kwargs["settings"] = settings
+    if "document_id" in signature.parameters:
+        kwargs["document_id"] = document_id
+    if "page_number" in signature.parameters:
+        kwargs["page_number"] = page_number
+    if "debug_records" in signature.parameters:
+        kwargs["debug_records"] = debug_records
+    return detector(page, **kwargs)
+
+
 def extract_references_from_pdf(
     file_path,
     *,
     qr_detector: Callable[[fitz.Page], list[str]] | None = None,
     settings=None,
+    document_id: int | None = None,
 ) -> tuple[list[ExtractedReference], list[ExtractionIssue], int]:
     references: list[ExtractedReference] = []
     issues: list[ExtractionIssue] = []
     seen: set[tuple[int, str, str, str]] = set()
     total_text_chars = 0
+    qr_debug_records: list[dict] = []
 
     detector = qr_detector or detect_qr_values_from_page
     logger.info("[EXTRACT_START] file=%s", file_path)
@@ -207,7 +273,14 @@ def extract_references_from_pdf(
 
             if qr_detection_available:
                 try:
-                    qr_values = detector(page)
+                    qr_values = _call_qr_detector(
+                        detector,
+                        page,
+                        settings=settings,
+                        document_id=document_id,
+                        page_number=page_number,
+                        debug_records=qr_debug_records,
+                    )
                 except Exception as exc:
                     issues.append(ExtractionIssue(page_number, "reference_qr_extraction", QR_EXTRACTION_FAIL, str(exc)))
                     qr_values = []
@@ -242,5 +315,6 @@ def extract_references_from_pdf(
     if not references:
         issues.append(ExtractionIssue(None, "reference_summary", NO_REFERENCE_FOUND, "No references found"))
 
+    save_debug_records(document_id, qr_debug_records, settings)
     logger.info("[EXTRACT_DONE] file=%s total_refs=%s", file_path, len(references))
     return references, issues, page_count

@@ -1,0 +1,78 @@
+{
+  "document_id": 20,
+  "generated_at": "2026-05-03T15:18:01.507059+00:00",
+  "attempts": [
+    {
+      "page": 1,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_20_page_1_full_page_rgb.png"
+    },
+    {
+      "page": 1,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_20_page_1_full_page_grayscale.png"
+    },
+    {
+      "page": 1,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_20_page_1_full_page_thresholded.png"
+    },
+    {
+      "page": 2,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_20_page_2_full_page_rgb.png"
+    },
+    {
+      "page": 2,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_20_page_2_full_page_grayscale.png"
+    },
+    {
+      "page": 2,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_20_page_2_full_page_thresholded.png"
+    },
+    {
+      "page": 3,
+      "zone": "full_page",
+      "variant": "rgb",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_20_page_3_full_page_rgb.png"
+    },
+    {
+      "page": 3,
+      "zone": "full_page",
+      "variant": "grayscale",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_20_page_3_full_page_grayscale.png"
+    },
+    {
+      "page": 3,
+      "zone": "full_page",
+      "variant": "thresholded",
+      "success": false,
+      "decoded_value": "",
+      "image_path": "D:\\git\\official-letter-reference-extractor\\data\\debug\\qr\\doc_20_page_3_full_page_thresholded.png"
+    }
+  ]
+}
