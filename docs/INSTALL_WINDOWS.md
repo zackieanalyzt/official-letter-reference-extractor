@@ -54,7 +54,19 @@ python -m pip install -e ".[dev,ocr,qr]"
 copy .env.example .env
 ```
 
-Edit `.env` and set PostgreSQL connection values:
+For the lightweight SQLite runtime, keep:
+
+```env
+DATABASE_URL=sqlite:///data/olre.sqlite3
+```
+
+For PostgreSQL, replace `DATABASE_URL` with:
+
+```env
+DATABASE_URL=postgresql+psycopg://olre_user:change-me@127.0.0.1:5432/olre_db
+```
+
+Legacy PostgreSQL variables are still supported when `DATABASE_URL` is not set:
 
 ```env
 POSTGRES_HOST=127.0.0.1
@@ -85,7 +97,7 @@ python -m alembic upgrade head
 python -m alembic current
 ```
 
-The expected v0.9.3 baseline head is:
+The expected baseline head is:
 
 ```text
 20260503_0007
@@ -110,3 +122,5 @@ http://127.0.0.1:8000/imports
 - `ModuleNotFoundError: openpyxl`: rerun `python -m pip install -e ".[dev]"`.
 - `tesseract is not installed or not in PATH`: install Tesseract and update PATH, or keep `OCR_ENABLED=false`.
 - `pyzbar` import works but decode fails: install zbar native runtime for Windows.
+- SQLite database file is missing: run `python -m alembic upgrade head`; OLRE creates `data/olre.sqlite3` during migration.
+- SQLite database is locked: close other app instances and retry. OLRE enables WAL and `busy_timeout=5000` for normal small-office use.

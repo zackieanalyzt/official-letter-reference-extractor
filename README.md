@@ -22,13 +22,15 @@ OLRE is a FastAPI web application for importing official-letter PDFs, extracting
 FastAPI routes
 -> service layer
 -> SQLAlchemy models
--> PostgreSQL database
+-> SQLite or PostgreSQL database
 -> filesystem data directories
 ```
 
 Runtime files are stored under `data/input`, `data/processed`, `data/error`, and optionally `data/debug/qr`. These directories are ignored by git and must not be committed.
 
 ## Quick Start on Windows
+
+SQLite is the default lightweight runtime for public/simple installs:
 
 ```powershell
 python -m venv .venv
@@ -37,6 +39,12 @@ python -m pip install -e ".[dev]"
 copy .env.example .env
 python -m alembic upgrade head
 python -m uvicorn app.main:app --reload
+```
+
+In `.env`, keep:
+
+```env
+DATABASE_URL=sqlite:///data/olre.sqlite3
 ```
 
 Open:
@@ -55,6 +63,8 @@ Tesseract OCR and zbar are native Windows runtimes and still need separate insta
 
 ## Important Environment Variables
 
+- `DATABASE_URL=sqlite:///data/olre.sqlite3` uses SQLite for simple local/runtime installs.
+- `DATABASE_URL=postgresql+psycopg://user:password@host:5432/dbname` uses PostgreSQL.
 - `ENABLE_AUTH=false` runs the public non-OAuth version.
 - `APP_TOKEN=` optionally protects `POST /batch/process` with `X-API-KEY`.
 - `APP_LANG=th` sets the default UI language when no cookie exists.
@@ -95,4 +105,12 @@ Exports preserve filters passed from `/results`.
 
 ## Database Note
 
-The current runtime target is PostgreSQL. The automated tests already use SQLite in-memory, so SQLite is technically promising for a lightweight single-container edition, but switching the runtime database should be handled as a separate compatibility phase because it affects configuration, migrations, deployment, and backup behavior.
+`DATABASE_URL` has priority. If it is not set, OLRE falls back to the legacy PostgreSQL environment variables when all required `POSTGRES_*` values are present. If neither is configured, OLRE uses `sqlite:///data/olre.sqlite3`.
+
+SQLite backup should include the database file and any WAL sidecars:
+
+```text
+data/olre.sqlite3
+data/olre.sqlite3-wal
+data/olre.sqlite3-shm
+```

@@ -69,6 +69,35 @@ Expected baseline:
 20260503_0007
 ```
 
+## SQLite Quick Start
+
+Use this in `.env`:
+
+```env
+DATABASE_URL=sqlite:///data/olre.sqlite3
+```
+
+Then run:
+
+```powershell
+python -m alembic upgrade head
+python -m uvicorn app.main:app --reload
+```
+
+If the database needs to be recreated during testing, stop the server and remove:
+
+```text
+data/olre.sqlite3
+data/olre.sqlite3-wal
+data/olre.sqlite3-shm
+```
+
+Then rerun migration.
+
+## SQLite Database Is Locked
+
+Close duplicate server processes or tools that hold the database. OLRE enables WAL and `busy_timeout=5000`, but SQLite still has a single-writer model.
+
 ## `processing_error_type does not exist`
 
 The database is behind the ORM. Run migrations:

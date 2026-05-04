@@ -52,7 +52,19 @@ These directories contain runtime data and must not be committed.
 
 ## Database
 
-Current runtime database is PostgreSQL:
+Default lightweight runtime database is SQLite:
+
+```env
+DATABASE_URL=sqlite:///data/olre.sqlite3
+```
+
+PostgreSQL remains supported:
+
+```env
+DATABASE_URL=postgresql+psycopg://olre_user:change-me@127.0.0.1:5432/olre_db
+```
+
+Legacy PostgreSQL variables are still supported when `DATABASE_URL` is not set:
 
 ```env
 POSTGRES_HOST=127.0.0.1
@@ -69,7 +81,7 @@ python -m alembic upgrade head
 python -m alembic current
 ```
 
-Expected v0.9.3 baseline head:
+Expected baseline head:
 
 ```text
 20260503_0007
@@ -117,11 +129,25 @@ Supported values:
 
 Minimum backup set:
 
-- PostgreSQL database dump
+- SQLite database files or PostgreSQL database dump
 - `data/input`
 - `data/processed`
 - `data/error`
 - `data/debug/qr` if debug artifacts must be retained
+
+SQLite backup files:
+
+```text
+data/olre.sqlite3
+data/olre.sqlite3-wal
+data/olre.sqlite3-shm
+```
+
+If `sqlite3` CLI is available, prefer:
+
+```powershell
+sqlite3 data\olre.sqlite3 ".backup 'backup\olre.sqlite3'"
+```
 
 Suggested PostgreSQL backup:
 
@@ -139,6 +165,14 @@ pg_restore -h <host> -U <user> -d <db> --clean olre.backup
 
 Current logs include request path, batch events, document IDs, extraction steps, OCR failures, QR fallback events, and URL resolution results. For production, consider adding structured JSON logs with request ID, batch run ID, document ID, and duration.
 
-## SQLite Note
+## SQLite Runtime Notes
 
-SQLite is a good candidate for a lightweight single-user or small-office edition because OLRE tests already run against SQLite in-memory. Do not switch the production database inside v0.9.3. Treat SQLite runtime support as a separate compatibility phase with Alembic, config, backup, and concurrency checks.
+OLRE enables these SQLite pragmas through SQLAlchemy when `DATABASE_URL` uses SQLite:
+
+```text
+PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=ON;
+PRAGMA busy_timeout=5000;
+```
+
+SQLite is suitable for single-user, small-office, or simple public container deployments. Use PostgreSQL for heavier concurrent writes, centralized operations, or existing managed database infrastructure.

@@ -17,10 +17,13 @@ branch_labels: Sequence[str] | None = None
 depends_on: Sequence[str] | None = None
 
 
+PK_TYPE = sa.BigInteger().with_variant(sa.Integer(), "sqlite")
+
+
 def upgrade() -> None:
     op.create_table(
         "batch_runs",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("id", PK_TYPE, autoincrement=True, nullable=False),
         sa.Column("triggered_by", sa.String(length=255), nullable=False),
         sa.Column("started_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("finished_at", sa.DateTime(timezone=True), nullable=True),
@@ -33,11 +36,11 @@ def upgrade() -> None:
 
     op.create_table(
         "documents",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
-        sa.Column("batch_run_id", sa.BigInteger(), nullable=True),
+        sa.Column("id", PK_TYPE, autoincrement=True, nullable=False),
+        sa.Column("batch_run_id", PK_TYPE, nullable=True),
         sa.Column("original_file_name", sa.Text(), nullable=False),
         sa.Column("content_hash", sa.String(length=64), nullable=False),
-        sa.Column("file_size_bytes", sa.BigInteger(), nullable=False),
+        sa.Column("file_size_bytes", PK_TYPE, nullable=False),
         sa.Column("page_count", sa.Integer(), nullable=True),
         sa.Column("document_number", sa.String(length=255), nullable=True),
         sa.Column("processing_status", sa.String(length=50), nullable=False),
@@ -52,8 +55,8 @@ def upgrade() -> None:
 
     op.create_table(
         "document_references",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
-        sa.Column("document_id", sa.BigInteger(), nullable=False),
+        sa.Column("id", PK_TYPE, autoincrement=True, nullable=False),
+        sa.Column("document_id", PK_TYPE, nullable=False),
         sa.Column("page_number", sa.Integer(), nullable=False),
         sa.Column("source_type", sa.String(length=50), nullable=False),
         sa.Column("reference_class", sa.String(length=50), nullable=False),
@@ -70,7 +73,7 @@ def upgrade() -> None:
 
     op.create_table(
         "users_audit",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("id", PK_TYPE, autoincrement=True, nullable=False),
         sa.Column("username", sa.String(length=255), nullable=False),
         sa.Column("action", sa.String(length=100), nullable=False),
         sa.Column("action_detail", sa.Text(), nullable=True),
@@ -80,8 +83,8 @@ def upgrade() -> None:
 
     op.create_table(
         "processing_logs",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
-        sa.Column("document_id", sa.BigInteger(), nullable=True),
+        sa.Column("id", PK_TYPE, autoincrement=True, nullable=False),
+        sa.Column("document_id", PK_TYPE, nullable=True),
         sa.Column("level", sa.String(length=20), nullable=False),
         sa.Column("step_name", sa.String(length=100), nullable=False),
         sa.Column("message", sa.Text(), nullable=False),

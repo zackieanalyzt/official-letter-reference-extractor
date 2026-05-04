@@ -17,16 +17,16 @@ depends_on: Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.create_unique_constraint(
-        "uq_document_references_document_page_raw_source",
-        "document_references",
-        ["document_id", "page_number", "raw_reference", "source_type"],
-    )
+    with op.batch_alter_table("document_references") as batch_op:
+        batch_op.create_unique_constraint(
+            "uq_document_references_document_page_raw_source",
+            ["document_id", "page_number", "raw_reference", "source_type"],
+        )
 
 
 def downgrade() -> None:
-    op.drop_constraint(
-        "uq_document_references_document_page_raw_source",
-        "document_references",
-        type_="unique",
-    )
+    with op.batch_alter_table("document_references") as batch_op:
+        batch_op.drop_constraint(
+            "uq_document_references_document_page_raw_source",
+            type_="unique",
+        )

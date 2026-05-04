@@ -17,6 +17,9 @@ branch_labels: Sequence[str] | None = None
 depends_on: Sequence[str] | None = None
 
 
+PK_TYPE = sa.BigInteger().with_variant(sa.Integer(), "sqlite")
+
+
 def upgrade() -> None:
     op.add_column(
         "batch_runs",
@@ -26,19 +29,20 @@ def upgrade() -> None:
         "batch_runs",
         sa.Column("failed_files", sa.Integer(), server_default="0", nullable=False),
     )
-    op.add_column("processing_logs", sa.Column("batch_run_id", sa.BigInteger(), nullable=True))
-    op.create_foreign_key(
-        "fk_processing_logs_batch_run_id_batch_runs",
-        "processing_logs",
-        "batch_runs",
-        ["batch_run_id"],
-        ["id"],
-        ondelete="SET NULL",
-    )
+    with op.batch_alter_table("processing_logs") as batch_op:
+        batch_op.add_column(sa.Column("batch_run_id", PK_TYPE, nullable=True))
+        batch_op.create_foreign_key(
+            "fk_processing_logs_batch_run_id_batch_runs",
+            "batch_runs",
+            ["batch_run_id"],
+            ["id"],
+            ondelete="SET NULL",
+        )
 
 
 def downgrade() -> None:
-    op.drop_constraint("fk_processing_logs_batch_run_id_batch_runs", "processing_logs", type_="foreignkey")
-    op.drop_column("processing_logs", "batch_run_id")
+    with op.batch_alter_table("processing_logs") as batch_op:
+        batch_op.drop_constraint("fk_processing_logs_batch_run_id_batch_runs", type_="foreignkey")
+        batch_op.drop_column("batch_run_id")
     op.drop_column("batch_runs", "failed_files")
     op.drop_column("batch_runs", "duplicate_files_skipped")

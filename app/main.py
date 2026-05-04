@@ -6,8 +6,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.auth.session import SessionManager
 from app.config import BASE_DIR, get_settings
+from app.db.engine import create_database_engine
 from app.db.mariadb import create_mariadb_engine
-from app.db.postgres import create_postgres_engine
 from app.logging_config import configure_logging, get_logger
 from app.web.routes_auth import router as auth_router
 from app.web.routes_batch import router as batch_router
@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.settings = settings
-    app.state.postgres_engine = create_postgres_engine(settings)
+    app.state.postgres_engine = create_database_engine(settings)
     if settings.enable_auth:
         app.state.mariadb_engine = create_mariadb_engine(settings)
         app.state.session_manager = SessionManager(

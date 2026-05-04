@@ -30,11 +30,15 @@ class Settings(BaseSettings):
     session_cookie_name: str = Field(default="olre_session", validation_alias="SESSION_COOKIE_NAME")
     session_max_age_seconds: int = Field(default=28800, validation_alias="SESSION_MAX_AGE_SECONDS")
 
-    postgres_host: str = Field(validation_alias="POSTGRES_HOST")
+    database_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("DATABASE_URL", "POSTGRES_DSN"),
+    )
+    postgres_host: str | None = Field(default=None, validation_alias="POSTGRES_HOST")
     postgres_port: int = Field(default=5432, validation_alias="POSTGRES_PORT")
-    postgres_db: str = Field(validation_alias="POSTGRES_DB")
-    postgres_user: str = Field(validation_alias="POSTGRES_USER")
-    postgres_password: str = Field(validation_alias="POSTGRES_PASSWORD")
+    postgres_db: str | None = Field(default=None, validation_alias="POSTGRES_DB")
+    postgres_user: str | None = Field(default=None, validation_alias="POSTGRES_USER")
+    postgres_password: str | None = Field(default=None, validation_alias="POSTGRES_PASSWORD")
 
     mariadb_host: str | None = Field(default=None, validation_alias="MARIADB_HOST")
     mariadb_port: int = Field(default=3306, validation_alias="MARIADB_PORT")
@@ -84,6 +88,8 @@ class Settings(BaseSettings):
 
     @property
     def postgres_dsn(self) -> EngineURL:
+        if not all([self.postgres_host, self.postgres_db, self.postgres_user, self.postgres_password]):
+            raise ValueError("PostgreSQL settings are required when DATABASE_URL is not set.")
         return URL.create(
             drivername="postgresql+psycopg",
             username=self.postgres_user,
@@ -92,6 +98,14 @@ class Settings(BaseSettings):
             port=self.postgres_port,
             database=self.postgres_db,
         )
+
+    @property
+    def resolved_database_url(self) -> str:
+        if self.database_url:
+            return self.database_url
+        if all([self.postgres_host, self.postgres_db, self.postgres_user, self.postgres_password]):
+            return self.postgres_dsn.render_as_string(hide_password=False)
+        return "sqlite:///data/olre.sqlite3"
 
     @property
     def mariadb_dsn(self) -> EngineURL:
