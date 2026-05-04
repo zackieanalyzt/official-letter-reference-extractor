@@ -115,6 +115,18 @@ Open:
 http://127.0.0.1:8000/imports
 ```
 
+Check active database backend:
+
+```text
+http://127.0.0.1:8000/healthz
+```
+
+For SQLite, expected output includes:
+
+```json
+{"database_backend":"sqlite"}
+```
+
 ## Common Windows Issues
 
 - `uvicorn is not recognized`: use `python -m uvicorn app.main:app --reload`.
@@ -124,3 +136,8 @@ http://127.0.0.1:8000/imports
 - `pyzbar` import works but decode fails: install zbar native runtime for Windows.
 - SQLite database file is missing: run `python -m alembic upgrade head`; OLRE creates `data/olre.sqlite3` during migration.
 - SQLite database is locked: close other app instances and retry. OLRE enables WAL and `busy_timeout=5000` for normal small-office use.
+- Browser keeps loading on `localhost:8000`: check whether an old server process is stuck on port 8000. Use another port temporarily:
+
+```powershell
+python -m uvicorn app.main:app --reload --port 8021
+```

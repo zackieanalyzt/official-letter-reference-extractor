@@ -12,6 +12,12 @@ http://127.0.0.1:8000/imports
 
 ถ้าระบบตั้งค่า public mode แล้ว ผู้ใช้เข้าได้โดยไม่ต้อง login
 
+ถ้า admin เปิดระบบด้วย port อื่น เช่น `8021` ให้ใช้:
+
+```text
+http://127.0.0.1:8021/imports
+```
+
 ## นำเข้า PDF
 
 1. ไปที่เมนู `นำเข้าไฟล์`
@@ -33,6 +39,12 @@ http://127.0.0.1:8000/imports
 ## ดูผลลัพธ์
 
 ไปที่เมนู `ผลการประมวลผล`
+
+ถ้าต้องตรวจจากฐานข้อมูล SQLite โดยตรง สามารถให้ผู้ดูแลระบบใช้คำสั่ง:
+
+```powershell
+python -c "import sqlite3; con=sqlite3.connect('data/olre.sqlite3'); print(con.execute('select id, original_file_name from documents').fetchall()); con.close()"
+```
 
 ข้อมูลที่เห็นประกอบด้วย:
 

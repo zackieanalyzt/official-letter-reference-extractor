@@ -96,12 +96,16 @@ Exports preserve filters passed from `/results`.
 ## Documentation
 
 - [Windows installation](docs/INSTALL_WINDOWS.md)
+- [SQLite runtime guide](docs/SQLITE_RUNTIME.md)
 - [Thai user manual](docs/USER_MANUAL_TH.md)
 - [Admin guide](docs/ADMIN_GUIDE.md)
+- [Backup and restore](docs/BACKUP_RESTORE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Tesseract OCR setup](docs/TESSERACT_WINDOWS_SETUP.md)
 - [pyzbar/zbar setup](docs/PYZBAR_ZBAR_WINDOWS_SETUP.md)
 - [v0.9.3 browser QA checklist](docs/QA_BROWSER_CHECKLIST_v0.9.3.md)
+- [v0.9.4 SQLite runtime QA](docs/QA_SQLITE_RUNTIME_v0.9.4.md)
+- [v0.9.4 release notes](docs/RELEASE_NOTES_v0.9.4.md)
 
 ## Database Note
 
@@ -113,4 +117,16 @@ SQLite backup should include the database file and any WAL sidecars:
 data/olre.sqlite3
 data/olre.sqlite3-wal
 data/olre.sqlite3-shm
+```
+
+Confirm the active database backend with:
+
+```text
+http://127.0.0.1:8000/healthz
+```
+
+SQLite mode should return:
+
+```json
+{"status":"ok","database_backend":"sqlite"}
 ```

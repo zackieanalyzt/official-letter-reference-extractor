@@ -1259,3 +1259,80 @@ tag: v0.9.2-language-switcher
 วันนี้ OLRE ไม่ใช่แค่ "อ่าน QR ได้ไหม" แล้ว
 แต่เริ่มกลายเป็น "ระบบงานเอกสารจริง" ที่มี dashboard, export, debug, retry และรองรับผู้ใช้ไทยได้แล้ว
 ```
+
+---
+
+## 13. Addendum - v0.9.4 SQLite Runtime Option
+
+หลังจาก v0.9.3 QA & Documentation Baseline เราแยก phase ใหม่เพื่อทำให้ OLRE ใช้งานง่ายขึ้นสำหรับเครื่องทั่วไปและเตรียมไปสู่ public/container distribution
+
+### 13.1 เป้าหมาย
+
+เพิ่ม SQLite เป็น runtime database option โดยไม่ลบ PostgreSQL support เดิม
+
+```text
+tag: v0.9.4-sqlite-runtime-option
+commit: 60ef66f feat: add SQLite runtime database option
+```
+
+### 13.2 สิ่งที่เพิ่ม
+
+- เพิ่ม `DATABASE_URL` เป็น source of truth สำหรับ database runtime
+- default lightweight runtime:
+
+```env
+DATABASE_URL=sqlite:///data/olre.sqlite3
+```
+
+- PostgreSQL ยังใช้ได้ผ่าน:
+
+```env
+DATABASE_URL=postgresql+psycopg://user:password@host:5432/dbname
+```
+
+- เพิ่ม central database engine/session wiring
+- ปรับ Alembic ให้อ่าน config เดียวกับ app
+- ปรับ migration เก่าให้สร้าง schema บน SQLite ได้
+- เพิ่ม `/healthz` ให้แสดง backend:
+
+```json
+{"status":"ok","database_backend":"sqlite"}
+```
+
+### 13.3 SQLite Runtime Hardening
+
+เมื่อใช้ SQLite ระบบเปิด PRAGMA:
+
+```text
+PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=ON;
+PRAGMA busy_timeout=5000;
+```
+
+### 13.4 Verification
+
+ยืนยันแล้วว่า:
+
+- `python -m alembic upgrade head` สร้าง SQLite schema ได้ถึง `20260503_0007 (head)`
+- app start ด้วย SQLite ได้
+- upload PDF แล้ว batch process เขียนข้อมูลลง `data/olre.sqlite3` จริง
+- query SQLite เห็นข้อมูลใน `documents`
+- `/results` แสดงเอกสารจาก SQLite
+- export CSV/Markdown/Excel ยังทำงาน
+- PostgreSQL compatibility ยังไม่ถูกลบ
+
+### 13.5 เอกสารที่เพิ่ม/ปรับ
+
+- `docs/SQLITE_RUNTIME.md`
+- `docs/BACKUP_RESTORE.md`
+- `docs/RELEASE_NOTES_v0.9.4.md`
+- `docs/QA_SQLITE_RUNTIME_v0.9.4.md`
+- ปรับ `README.md`
+- ปรับ `docs/INSTALL_WINDOWS.md`
+- ปรับ `docs/ADMIN_GUIDE.md`
+- ปรับ `docs/TROUBLESHOOTING.md`
+- ปรับ `docs/USER_MANUAL_TH.md`
+
+### 13.6 ข้อจำกัด
+
+SQLite เหมาะกับงานเล็ก เครื่องเดียว หรือ deployment แบบง่าย แต่ยังเป็น single-writer database หากใช้งาน concurrent หนักหรือหลายผู้ใช้พร้อมกันมาก ควรใช้ PostgreSQL ต่อไป

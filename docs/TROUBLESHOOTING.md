@@ -94,9 +94,53 @@ data/olre.sqlite3-shm
 
 Then rerun migration.
 
+## App Still Writes to PostgreSQL
+
+Check `/healthz`:
+
+```text
+http://127.0.0.1:8000/healthz
+```
+
+If it does not show `"database_backend":"sqlite"`, confirm `.env` contains:
+
+```env
+DATABASE_URL=sqlite:///data/olre.sqlite3
+```
+
+Restart the server after changing `.env`.
+
+Then confirm data is in SQLite:
+
+```powershell
+python -c "import sqlite3; con=sqlite3.connect('data/olre.sqlite3'); print(con.execute('select id, original_file_name from documents').fetchall()); con.close()"
+```
+
 ## SQLite Database Is Locked
 
 Close duplicate server processes or tools that hold the database. OLRE enables WAL and `busy_timeout=5000`, but SQLite still has a single-writer model.
+
+## Browser Hangs on `localhost:8000`
+
+If `/healthz` times out and the browser keeps loading, an old server process may be stuck on port 8000.
+
+Check:
+
+```powershell
+Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue
+```
+
+Use another port temporarily:
+
+```powershell
+python -m uvicorn app.main:app --reload --port 8021
+```
+
+Open:
+
+```text
+http://127.0.0.1:8021/imports
+```
 
 ## `processing_error_type does not exist`
 

@@ -10,6 +10,22 @@ ENABLE_AUTH=false
 
 When auth is disabled, `/login` and `/logout` are not mounted and MariaDB session integration is not used.
 
+## Health Check
+
+Open:
+
+```text
+/healthz
+```
+
+Example SQLite response:
+
+```json
+{"status":"ok","database_backend":"sqlite"}
+```
+
+Use this to confirm OLRE is using the intended database backend before uploading real documents.
+
 ## APP_TOKEN
 
 `APP_TOKEN` optionally protects `POST /batch/process`.
@@ -126,6 +142,8 @@ Supported values:
 `pyzbar` is optional and requires both the Python package and zbar native runtime.
 
 ## Backup Guidance
+
+See [Backup and Restore Guide](BACKUP_RESTORE.md) for command examples.
 
 Minimum backup set:
 
