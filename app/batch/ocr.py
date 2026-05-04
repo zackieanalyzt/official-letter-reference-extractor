@@ -3,9 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import fitz
-import pytesseract
-from PIL import Image
-from pytesseract import TesseractError
 
 from app.batch.error_types import OCR_FAIL, OCR_NOT_AVAILABLE
 from app.config import get_settings
@@ -49,6 +46,27 @@ def extract_text_with_ocr_if_needed(
 
     logger.info("[OCR_START] page=%s engine=%s", page_number, engine)
     try:
+        try:
+            import pytesseract
+            from PIL import Image
+            from pytesseract import TesseractError
+        except Exception as exc:
+            logger.warning(
+                "[OCR_RUNTIME_MISSING] page=%s engine=%s error_type=%s error=%s",
+                page_number,
+                engine,
+                OCR_NOT_AVAILABLE,
+                exc,
+            )
+            return OcrResult(
+                True,
+                existing_text,
+                len(existing_text),
+                engine,
+                f"OCR runtime is not installed or not importable: {exc}",
+                OCR_NOT_AVAILABLE,
+            ).__dict__
+
         pytesseract.pytesseract.tesseract_cmd = engine
 
         pixmap = page.get_pixmap(

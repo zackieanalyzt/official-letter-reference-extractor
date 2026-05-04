@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     input_dir: str = Field(default="data/input", validation_alias="INPUT_DIR")
     processed_dir: str = Field(default="data/processed", validation_alias="PROCESSED_DIR")
     error_dir: str = Field(default="data/error", validation_alias="ERROR_DIR")
-    ocr_enabled: bool = Field(default=True, validation_alias="OCR_ENABLED")
+    ocr_enabled: bool = Field(default=False, validation_alias="OCR_ENABLED")
     ocr_engine: str = Field(default="tesseract", validation_alias=AliasChoices("OCR_ENGINE", "OCR_COMMAND"))
     ocr_language: str = Field(default="eng", validation_alias=AliasChoices("OCR_LANG", "OCR_LANGUAGE"))
     ocr_timeout_seconds: int = Field(default=30, validation_alias="OCR_TIMEOUT_SECONDS")
