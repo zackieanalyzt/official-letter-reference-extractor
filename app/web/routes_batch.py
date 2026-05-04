@@ -22,11 +22,11 @@ templates = Jinja2Templates(directory=BASE_DIR / "app" / "web" / "templates")
 async def process_batch(request: Request, _: None = Depends(verify_token)):
     batch_summary = run_batch_registration(
         request.app.state.settings,
-        request.app.state.postgres_engine,
+        request.app.state.database_engine,
         triggered_by="public",
     )
     batch_summary = localize_batch_summary(batch_summary)
-    latest_batch = fetch_latest_batch(request.app.state.postgres_engine)
+    latest_batch = fetch_latest_batch(request.app.state.database_engine)
     return templates.TemplateResponse(
         request=request,
         name="batch.html",
@@ -36,11 +36,11 @@ async def process_batch(request: Request, _: None = Depends(verify_token)):
             current_page="batch",
             batch_summary=batch_summary,
             latest_batch=latest_batch,
-            recent_batches=fetch_recent_batches(request.app.state.postgres_engine),
-            error_insights=fetch_recent_error_insights(request.app.state.postgres_engine),
+            recent_batches=fetch_recent_batches(request.app.state.database_engine),
+            error_insights=fetch_recent_error_insights(request.app.state.database_engine),
             pending_count=count_pending_inbox_files(
                 request.app.state.settings,
-                request.app.state.postgres_engine,
+                request.app.state.database_engine,
             ),
         ),
     )

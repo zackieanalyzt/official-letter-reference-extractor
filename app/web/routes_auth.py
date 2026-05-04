@@ -41,7 +41,7 @@ async def login_submit(
     )
     if not result.success:
         write_audit_log(
-            request.app.state.postgres_engine,
+            request.app.state.database_engine,
             username=normalized_username or "unknown",
             action="login_failure",
             action_detail=result.error_message,
@@ -64,7 +64,7 @@ async def login_submit(
     )
     session_manager.set_session_cookie(response, token)
     write_audit_log(
-        request.app.state.postgres_engine,
+        request.app.state.database_engine,
         username=result.username or normalized_username,
         action="login_success",
         action_detail=f"display_name={result.display_name or normalized_username}",
@@ -79,7 +79,7 @@ async def logout(request: Request, session_manager: SessionManager = Depends(get
     session_manager.clear_session_cookie(response)
     if session:
         write_audit_log(
-            request.app.state.postgres_engine,
+            request.app.state.database_engine,
             username=session["username"],
             action="logout",
             action_detail=f"display_name={session['display_name']}",

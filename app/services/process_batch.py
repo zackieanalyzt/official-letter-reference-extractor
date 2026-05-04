@@ -34,7 +34,7 @@ from app.batch.service import (
     set_document_processing_issue,
 )
 from app.config import Settings
-from app.db.postgres import create_postgres_session_factory
+from app.db.session import get_session_factory
 from app.logging_config import get_logger
 from app.services.inbox_paths import get_inbox_path
 
@@ -273,7 +273,7 @@ def process_registered_document(
         raise
 
 
-def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by: str) -> BatchProcessSummary:
+def run_batch_registration(settings: Settings, database_engine, *, triggered_by: str) -> BatchProcessSummary:
     input_dir = get_inbox_path(settings)
     processed_dir = ensure_directory(settings.processed_path)
     error_dir = ensure_directory(settings.error_path)
@@ -291,7 +291,7 @@ def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by:
         [str(path) for path in pdf_files],
     )
 
-    session_factory = create_postgres_session_factory(postgres_engine)
+    session_factory = get_session_factory(database_engine)
     duplicate_files_skipped = 0
     total_files_processed = 0
     failed_files = 0
@@ -392,7 +392,7 @@ def run_batch_registration(settings: Settings, postgres_engine, *, triggered_by:
         )
 
 
-def fetch_home_batch_summary(postgres_engine) -> HomeBatchSummary | None:
-    session_factory = create_postgres_session_factory(postgres_engine)
+def fetch_home_batch_summary(database_engine) -> HomeBatchSummary | None:
+    session_factory = get_session_factory(database_engine)
     with session_factory() as session:
         return get_latest_home_batch_summary(session)

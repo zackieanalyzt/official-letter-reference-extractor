@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     session_max_age_seconds: int = Field(default=28800, validation_alias="SESSION_MAX_AGE_SECONDS")
 
     database_url: str | None = Field(
-        default=None,
+        default="sqlite:///data/olre.sqlite3",
         validation_alias=AliasChoices("DATABASE_URL", "POSTGRES_DSN"),
     )
     postgres_host: str | None = Field(default=None, validation_alias="POSTGRES_HOST")
@@ -101,7 +101,7 @@ class Settings(BaseSettings):
 
     @property
     def resolved_database_url(self) -> str:
-        if self.database_url:
+        if self.database_url and self.database_url.strip():
             return self.database_url
         if all([self.postgres_host, self.postgres_db, self.postgres_user, self.postgres_password]):
             return self.postgres_dsn.render_as_string(hide_password=False)

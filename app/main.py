@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.auth.session import SessionManager
 from app.config import BASE_DIR, get_settings
-from app.db.engine import create_database_engine
+from app.db.engine import create_database_engine, get_database_backend
 from app.db.mariadb import create_mariadb_engine
 from app.logging_config import configure_logging, get_logger
 from app.web.routes_auth import router as auth_router
@@ -24,7 +24,13 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.settings = settings
-    app.state.postgres_engine = create_database_engine(settings)
+    app.state.database_engine = create_database_engine(settings)
+    app.state.database_backend = get_database_backend(settings.resolved_database_url)
+    logger.info(
+        "[DB_CONFIG] backend=%s url=%s",
+        app.state.database_backend,
+        settings.resolved_database_url,
+    )
     if settings.enable_auth:
         app.state.mariadb_engine = create_mariadb_engine(settings)
         app.state.session_manager = SessionManager(
@@ -37,7 +43,7 @@ async def lifespan(app: FastAPI):
         app.state.session_manager = None
     logger.info("Application startup complete")
     yield
-    app.state.postgres_engine.dispose()
+    app.state.database_engine.dispose()
     if app.state.mariadb_engine is not None:
         app.state.mariadb_engine.dispose()
     logger.info("Application shutdown complete")
@@ -62,8 +68,13 @@ async def request_logging_middleware(request: Request, call_next):
 
 
 @app.get("/healthz")
-async def healthz() -> JSONResponse:
-    return JSONResponse({"status": "ok"})
+async def healthz(request: Request) -> JSONResponse:
+    return JSONResponse(
+        {
+            "status": "ok",
+            "database_backend": request.app.state.database_backend,
+        }
+    )
 
 
 @app.get("/readyz")

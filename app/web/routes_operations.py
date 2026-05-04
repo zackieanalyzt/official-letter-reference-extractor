@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.background import BackgroundTask
 
 from app.config import BASE_DIR
-from app.db.postgres import create_postgres_session_factory
+from app.db.session import get_session_factory
 from app.logging_config import get_logger
 from app.i18n import normalize_lang
 from app.security import safe_redirect_target
@@ -151,7 +151,7 @@ async def set_language(
 
 @router.get("/imports")
 async def imports_page(request: Request):
-    inbox_items = list_inbox_files(request.app.state.settings, request.app.state.postgres_engine)
+    inbox_items = list_inbox_files(request.app.state.settings, request.app.state.database_engine)
     return _render(
         request,
         name="imports.html",
@@ -160,7 +160,7 @@ async def imports_page(request: Request):
             "inbox_items": inbox_items,
             "pending_count": count_pending_inbox_files(
                 request.app.state.settings,
-                request.app.state.postgres_engine,
+                request.app.state.database_engine,
             ),
             "upload_summary": None,
         },
@@ -169,7 +169,7 @@ async def imports_page(request: Request):
 
 @router.get("/dashboard")
 async def dashboard_page(request: Request):
-    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session_factory = get_session_factory(request.app.state.database_engine)
     with session_factory() as session:
         summary = get_dashboard_summary(session)
         domain_summary = get_domain_summary(session)
@@ -193,7 +193,7 @@ async def dashboard_page(request: Request):
 
 @router.get("/quality")
 async def quality_page(request: Request):
-    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session_factory = get_session_factory(request.app.state.database_engine)
     with session_factory() as session:
         quality = get_quality_report(session)
 
@@ -240,7 +240,7 @@ async def upload_imports(
             )
         await upload.close()
 
-    inbox_items = list_inbox_files(request.app.state.settings, request.app.state.postgres_engine)
+    inbox_items = list_inbox_files(request.app.state.settings, request.app.state.database_engine)
     return _render(
         request,
         name="imports.html",
@@ -249,7 +249,7 @@ async def upload_imports(
             "inbox_items": inbox_items,
             "pending_count": count_pending_inbox_files(
                 request.app.state.settings,
-                request.app.state.postgres_engine,
+                request.app.state.database_engine,
             ),
             "upload_summary": {
                 "saved_count": len(saved_files),
@@ -284,12 +284,12 @@ async def batch_page(request: Request):
         current_page="batch",
         context={
             "batch_summary": None,
-            "latest_batch": fetch_latest_batch(request.app.state.postgres_engine),
-            "recent_batches": fetch_recent_batches(request.app.state.postgres_engine),
-            "error_insights": fetch_recent_error_insights(request.app.state.postgres_engine),
+            "latest_batch": fetch_latest_batch(request.app.state.database_engine),
+            "recent_batches": fetch_recent_batches(request.app.state.database_engine),
+            "error_insights": fetch_recent_error_insights(request.app.state.database_engine),
             "pending_count": count_pending_inbox_files(
                 request.app.state.settings,
-                request.app.state.postgres_engine,
+                request.app.state.database_engine,
             ),
         },
     )
@@ -300,7 +300,7 @@ async def batch_runs_page(
     request: Request,
     page: int = Query(default=1, ge=1),
 ):
-    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session_factory = get_session_factory(request.app.state.database_engine)
     with session_factory() as session:
         runs = list_batch_runs(session, page=page, page_size=20)
 
@@ -319,7 +319,7 @@ async def batch_run_detail_page(
     request: Request,
     batch_run_id: int,
 ):
-    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session_factory = get_session_factory(request.app.state.database_engine)
     with session_factory() as session:
         detail = get_batch_run_detail(session, batch_run_id)
 
@@ -364,7 +364,7 @@ async def results_page(
         domain=domain,
     )
     offset = (page - 1) * DEFAULT_PAGE_SIZE
-    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session_factory = get_session_factory(request.app.state.database_engine)
     with session_factory() as session:
         results = get_references(
             session,
@@ -413,7 +413,7 @@ async def results_page(
 
 @router.post("/documents/{document_id}/retry")
 async def retry_document(request: Request, document_id: int):
-    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session_factory = get_session_factory(request.app.state.database_engine)
     with session_factory() as session:
         result = retry_failed_document(session, request.app.state.settings, document_id)
 
@@ -457,7 +457,7 @@ async def exports_page(
         name="exports.html",
         current_page="exports",
         context={
-            "export_summary": fetch_export_summary(request.app.state.postgres_engine),
+            "export_summary": fetch_export_summary(request.app.state.database_engine),
             **_export_filter_context(filters),
             "filter_query": urlencode({key: value for key, value in filters.items() if value}),
         },
@@ -490,7 +490,7 @@ async def export_csv_route(
         date_to=date_to,
         domain=domain,
     )
-    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session_factory = get_session_factory(request.app.state.database_engine)
     session = session_factory()
     try:
         response = export_csv(
@@ -531,7 +531,7 @@ async def export_markdown_route(
         date_to=date_to,
         domain=domain,
     )
-    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session_factory = get_session_factory(request.app.state.database_engine)
     session = session_factory()
     try:
         response = export_markdown(
@@ -572,6 +572,6 @@ async def export_excel_route(
         date_to=date_to,
         domain=domain,
     )
-    session_factory = create_postgres_session_factory(request.app.state.postgres_engine)
+    session_factory = get_session_factory(request.app.state.database_engine)
     with session_factory() as session:
         return export_excel(session, filters)

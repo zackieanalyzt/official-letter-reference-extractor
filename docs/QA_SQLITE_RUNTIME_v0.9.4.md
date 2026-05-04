@@ -90,6 +90,7 @@ SQLite PRAGMAs verified: `foreign_keys=1`, `busy_timeout=5000`, `journal_mode=wa
 
 SQLite runtime QA result:
 PASS - App started on SQLite at port 8010. `/healthz`, `/dashboard`, `/imports`, upload, `/batch/process`, `/results`, CSV/Markdown/Excel export, `/quality`, QR debug artifacts, and `/debug/document/2` passed.
+Critical bugfix acceptance rerun: App started with `DATABASE_URL=sqlite:///data/olre_acceptance.sqlite3` at port 8020 while avoiding PostgreSQL checks. `/healthz` returned `{"status":"ok","database_backend":"sqlite"}`, `/imports` returned 200 in 0.21 seconds, upload/process/results passed, and direct SQLite query returned `qa_acceptance_sqlite_bugfix.pdf` plus `https://example.com/sqlite-acceptance`.
 
 PostgreSQL compatibility result:
 PASS - Existing `.env` PostgreSQL mode returned `20260503_0007 (head)`, and the full pytest suite passed in normal test mode.

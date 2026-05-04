@@ -11,7 +11,7 @@ from app.batch.fingerprint import compute_sha256
 from app.batch.service import HomeBatchSummary, get_latest_home_batch_summary
 from app.config import Settings
 from app.db.models import BatchRun, Document, DocumentReference, ProcessingLog
-from app.db.postgres import create_postgres_session_factory
+from app.db.session import get_session_factory
 from app.logging_config import get_logger
 from app.services.inbox_paths import get_inbox_path
 
@@ -161,9 +161,9 @@ def _strip_issue_code(message: str) -> str:
     return message
 
 
-def list_inbox_files(settings: Settings, postgres_engine) -> list[InboxFileItem]:
+def list_inbox_files(settings: Settings, database_engine) -> list[InboxFileItem]:
     input_dir = get_inbox_path(settings)
-    session_factory = create_postgres_session_factory(postgres_engine)
+    session_factory = get_session_factory(database_engine)
     with session_factory() as session:
         processed_hashes = _fetch_processed_hashes(session)
 
@@ -202,18 +202,18 @@ def list_inbox_files(settings: Settings, postgres_engine) -> list[InboxFileItem]
     return inbox_items
 
 
-def count_pending_inbox_files(settings: Settings, postgres_engine) -> int:
-    return sum(1 for item in list_inbox_files(settings, postgres_engine) if item.status == INBOX_STATUS_PENDING)
+def count_pending_inbox_files(settings: Settings, database_engine) -> int:
+    return sum(1 for item in list_inbox_files(settings, database_engine) if item.status == INBOX_STATUS_PENDING)
 
 
-def fetch_latest_batch(postgres_engine) -> HomeBatchSummary | None:
-    session_factory = create_postgres_session_factory(postgres_engine)
+def fetch_latest_batch(database_engine) -> HomeBatchSummary | None:
+    session_factory = get_session_factory(database_engine)
     with session_factory() as session:
         return localize_batch_summary(get_latest_home_batch_summary(session))
 
 
-def fetch_recent_batches(postgres_engine, *, limit: int = 10) -> list[BatchHistoryItem]:
-    session_factory = create_postgres_session_factory(postgres_engine)
+def fetch_recent_batches(database_engine, *, limit: int = 10) -> list[BatchHistoryItem]:
+    session_factory = get_session_factory(database_engine)
     with session_factory() as session:
         rows = session.execute(
             select(BatchRun).order_by(BatchRun.started_at.desc(), BatchRun.id.desc()).limit(limit)
@@ -235,8 +235,8 @@ def fetch_recent_batches(postgres_engine, *, limit: int = 10) -> list[BatchHisto
         ]
 
 
-def fetch_recent_error_insights(postgres_engine, *, limit: int = 20) -> list[ErrorInsightItem]:
-    session_factory = create_postgres_session_factory(postgres_engine)
+def fetch_recent_error_insights(database_engine, *, limit: int = 20) -> list[ErrorInsightItem]:
+    session_factory = get_session_factory(database_engine)
     with session_factory() as session:
         rows = session.execute(
             select(ProcessingLog, Document.original_file_name)
@@ -260,8 +260,8 @@ def fetch_recent_error_insights(postgres_engine, *, limit: int = 20) -> list[Err
     ]
 
 
-def fetch_results_rows(postgres_engine, *, limit: int = 200) -> list[ResultsRow]:
-    session_factory = create_postgres_session_factory(postgres_engine)
+def fetch_results_rows(database_engine, *, limit: int = 200) -> list[ResultsRow]:
+    session_factory = get_session_factory(database_engine)
     with session_factory() as session:
         rows = session.execute(
             select(
@@ -296,8 +296,8 @@ def fetch_results_rows(postgres_engine, *, limit: int = 200) -> list[ResultsRow]
     ]
 
 
-def fetch_export_summary(postgres_engine) -> ExportSummary:
-    session_factory = create_postgres_session_factory(postgres_engine)
+def fetch_export_summary(database_engine) -> ExportSummary:
+    session_factory = get_session_factory(database_engine)
     with session_factory() as session:
         processed_documents = session.execute(
             select(func.count(Document.id)).where(Document.processing_status == "processed")

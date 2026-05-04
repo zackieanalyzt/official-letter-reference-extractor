@@ -63,8 +63,10 @@ def client(monkeypatch, tmp_path):
     Base.metadata.create_all(postgres_engine)
 
     with TestClient(main_module.app) as test_client:
-        test_client.app.state.postgres_engine.dispose()
+        test_client.app.state.database_engine.dispose()
+        test_client.app.state.database_engine = postgres_engine
         test_client.app.state.postgres_engine = postgres_engine
+        test_client.app.state.database_backend = "sqlite"
         yield test_client
 
     postgres_engine.dispose()

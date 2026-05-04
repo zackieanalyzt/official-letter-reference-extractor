@@ -12,6 +12,10 @@ def is_sqlite_url(database_url: str) -> bool:
     return make_url(database_url).get_backend_name() == "sqlite"
 
 
+def get_database_backend(database_url: str) -> str:
+    return make_url(database_url).get_backend_name()
+
+
 def _sqlite_connect_args(database_url: str) -> dict:
     url = make_url(database_url)
     if url.database in (None, "", ":memory:"):

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from app.batch.qr_debug import load_debug_payload
 from app.config import BASE_DIR
 from app.db.models import Document
-from app.db.postgres import create_postgres_session_factory
+from app.db.session import get_session_factory
 from app.web.context import base_context
 
 
@@ -14,8 +14,8 @@ router = APIRouter()
 templates = Jinja2Templates(directory=BASE_DIR / "app" / "web" / "templates")
 
 
-def _get_document(postgres_engine, document_id: int) -> dict | None:
-    session_factory = create_postgres_session_factory(postgres_engine)
+def _get_document(database_engine, document_id: int) -> dict | None:
+    session_factory = get_session_factory(database_engine)
     with session_factory() as session:
         row = session.execute(
             select(
@@ -45,7 +45,7 @@ async def debug_view(
     document_id: int,
     format: str | None = Query(default=None),
 ):
-    document = _get_document(request.app.state.postgres_engine, document_id)
+    document = _get_document(request.app.state.database_engine, document_id)
     if document is None:
         if format == "json" or "application/json" in request.headers.get("accept", ""):
             return JSONResponse({"detail": "Document not found"}, status_code=404)
