@@ -100,7 +100,9 @@ def test_documents_row_created_for_valid_pdf(client):
 def test_duplicate_content_skip_does_not_create_new_processed_record(client):
     input_dir = Path(client.app.state.settings.input_dir)
 
-    create_valid_pdf(input_dir / "letter-a.pdf", "same content")
+    original_source = input_dir / "letter-a.pdf"
+    create_valid_pdf(original_source, "same content")
+    original_bytes = original_source.read_bytes()
     run_batch_registration(
         client.app.state.settings,
         client.app.state.postgres_engine,
@@ -114,10 +116,8 @@ def test_duplicate_content_skip_does_not_create_new_processed_record(client):
         )
     )
 
-    original_pdf_path = input_dir / "letter-a.pdf"
-    create_valid_pdf(original_pdf_path, "same content")
     duplicate_source = input_dir / "letter-b.pdf"
-    duplicate_source.write_bytes(original_pdf_path.read_bytes())
+    duplicate_source.write_bytes(original_bytes)
 
     summary = run_batch_registration(
         client.app.state.settings,
@@ -236,9 +236,10 @@ def test_fake_pdf_marked_failed_and_moved_to_error(client):
 
 def test_batch_summary_reflects_duplicate_and_failed_counts(client):
     input_dir = Path(client.app.state.settings.input_dir)
-    processed_dir = Path(client.app.state.settings.processed_dir)
 
-    create_valid_pdf(input_dir / "valid.pdf", "batch summary valid")
+    original_source = input_dir / "valid.pdf"
+    create_valid_pdf(original_source, "batch summary valid")
+    original_bytes = original_source.read_bytes()
     run_batch_registration(
         client.app.state.settings,
         client.app.state.postgres_engine,
@@ -246,7 +247,7 @@ def test_batch_summary_reflects_duplicate_and_failed_counts(client):
     )
 
     duplicate_source = input_dir / "duplicate.pdf"
-    duplicate_source.write_bytes((processed_dir / "valid.pdf").read_bytes())
+    duplicate_source.write_bytes(original_bytes)
     create_fake_pdf(input_dir / "invalid.pdf")
 
     summary = run_batch_registration(
@@ -465,14 +466,16 @@ def test_pending_http_reference_resolved_after_insert(client, monkeypatch):
 
 def test_force_reprocess_rebuilds_existing_hash_when_requested(client, monkeypatch):
     input_dir = Path(client.app.state.settings.input_dir)
-    create_valid_pdf(input_dir / "force.pdf", "Reference https://example.com/original")
+    source_path = input_dir / "force.pdf"
+    create_valid_pdf(source_path, "Reference https://example.com/original")
+    original_bytes = source_path.read_bytes()
     run_batch_registration(
         client.app.state.settings,
         client.app.state.postgres_engine,
         triggered_by="alice",
     )
 
-    create_valid_pdf(input_dir / "force.pdf", "Reference https://example.com/original")
+    source_path.write_bytes(original_bytes)
 
     def fake_extract_references_from_pdf(_file_path, **_kwargs):
         return (

@@ -117,6 +117,44 @@ def _seed_failed_document(
         )
 
 
+def _seed_document_reference(engine, *, document_id: int, raw_reference: str = "https://example.com/retry"):
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                INSERT INTO document_references (
+                    document_id,
+                    page_number,
+                    source_type,
+                    reference_class,
+                    raw_reference,
+                    final_url,
+                    resolution_status,
+                    http_status,
+                    resolution_error_type,
+                    resolution_error_detail
+                )
+                VALUES (
+                    :document_id,
+                    1,
+                    'text',
+                    'url',
+                    :raw_reference,
+                    NULL,
+                    'failed',
+                    NULL,
+                    'URL_TIMEOUT',
+                    'timed out'
+                )
+                """
+            ),
+            {
+                "document_id": document_id,
+                "raw_reference": raw_reference,
+            },
+        )
+
+
 def test_retry_failed_document_redirects_to_batch_when_source_exists(client):
     source_path = Path(client.app.state.settings.failed_retained_dir) / "retry-source.pdf"
     source_path.write_bytes(b"failed pdf bytes")
@@ -142,6 +180,7 @@ def test_results_show_failed_document_retry_status_and_actions(client):
     source_path = Path(client.app.state.settings.failed_retained_dir) / "retry-source.pdf"
     source_path.write_bytes(b"failed pdf bytes")
     _seed_failed_document(client.app.state.postgres_engine, document_id=503, source_path=source_path)
+    _seed_document_reference(client.app.state.postgres_engine, document_id=503)
 
     response = client.get("/results?processing_status=failed")
 

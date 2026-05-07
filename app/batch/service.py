@@ -120,11 +120,13 @@ def mark_document_processed(
     extraction_version: int,
     source_file_present: bool,
     retry_requires_reupload: bool,
+    processing_error_type: str | None = None,
+    processing_error_detail: str | None = None,
 ) -> Document:
     document.processing_status = "processed"
     document.processing_error = None
-    document.processing_error_type = None
-    document.processing_error_detail = None
+    document.processing_error_type = processing_error_type
+    document.processing_error_detail = processing_error_detail
     document.processed_at = datetime.now(UTC)
     document.moved_to_path = moved_to_path
     document.extraction_version = extraction_version

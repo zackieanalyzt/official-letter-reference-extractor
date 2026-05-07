@@ -1,7 +1,9 @@
 import inspect
+import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
@@ -30,7 +32,6 @@ from app.batch.service import (
     create_processing_log,
     finalize_batch_run,
     find_document_by_hash,
-    find_processed_document_by_hash,
     get_latest_home_batch_summary,
     mark_document_failed,
     mark_document_ingestion_status,
@@ -251,6 +252,8 @@ def _process_document_from_source(
             extraction_version=settings.extraction_version,
             source_file_present=retention.source_file_present,
             retry_requires_reupload=retention.retry_requires_reupload,
+            processing_error_type=error_type,
+            processing_error_detail=error_detail,
         )
         document.retention_mode = settings.file_retention_mode
         document.last_ingestion_used_cached_result = False
@@ -413,14 +416,25 @@ def run_batch_registration(
         for file_path in pdf_files:
             fingerprint = build_file_fingerprint(file_path)
             existing_document = find_document_by_hash(session, fingerprint.content_hash)
-            document = create_or_get_document_row(
-                session,
-                original_file_name=fingerprint.original_file_name,
-                content_hash=fingerprint.content_hash,
-                file_size_bytes=fingerprint.file_size_bytes,
-                extraction_version=settings.extraction_version,
-                retention_mode=settings.file_retention_mode,
+            reusable_cached_document = (
+                existing_document
+                if _can_reuse_cached_result(
+                    existing_document,
+                    settings=settings,
+                    force_reprocess=force_reprocess,
+                )
+                else None
             )
+            document = reusable_cached_document or existing_document
+            if document is None:
+                document = create_or_get_document_row(
+                    session,
+                    original_file_name=fingerprint.original_file_name,
+                    content_hash=fingerprint.content_hash,
+                    file_size_bytes=fingerprint.file_size_bytes,
+                    extraction_version=settings.extraction_version,
+                    retention_mode=settings.file_retention_mode,
+                )
             ingestion = create_document_ingestion(
                 session,
                 document_id=document.id,
@@ -431,7 +445,7 @@ def run_batch_registration(
                 source_file_path=str(file_path),
             )
 
-            if _can_reuse_cached_result(existing_document, settings=settings, force_reprocess=force_reprocess):
+            if reusable_cached_document is not None:
                 duplicate_files_skipped += 1
                 _reuse_cached_document(
                     session,
@@ -496,7 +510,10 @@ def process_single_document_from_retained_source(
     force_reprocess: bool,
 ) -> BatchProcessSummary:
     session_factory = get_session_factory(database_engine)
-    fingerprint = build_file_fingerprint(source_path)
+    temp_dir = ensure_directory(settings.runtime_tmp_path)
+    temp_source_path = temp_dir / f"{uuid4().hex}-{source_path.name}"
+    shutil.copy2(source_path, temp_source_path)
+    fingerprint = build_file_fingerprint(temp_source_path)
     with session_factory() as session:
         batch_run = create_batch_run(session, triggered_by=triggered_by)
         session.commit()
@@ -524,9 +541,12 @@ def process_single_document_from_retained_source(
             total_processed = 1
             if force_reprocess:
                 ingestion.ingestion_status = "forced_reprocess"
+            if source_path.exists() and not canonical_document.source_file_present:
+                source_path.unlink(missing_ok=True)
             session.commit()
         except Exception:
             failed_files = 1
+            temp_source_path.unlink(missing_ok=True)
             session.commit()
         total_references_found = count_batch_references(session, batch_run.id)
         finalize_batch_run(
