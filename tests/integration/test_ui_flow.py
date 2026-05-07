@@ -40,11 +40,18 @@ def seed_reference_rows(engine):
                     processing_error_type,
                     processing_error_detail,
                     processed_at,
-                    moved_to_path
+                    moved_to_path,
+                    extraction_version,
+                    retention_mode,
+                    source_file_present,
+                    source_deleted_at,
+                    last_source_path,
+                    retry_requires_reupload,
+                    last_ingestion_used_cached_result
                 )
                 VALUES
-                    (1, NULL, 'alpha-letter.pdf', 'hash-alpha', 100, 2, NULL, 'processed', NULL, NULL, NULL, '2026-04-24 10:00:00', '/processed/alpha-letter.pdf'),
-                    (2, NULL, 'beta-scan.pdf', 'hash-beta', 120, 1, NULL, 'processed', NULL, NULL, NULL, '2026-04-24 11:00:00', '/processed/beta-scan.pdf')
+                    (1, NULL, 'alpha-letter.pdf', 'hash-alpha', 100, 2, NULL, 'processed', NULL, NULL, NULL, '2026-04-24 10:00:00', NULL, 1, 'retain_failed_only', 0, '2026-04-24 10:01:00', NULL, 1, 0),
+                    (2, NULL, 'beta-scan.pdf', 'hash-beta', 120, 1, NULL, 'processed', NULL, NULL, NULL, '2026-04-24 11:00:00', NULL, 1, 'retain_failed_only', 0, '2026-04-24 11:01:00', NULL, 1, 0)
                 """
             )
         )
@@ -244,10 +251,33 @@ def test_batch_page_shows_monitoring_and_error_intelligence(client):
                     processing_error_type,
                     processing_error_detail,
                     processed_at,
-                    moved_to_path
+                    moved_to_path,
+                    extraction_version,
+                    retention_mode,
+                    source_file_present,
+                    source_deleted_at,
+                    last_source_path,
+                    retry_requires_reupload,
+                    last_ingestion_used_cached_result
                 )
                 VALUES
-                    (1, 1, 'scan-001.pdf', 'hash-scan-001', 100, 1, NULL, 'processed', NULL, 'OCR_NOT_AVAILABLE', 'tesseract missing', '2026-04-24 09:05:00', '/processed/scan-001.pdf')
+                    (1, 1, 'scan-001.pdf', 'hash-scan-001', 100, 1, NULL, 'processed', NULL, 'OCR_NOT_AVAILABLE', 'tesseract missing', '2026-04-24 09:05:00', NULL, 1, 'retain_failed_only', 0, '2026-04-24 09:06:00', NULL, 1, 0)
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO document_ingestions (
+                    id, document_id, batch_run_id, uploaded_file_name, uploaded_at, ingestion_status,
+                    used_cached_result, force_reprocess_requested, retention_mode_used, source_file_path,
+                    source_file_present, source_deleted_at, cleanup_due_at, retry_source_available,
+                    error_type, error_detail
+                )
+                VALUES
+                    (1, 1, 1, 'scan-001.pdf', '2026-04-24 09:00:00', 'processed_fresh',
+                     0, 0, 'retain_failed_only', NULL, 0, '2026-04-24 09:06:00', NULL, 0,
+                     NULL, NULL)
                 """
             )
         )
@@ -316,10 +346,33 @@ def test_batch_run_pages_render(client):
                     processing_error_type,
                     processing_error_detail,
                     processed_at,
-                    moved_to_path
+                    moved_to_path,
+                    extraction_version,
+                    retention_mode,
+                    source_file_present,
+                    source_deleted_at,
+                    last_source_path,
+                    retry_requires_reupload,
+                    last_ingestion_used_cached_result
                 )
                 VALUES
-                    (1, 1, 'invalid.pdf', 'hash-invalid', 99, 1, NULL, 'failed', 'bad pdf', 'INVALID_PDF', 'broken file', '2026-04-24 09:05:00', '/error/invalid.pdf')
+                    (1, 1, 'invalid.pdf', 'hash-invalid', 99, 1, NULL, 'failed', 'bad pdf', 'INVALID_PDF', 'broken file', '2026-04-24 09:05:00', '/error/invalid.pdf', 1, 'retain_failed_only', 1, NULL, '/error/invalid.pdf', 0, 0)
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO document_ingestions (
+                    id, document_id, batch_run_id, uploaded_file_name, uploaded_at, ingestion_status,
+                    used_cached_result, force_reprocess_requested, retention_mode_used, source_file_path,
+                    source_file_present, source_deleted_at, cleanup_due_at, retry_source_available,
+                    error_type, error_detail
+                )
+                VALUES
+                    (1, 1, 1, 'invalid.pdf', '2026-04-24 09:00:00', 'failed',
+                     0, 0, 'retain_failed_only', '/error/invalid.pdf', 1, NULL,
+                     '2026-04-30 09:00:00', 1, 'INVALID_PDF', 'broken file')
                 """
             )
         )

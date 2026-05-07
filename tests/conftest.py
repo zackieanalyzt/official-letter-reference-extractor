@@ -20,19 +20,20 @@ def create_sqlite_engine():
 
 @pytest.fixture
 def client(monkeypatch, tmp_path):
+    database_path = tmp_path / "olre.sqlite3"
     input_dir = tmp_path / "input"
     processed_dir = tmp_path / "processed"
     error_dir = tmp_path / "error"
+    runtime_tmp_dir = tmp_path / "runtime" / "tmp"
+    failed_retained_dir = tmp_path / "runtime" / "failed-retained"
     qr_debug_dir = tmp_path / "debug" / "qr"
     input_dir.mkdir()
     processed_dir.mkdir()
     error_dir.mkdir()
+    runtime_tmp_dir.mkdir(parents=True)
+    failed_retained_dir.mkdir(parents=True)
 
-    monkeypatch.setenv("POSTGRES_HOST", "127.0.0.1")
-    monkeypatch.setenv("POSTGRES_PORT", "5432")
-    monkeypatch.setenv("POSTGRES_DB", "olre_db")
-    monkeypatch.setenv("POSTGRES_USER", "olre_user")
-    monkeypatch.setenv("POSTGRES_PASSWORD", "olre_password")
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path.as_posix()}")
     monkeypatch.setenv("ENABLE_AUTH", "false")
     monkeypatch.setenv("SECRET_KEY", "test-secret-key")
     monkeypatch.setenv("SESSION_MAX_AGE_SECONDS", "28800")
@@ -52,6 +53,19 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setenv("URL_RESOLVE_TIMEOUT_SECONDS", "5")
     monkeypatch.setenv("URL_RESOLVE_MAX_ATTEMPTS", "2")
     monkeypatch.setenv("URL_RESOLVE_USER_AGENT", "OLRE Test")
+    monkeypatch.setenv("FILE_RETENTION_MODE", "retain_failed_only")
+    monkeypatch.setenv("SUCCESS_SOURCE_RETENTION_HOURS", "0")
+    monkeypatch.setenv("FAILED_SOURCE_RETENTION_HOURS", "168")
+    monkeypatch.setenv("SOURCE_DELETE_ON_CACHE_REUSE", "true")
+    monkeypatch.setenv("QR_DEBUG_RETENTION_HOURS", "72")
+    monkeypatch.setenv("CLEANUP_ENABLED", "false")
+    monkeypatch.setenv("CLEANUP_INTERVAL_MINUTES", "60")
+    monkeypatch.setenv("CLEANUP_STARTUP_SWEEP", "false")
+    monkeypatch.setenv("DEFAULT_FORCE_REPROCESS", "false")
+    monkeypatch.setenv("EXTRACTION_VERSION", "1")
+    monkeypatch.setenv("TEMP_FILE_MAX_AGE_HOURS", "24")
+    monkeypatch.setenv("RUNTIME_TMP_DIR", str(runtime_tmp_dir))
+    monkeypatch.setenv("FAILED_RETAINED_DIR", str(failed_retained_dir))
 
     import app.config as config_module
     import app.main as main_module

@@ -47,11 +47,18 @@ def seed_reporting_rows(engine):
                     processing_error_type,
                     processing_error_detail,
                     processed_at,
-                    moved_to_path
+                    moved_to_path,
+                    extraction_version,
+                    retention_mode,
+                    source_file_present,
+                    source_deleted_at,
+                    last_source_path,
+                    retry_requires_reupload,
+                    last_ingestion_used_cached_result
                 )
                 VALUES
-                    (901, 901, 'alpha-report.pdf', 'hash-report-a', 100, 2, NULL, 'processed', NULL, NULL, NULL, '2026-05-01 10:00:00', '/processed/alpha-report.pdf'),
-                    (902, 901, 'beta-report.pdf', 'hash-report-b', 120, 1, NULL, 'failed', 'bad pdf', 'INVALID_PDF', 'broken file', '2026-05-02 11:00:00', '/error/beta-report.pdf')
+                    (901, 901, 'alpha-report.pdf', 'hash-report-a', 100, 2, NULL, 'processed', NULL, NULL, NULL, '2026-05-01 10:00:00', NULL, 1, 'retain_failed_only', 0, '2026-05-01 10:01:00', NULL, 1, 0),
+                    (902, 901, 'beta-report.pdf', 'hash-report-b', 120, 1, NULL, 'failed', 'bad pdf', 'INVALID_PDF', 'broken file', '2026-05-02 11:00:00', '/error/beta-report.pdf', 1, 'retain_failed_only', 1, NULL, '/error/beta-report.pdf', 0, 0)
                 """
             )
         )

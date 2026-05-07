@@ -38,8 +38,10 @@ class BatchRun(Base):
 class Document(Base):
     __tablename__ = "documents"
     __table_args__ = (
-        Index("ix_documents_content_hash", "content_hash"),
+        Index("ix_documents_content_hash", "content_hash", unique=True),
         Index("ix_documents_document_number", "document_number"),
+        Index("ix_documents_source_file_present", "source_file_present"),
+        Index("ix_documents_retry_requires_reupload", "retry_requires_reupload"),
     )
 
     id: Mapped[int] = mapped_column(PK_TYPE, primary_key=True, autoincrement=True)
@@ -57,6 +59,17 @@ class Document(Base):
     processing_error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     moved_to_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extraction_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    retention_mode: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="retain_failed_only", server_default="retain_failed_only"
+    )
+    source_file_present: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="0")
+    source_deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_source_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    retry_requires_reupload: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="0")
+    last_ingestion_used_cached_result: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default="0"
+    )
 
     batch_run: Mapped[BatchRun | None] = relationship(back_populates="documents")
     references: Mapped[list["DocumentReference"]] = relationship(
@@ -65,6 +78,52 @@ class Document(Base):
     processing_logs: Mapped[list["ProcessingLog"]] = relationship(
         back_populates="document", cascade="all, delete-orphan"
     )
+    ingestions: Mapped[list["DocumentIngestion"]] = relationship(
+        back_populates="document", cascade="all, delete-orphan"
+    )
+
+
+class DocumentIngestion(Base):
+    __tablename__ = "document_ingestions"
+    __table_args__ = (
+        Index("ix_document_ingestions_document_id", "document_id"),
+        Index("ix_document_ingestions_batch_run_id", "batch_run_id"),
+        Index("ix_document_ingestions_uploaded_at", "uploaded_at"),
+        Index("ix_document_ingestions_ingestion_status", "ingestion_status"),
+        Index("ix_document_ingestions_used_cached_result", "used_cached_result"),
+        Index("ix_document_ingestions_cleanup_due_at", "cleanup_due_at"),
+        Index("ix_document_ingestions_source_file_present", "source_file_present"),
+        Index("ix_document_ingestions_retry_source_available", "retry_source_available"),
+    )
+
+    id: Mapped[int] = mapped_column(PK_TYPE, primary_key=True, autoincrement=True)
+    document_id: Mapped[int] = mapped_column(
+        PK_TYPE, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False
+    )
+    batch_run_id: Mapped[int | None] = mapped_column(
+        PK_TYPE, ForeignKey("batch_runs.id", ondelete="SET NULL"), nullable=True
+    )
+    uploaded_file_name: Mapped[str] = mapped_column(Text, nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    ingestion_status: Mapped[str] = mapped_column(String(50), nullable=False, default="uploaded")
+    used_cached_result: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="0")
+    force_reprocess_requested: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default="0"
+    )
+    retention_mode_used: Mapped[str] = mapped_column(String(50), nullable=False)
+    source_file_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_file_present: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="0")
+    source_deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cleanup_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    retry_source_available: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default="0"
+    )
+    error_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    document: Mapped[Document] = relationship(back_populates="ingestions")
 
 
 class DocumentReference(Base):

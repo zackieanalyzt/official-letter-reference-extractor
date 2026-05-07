@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.templating import Jinja2Templates
 
 from app.config import BASE_DIR
@@ -19,11 +19,16 @@ templates = Jinja2Templates(directory=BASE_DIR / "app" / "web" / "templates")
 
 
 @router.post("/batch/process")
-async def process_batch(request: Request, _: None = Depends(verify_token)):
+async def process_batch(
+    request: Request,
+    force_reprocess_duplicates: bool = Form(default=False),
+    _: None = Depends(verify_token),
+):
     batch_summary = run_batch_registration(
         request.app.state.settings,
         request.app.state.database_engine,
         triggered_by="public",
+        force_reprocess=force_reprocess_duplicates,
     )
     batch_summary = localize_batch_summary(batch_summary)
     latest_batch = fetch_latest_batch(request.app.state.database_engine)

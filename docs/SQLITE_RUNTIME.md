@@ -24,7 +24,7 @@ Use PostgreSQL when:
 In `.env`:
 
 ```env
-DATABASE_URL=sqlite:///data/olre.sqlite3
+DATABASE_URL=sqlite:////app/data/olre.sqlite3
 ENABLE_AUTH=false
 OCR_ENABLED=false
 QR_DEBUG_EXPORT=false
@@ -83,7 +83,7 @@ Expected:
 ## Confirm Data Is in SQLite
 
 ```powershell
-python -c "import sqlite3; con=sqlite3.connect('data/olre.sqlite3'); print(con.execute('select id, original_file_name from documents').fetchall()); con.close()"
+python -c "import sqlite3; con=sqlite3.connect('/app/data/olre.sqlite3'); print(con.execute('select id, original_file_name from documents').fetchall()); con.close()"
 ```
 
 After upload and batch processing, the new document should appear in this query.
@@ -105,7 +105,7 @@ This improves integrity and small-team usability while keeping SQLite simple.
 Stop the server first, then remove:
 
 ```powershell
-Remove-Item data\olre.sqlite3,data\olre.sqlite3-wal,data\olre.sqlite3-shm -ErrorAction SilentlyContinue
+Remove-Item /app/data/olre.sqlite3,/app/data/olre.sqlite3-wal,/app/data/olre.sqlite3-shm -ErrorAction SilentlyContinue
 python -m alembic upgrade head
 ```
 

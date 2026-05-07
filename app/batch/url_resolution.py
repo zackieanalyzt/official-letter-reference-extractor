@@ -189,3 +189,20 @@ def resolve_document_references(session: Session, document_id: int, *, settings)
     )
     references = session.execute(statement).scalars().all()
     return _resolve_references(session, references, document_id=document_id, settings=settings)
+
+
+def re_resolve_document_references(session: Session, document_id: int, *, settings) -> dict:
+    statement: Select[tuple[DocumentReference]] = select(DocumentReference).where(
+        DocumentReference.document_id == document_id,
+    )
+    references = session.execute(statement).scalars().all()
+    for reference in references:
+        if is_http_url(reference.raw_reference):
+            reference.resolution_status = "pending"
+            reference.final_url = None
+            reference.http_status = None
+            reference.resolution_error_type = None
+            reference.resolution_error_detail = None
+    session.flush()
+    http_references = [reference for reference in references if is_http_url(reference.raw_reference)]
+    return _resolve_references(session, http_references, document_id=document_id, settings=settings)

@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -8,7 +9,10 @@ from app.auth.session import SessionManager
 from app.config import BASE_DIR, get_settings
 from app.db.engine import create_database_engine, get_database_backend
 from app.db.mariadb import create_mariadb_engine
+from app.db.session import get_session_factory
 from app.logging_config import configure_logging, get_logger
+from app.runtime import build_readiness_report, validate_startup
+from app.services.retention_service import run_retention_cleanup
 from app.web.routes_auth import router as auth_router
 from app.web.routes_batch import router as batch_router
 from app.web.routes_debug import router as debug_router
@@ -23,6 +27,7 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_startup(settings)
     app.state.settings = settings
     app.state.database_engine = create_database_engine(settings)
     app.state.database_backend = get_database_backend(settings.resolved_database_url)
@@ -41,8 +46,35 @@ async def lifespan(app: FastAPI):
     else:
         app.state.mariadb_engine = None
         app.state.session_manager = None
+    cleanup_stop = asyncio.Event()
+
+    async def cleanup_loop():
+        session_factory = get_session_factory(app.state.database_engine)
+        if settings.cleanup_startup_sweep and settings.cleanup_enabled:
+            with session_factory() as session:
+                summary = run_retention_cleanup(session, settings)
+                session.commit()
+                logger.info("[CLEANUP_STARTUP] %s", summary)
+
+        while not cleanup_stop.is_set():
+            try:
+                await asyncio.wait_for(cleanup_stop.wait(), timeout=settings.cleanup_interval_minutes * 60)
+            except asyncio.TimeoutError:
+                if settings.cleanup_enabled:
+                    with session_factory() as session:
+                        summary = run_retention_cleanup(session, settings)
+                        session.commit()
+                        logger.info("[CLEANUP_INTERVAL] %s", summary)
+
+    cleanup_task = asyncio.create_task(cleanup_loop())
     logger.info("Application startup complete")
     yield
+    cleanup_stop.set()
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except BaseException:
+        pass
     app.state.database_engine.dispose()
     if app.state.mariadb_engine is not None:
         app.state.mariadb_engine.dispose()
@@ -80,12 +112,19 @@ async def healthz(request: Request) -> JSONResponse:
 @app.get("/readyz")
 async def readyz(request: Request) -> JSONResponse:
     app_settings = request.app.state.settings
+    report = build_readiness_report(app_settings, request.app.state.database_engine)
+    status_code = 200 if report.ok else 503
     return JSONResponse(
-        {
-            "status": "ready",
+        status_code=status_code,
+        content={
+            "status": "ready" if report.ok else "not_ready",
             "app_name": app_settings.app_name,
             "environment": app_settings.app_env,
-        }
+            "database_backend": report.database_backend,
+            "database_ping": report.database_ping,
+            "writable_paths": report.writable_paths,
+            "details": report.details,
+        },
     )
 
 

@@ -12,6 +12,14 @@
                 <p class="lead">{{ labels.results_lead }}</p>
             </div>
         </div>
+        {% if retry_status == "requires_reupload" %}
+        <div class="alert alert-warning">{{ labels.retry_requires_reupload_message }}</div>
+        {% elif retry_status == "resolution_retried" %}
+        <div class="alert alert-success">{{ labels.retry_resolution_done }}</div>
+        {% endif %}
+        {% if force_reprocess_status == "requires_reupload" %}
+        <div class="alert alert-warning">{{ labels.force_reprocess_requires_reupload }}</div>
+        {% endif %}
 
         <article class="info-card table-card">
             <form method="get" action="/results" class="filters-bar">
@@ -114,6 +122,14 @@
                             <td>{{ row.reference_class or "-" }}</td>
                             <td>{{ labels.get(row.source_type, row.source_type) if row.source_type else "-" }}</td>
                             <td>
+                                {% if row.used_cached_result %}
+                                <span class="metric-chip">{{ labels.cached_result }}</span>
+                                {% endif %}
+                                {% if row.source_file_present %}
+                                <span class="metric-chip">{{ labels.source_retained }}</span>
+                                {% else %}
+                                <span class="metric-chip">{{ labels.source_deleted }}</span>
+                                {% endif %}
                                 <span class="status-badge">{{ labels.get(row.processing_status, row.processing_status) }}</span>
                                 {% if row.processing_error_type %}
                                 <span class="metric-chip">{{ row.processing_error_type }}</span>
@@ -150,7 +166,19 @@
                                 <a class="button button-secondary button-small" href="/debug/document/{{ row.document_id }}">{{ labels.debug }}</a>
                                 {% if row.retryable %}
                                 <form method="post" action="/documents/{{ row.document_id }}/retry" class="inline-form">
-                                    <button class="button button-ghost button-small" type="submit">{{ labels.retry }}</button>
+                                    <button class="button button-ghost button-small" type="submit">{{ labels.retry_from_stored_file }}</button>
+                                </form>
+                                {% elif row.processing_status == "failed" and row.retry_requires_reupload %}
+                                <span class="muted-inline">{{ labels.reupload_required_short }}</span>
+                                {% endif %}
+                                {% if row.resolution_retryable %}
+                                <form method="post" action="/documents/{{ row.document_id }}/retry-resolution" class="inline-form">
+                                    <button class="button button-ghost button-small" type="submit">{{ labels.retry_resolution }}</button>
+                                </form>
+                                {% endif %}
+                                {% if row.source_file_present %}
+                                <form method="post" action="/documents/{{ row.document_id }}/force-reprocess" class="inline-form">
+                                    <button class="button button-ghost button-small" type="submit">{{ labels.force_reprocess }}</button>
                                 </form>
                                 {% endif %}
                             </td>

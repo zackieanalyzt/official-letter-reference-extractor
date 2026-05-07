@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import BatchRun, Document, DocumentReference, ProcessingLog
+from app.db.models import BatchRun, Document, DocumentIngestion, DocumentReference, ProcessingLog
 
 
 @dataclass
@@ -56,31 +56,82 @@ def find_processed_document_by_hash(session: Session, content_hash: str) -> Docu
     return session.execute(statement).scalar_one_or_none()
 
 
-def create_document_row(
+def find_document_by_hash(session: Session, content_hash: str) -> Document | None:
+    statement: Select[tuple[Document]] = select(Document).where(Document.content_hash == content_hash)
+    return session.execute(statement).scalar_one_or_none()
+
+
+def create_or_get_document_row(
     session: Session,
     *,
-    batch_run_id: int,
     original_file_name: str,
     content_hash: str,
     file_size_bytes: int,
+    extraction_version: int,
+    retention_mode: str,
 ) -> Document:
-    document = Document(
-        batch_run_id=batch_run_id,
-        original_file_name=original_file_name,
-        content_hash=content_hash,
-        file_size_bytes=file_size_bytes,
-        processing_status="processing",
-    )
-    session.add(document)
-    session.flush()
+    document = find_document_by_hash(session, content_hash)
+    if document is None:
+        document = Document(
+            original_file_name=original_file_name,
+            content_hash=content_hash,
+            file_size_bytes=file_size_bytes,
+            processing_status="pending",
+            extraction_version=extraction_version,
+            retention_mode=retention_mode,
+        )
+        session.add(document)
+        session.flush()
     return document
 
 
-def mark_document_processed(session: Session, document: Document, moved_to_path: str) -> Document:
+def create_document_ingestion(
+    session: Session,
+    *,
+    document_id: int,
+    batch_run_id: int | None,
+    uploaded_file_name: str,
+    retention_mode_used: str,
+    force_reprocess_requested: bool,
+    source_file_path: str | None,
+) -> DocumentIngestion:
+    ingestion = DocumentIngestion(
+        document_id=document_id,
+        batch_run_id=batch_run_id,
+        uploaded_file_name=uploaded_file_name,
+        ingestion_status="uploaded",
+        used_cached_result=False,
+        force_reprocess_requested=force_reprocess_requested,
+        retention_mode_used=retention_mode_used,
+        source_file_path=source_file_path,
+        source_file_present=bool(source_file_path),
+        retry_source_available=bool(source_file_path),
+    )
+    session.add(ingestion)
+    session.flush()
+    return ingestion
+
+
+def mark_document_processed(
+    session: Session,
+    document: Document,
+    moved_to_path: str | None,
+    *,
+    extraction_version: int,
+    source_file_present: bool,
+    retry_requires_reupload: bool,
+) -> Document:
     document.processing_status = "processed"
     document.processing_error = None
+    document.processing_error_type = None
+    document.processing_error_detail = None
     document.processed_at = datetime.now(UTC)
     document.moved_to_path = moved_to_path
+    document.extraction_version = extraction_version
+    document.source_file_present = source_file_present
+    document.retry_requires_reupload = retry_requires_reupload
+    document.last_source_path = moved_to_path
+    document.source_deleted_at = None if source_file_present else datetime.now(UTC)
     session.flush()
     return document
 
@@ -89,16 +140,22 @@ def mark_document_failed(
     session: Session,
     document: Document,
     error_message: str,
-    moved_to_path: str,
+    moved_to_path: str | None,
     *,
     error_type: str | None = None,
     error_detail: str | None = None,
+    source_file_present: bool = False,
+    retry_requires_reupload: bool = True,
 ) -> Document:
     document.processing_status = "failed"
     document.processing_error = error_message
     document.processing_error_type = error_type
     document.processing_error_detail = error_detail
     document.moved_to_path = moved_to_path
+    document.source_file_present = source_file_present
+    document.retry_requires_reupload = retry_requires_reupload
+    document.last_source_path = moved_to_path
+    document.source_deleted_at = None if source_file_present else datetime.now(UTC)
     session.flush()
     return document
 
@@ -114,6 +171,32 @@ def set_document_processing_issue(
     document.processing_error_detail = error_detail
     session.flush()
     return document
+
+
+def mark_document_ingestion_status(
+    session: Session,
+    ingestion: DocumentIngestion,
+    *,
+    ingestion_status: str,
+    used_cached_result: bool,
+    source_file_path: str | None,
+    source_file_present: bool,
+    retry_source_available: bool,
+    cleanup_due_at: datetime | None = None,
+    error_type: str | None = None,
+    error_detail: str | None = None,
+) -> DocumentIngestion:
+    ingestion.ingestion_status = ingestion_status
+    ingestion.used_cached_result = used_cached_result
+    ingestion.source_file_path = source_file_path
+    ingestion.source_file_present = source_file_present
+    ingestion.retry_source_available = retry_source_available
+    ingestion.cleanup_due_at = cleanup_due_at
+    ingestion.error_type = error_type
+    ingestion.error_detail = error_detail
+    ingestion.source_deleted_at = None if source_file_present else datetime.now(UTC)
+    session.flush()
+    return ingestion
 
 
 def create_document_reference(
@@ -187,5 +270,6 @@ def count_batch_references(session: Session, batch_run_id: int) -> int:
         select(func.count(DocumentReference.id))
         .select_from(DocumentReference)
         .join(Document, DocumentReference.document_id == Document.id)
-        .where(Document.batch_run_id == batch_run_id)
+        .join(DocumentIngestion, DocumentIngestion.document_id == Document.id)
+        .where(DocumentIngestion.batch_run_id == batch_run_id)
     ).scalar_one()

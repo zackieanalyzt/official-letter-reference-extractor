@@ -14,6 +14,7 @@ DEFAULT_PAGE_SIZE = 20
 
 @dataclass(frozen=True)
 class ResultsReferenceRow:
+    reference_id: int | None
     document_id: int
     filename: str
     page_number: int | None
@@ -26,6 +27,10 @@ class ResultsReferenceRow:
     processing_error_type: str | None
     resolution_error_type: str | None
     retryable: bool
+    resolution_retryable: bool
+    source_file_present: bool
+    retry_requires_reupload: bool
+    used_cached_result: bool
     created_at: datetime | None
 
 
@@ -72,6 +77,9 @@ def _build_reference_statement(
             Document.processing_status,
             Document.processing_error_type,
             DocumentReference.resolution_error_type,
+            Document.source_file_present,
+            Document.retry_requires_reupload,
+            Document.last_ingestion_used_cached_result,
             Document.processed_at.label("created_at"),
         )
         .select_from(Document)
@@ -179,6 +187,7 @@ def get_references(
         "rows": [
             ResultsReferenceRow(
                 document_id=row.document_id,
+                reference_id=row.reference_id,
                 filename=row.filename,
                 page_number=row.page_number,
                 reference_class=row.reference_class,
@@ -189,7 +198,11 @@ def get_references(
                 processing_status=row.processing_status,
                 processing_error_type=row.processing_error_type,
                 resolution_error_type=row.resolution_error_type,
-                retryable=row.processing_status == "failed",
+                retryable=row.processing_status == "failed" and row.source_file_present,
+                resolution_retryable=row.reference_id is not None,
+                source_file_present=bool(row.source_file_present),
+                retry_requires_reupload=bool(row.retry_requires_reupload),
+                used_cached_result=bool(row.last_ingestion_used_cached_result),
                 created_at=row.created_at,
             )
             for row in rows

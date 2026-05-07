@@ -125,10 +125,17 @@ def test_debug_document_api_returns_sidecar_payload(client):
                     processing_error_type,
                     processing_error_detail,
                     processed_at,
-                    moved_to_path
+                    moved_to_path,
+                    extraction_version,
+                    retention_mode,
+                    source_file_present,
+                    source_deleted_at,
+                    last_source_path,
+                    retry_requires_reupload,
+                    last_ingestion_used_cached_result
                 )
                 VALUES
-                    (12, NULL, 'qr-debug.pdf', 'hash-debug', 100, 2, NULL, 'processed', NULL, NULL, NULL, '2026-04-24 10:00:00', '/processed/qr-debug.pdf')
+                    (12, NULL, 'qr-debug.pdf', 'hash-debug', 100, 2, NULL, 'processed', NULL, NULL, NULL, '2026-04-24 10:00:00', NULL, 1, 'retain_failed_only', 0, '2026-04-24 10:01:00', NULL, 1, 0)
                 """
             )
         )
@@ -180,10 +187,17 @@ def test_debug_document_ui_renders_attempts(client):
                     processing_error_type,
                     processing_error_detail,
                     processed_at,
-                    moved_to_path
+                    moved_to_path,
+                    extraction_version,
+                    retention_mode,
+                    source_file_present,
+                    source_deleted_at,
+                    last_source_path,
+                    retry_requires_reupload,
+                    last_ingestion_used_cached_result
                 )
                 VALUES
-                    (13, NULL, 'qr-debug-ui.pdf', 'hash-debug-ui', 100, 1, NULL, 'processed', NULL, NULL, NULL, '2026-04-24 10:00:00', '/processed/qr-debug-ui.pdf')
+                    (13, NULL, 'qr-debug-ui.pdf', 'hash-debug-ui', 100, 1, NULL, 'processed', NULL, NULL, NULL, '2026-04-24 10:00:00', NULL, 1, 'retain_failed_only', 0, '2026-04-24 10:01:00', NULL, 1, 0)
                 """
             )
         )

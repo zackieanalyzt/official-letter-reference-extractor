@@ -2,6 +2,19 @@
 
 OLRE is a FastAPI web application for importing official-letter PDFs, extracting references from text, QR codes, and optional OCR, resolving URLs, reviewing quality, and exporting results for reporting.
 
+## v0.9.5 Runtime Direction
+
+OLRE now targets a SQLite-first Docker runtime with zero external database setup:
+
+- Default runtime database: `sqlite:////app/data/olre.sqlite3`
+- Runtime paths: everything lives under `/app/data`
+- Default web port: `8000`
+- Container startup: validate paths, run Alembic migrations, start app
+- `/healthz`: lightweight process health
+- `/readyz`: database ping plus writable runtime path checks
+
+PostgreSQL and MariaDB remain future profile notes only. They are not required for the default runtime.
+
 ## Current Features
 
 - Public non-OAuth mode with optional `APP_TOKEN` guard for batch processing.
@@ -22,15 +35,34 @@ OLRE is a FastAPI web application for importing official-letter PDFs, extracting
 FastAPI routes
 -> service layer
 -> SQLAlchemy models
--> SQLite or PostgreSQL database
--> filesystem data directories
+-> SQLite database
+-> filesystem data directories under /app/data
 ```
 
-Runtime files are stored under `data/input`, `data/processed`, `data/error`, and optionally `data/debug/qr`. These directories are ignored by git and must not be committed.
+Runtime files are stored under `/app/data/input`, `/app/data/processed`, `/app/data/error`, and optionally `/app/data/debug/qr`. These directories are ignored by git and must not be committed.
+
+## Quick Start with Docker
+
+```powershell
+docker build -t olre .
+docker run --rm -p 8000:8000 -v olre_data:/app/data olre
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000/imports
+```
+
+Or use Compose:
+
+```powershell
+docker compose up --build
+```
 
 ## Quick Start on Windows
 
-SQLite is the default lightweight runtime for public/simple installs:
+SQLite is the default runtime:
 
 ```powershell
 python -m venv .venv
@@ -44,7 +76,7 @@ python -m uvicorn app.main:app --reload
 In `.env`, keep:
 
 ```env
-DATABASE_URL=sqlite:///data/olre.sqlite3
+DATABASE_URL=sqlite:////app/data/olre.sqlite3
 ```
 
 Open:
@@ -63,14 +95,13 @@ Tesseract OCR and zbar are native Windows runtimes and still need separate insta
 
 ## Important Environment Variables
 
-- `DATABASE_URL=sqlite:///data/olre.sqlite3` uses SQLite for simple local/runtime installs.
-- `DATABASE_URL=postgresql+psycopg://user:password@host:5432/dbname` uses PostgreSQL.
+- `DATABASE_URL=sqlite:////app/data/olre.sqlite3` uses the default SQLite runtime.
 - `ENABLE_AUTH=false` runs the public non-OAuth version.
 - `APP_TOKEN=` optionally protects `POST /batch/process` with `X-API-KEY`.
 - `APP_LANG=th` sets the default UI language when no cookie exists.
-- `INPUT_DIR=data/input` stores pending PDFs.
-- `PROCESSED_DIR=data/processed` stores processed PDFs.
-- `ERROR_DIR=data/error` stores failed PDFs.
+- `INPUT_DIR=/app/data/input` stores pending PDFs.
+- `PROCESSED_DIR=/app/data/processed` stores processed PDFs.
+- `ERROR_DIR=/app/data/error` stores failed PDFs.
 - `QR_DEBUG_EXPORT=false` enables or disables QR debug artifacts.
 - `QR_FALLBACK_DECODER=none` keeps pyzbar fallback disabled by default.
 - `OCR_ENABLED=false` keeps OCR disabled until Tesseract is installed.
@@ -109,14 +140,14 @@ Exports preserve filters passed from `/results`.
 
 ## Database Note
 
-`DATABASE_URL` has priority. If it is not set, OLRE falls back to the legacy PostgreSQL environment variables when all required `POSTGRES_*` values are present. If neither is configured, OLRE uses `sqlite:///data/olre.sqlite3`.
+The default runtime is SQLite only. PostgreSQL and MariaDB are future profile notes, not default runtime requirements.
 
 SQLite backup should include the database file and any WAL sidecars:
 
 ```text
-data/olre.sqlite3
-data/olre.sqlite3-wal
-data/olre.sqlite3-shm
+/app/data/olre.sqlite3
+/app/data/olre.sqlite3-wal
+/app/data/olre.sqlite3-shm
 ```
 
 Confirm the active database backend with:

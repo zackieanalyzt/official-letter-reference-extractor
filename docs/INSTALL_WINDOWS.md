@@ -54,26 +54,20 @@ python -m pip install -e ".[dev,ocr,qr]"
 copy .env.example .env
 ```
 
-For the lightweight SQLite runtime, keep:
+For the SQLite-first runtime, keep:
+
+```env
+DATABASE_URL=sqlite:////app/data/olre.sqlite3
+```
+
+Local Windows overrides are still allowed if you want the database under the repository instead of `/app/data`, for example:
 
 ```env
 DATABASE_URL=sqlite:///data/olre.sqlite3
-```
-
-For PostgreSQL, replace `DATABASE_URL` with:
-
-```env
-DATABASE_URL=postgresql+psycopg://olre_user:change-me@127.0.0.1:5432/olre_db
-```
-
-Legacy PostgreSQL variables are still supported when `DATABASE_URL` is not set:
-
-```env
-POSTGRES_HOST=127.0.0.1
-POSTGRES_PORT=5432
-POSTGRES_DB=olre_db
-POSTGRES_USER=olre_user
-POSTGRES_PASSWORD=change-me
+INPUT_DIR=data/input
+PROCESSED_DIR=data/processed
+ERROR_DIR=data/error
+QR_DEBUG_DIR=data/debug/qr
 ```
 
 For public mode:

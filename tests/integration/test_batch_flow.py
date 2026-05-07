@@ -86,19 +86,19 @@ def test_documents_row_created_for_valid_pdf(client):
     document_row = fetch_one(
         client.app.state.postgres_engine,
         """
-        SELECT original_file_name, file_size_bytes, processing_status, moved_to_path
+        SELECT original_file_name, file_size_bytes, processing_status, moved_to_path, source_file_present
         FROM documents
         """
     )
     assert document_row["original_file_name"] == "letter-002.pdf"
     assert document_row["file_size_bytes"] > 0
     assert document_row["processing_status"] == "processed"
-    assert document_row["moved_to_path"] is not None
+    assert document_row["moved_to_path"] is None
+    assert document_row["source_file_present"] == 0
 
 
 def test_duplicate_content_skip_does_not_create_new_processed_record(client):
     input_dir = Path(client.app.state.settings.input_dir)
-    processed_dir = Path(client.app.state.settings.processed_dir)
 
     create_valid_pdf(input_dir / "letter-a.pdf", "same content")
     run_batch_registration(
@@ -114,7 +114,8 @@ def test_duplicate_content_skip_does_not_create_new_processed_record(client):
         )
     )
 
-    original_pdf_path = processed_dir / "letter-a.pdf"
+    original_pdf_path = input_dir / "letter-a.pdf"
+    create_valid_pdf(original_pdf_path, "same content")
     duplicate_source = input_dir / "letter-b.pdf"
     duplicate_source.write_bytes(original_pdf_path.read_bytes())
 
@@ -132,12 +133,20 @@ def test_duplicate_content_skip_does_not_create_new_processed_record(client):
     assert summary.duplicate_files_skipped == 1
     assert summary.total_files_processed == 0
     assert not duplicate_source.exists()
-    assert len(list(processed_dir.glob("letter-*.pdf"))) == 2
+    ingestion_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT ingestion_status, used_cached_result
+        FROM document_ingestions
+        ORDER BY id DESC
+        """,
+    )
+    assert ingestion_row["ingestion_status"] == "reused_cached"
+    assert ingestion_row["used_cached_result"] == 1
 
 
 def test_same_filename_different_content_treated_as_new(client):
     input_dir = Path(client.app.state.settings.input_dir)
-    processed_dir = Path(client.app.state.settings.processed_dir)
 
     create_valid_pdf(input_dir / "same.pdf", "first content")
     run_batch_registration(
@@ -161,12 +170,10 @@ def test_same_filename_different_content_treated_as_new(client):
     assert document_rows[0]["original_file_name"] == "same.pdf"
     assert document_rows[1]["original_file_name"] == "same.pdf"
     assert document_rows[0]["content_hash"] != document_rows[1]["content_hash"]
-    assert len(list(processed_dir.glob("same*.pdf"))) == 2
 
 
-def test_processed_file_moved_to_processed_dir(client):
+def test_processed_file_deleted_after_success_under_default_retention(client):
     input_dir = Path(client.app.state.settings.input_dir)
-    processed_dir = Path(client.app.state.settings.processed_dir)
     source_path = input_dir / "move-me.pdf"
     create_valid_pdf(source_path, "move to processed")
 
@@ -177,12 +184,17 @@ def test_processed_file_moved_to_processed_dir(client):
     )
 
     assert not source_path.exists()
-    assert len(list(processed_dir.glob("move-me*.pdf"))) == 1
+    document_row = fetch_one(
+        client.app.state.postgres_engine,
+        "SELECT source_file_present, moved_to_path FROM documents ORDER BY id DESC",
+    )
+    assert document_row["source_file_present"] == 0
+    assert document_row["moved_to_path"] is None
 
 
 def test_fake_pdf_marked_failed_and_moved_to_error(client):
     input_dir = Path(client.app.state.settings.input_dir)
-    error_dir = Path(client.app.state.settings.error_dir)
+    failed_retained_dir = Path(client.app.state.settings.failed_retained_dir)
     source_path = input_dir / "fake.pdf"
     create_fake_pdf(source_path)
 
@@ -217,7 +229,7 @@ def test_fake_pdf_marked_failed_and_moved_to_error(client):
     assert document_row["processing_error_type"] == INVALID_PDF
     assert document_row["processing_error"].startswith("[PDF_VALIDATION_FAILED] PDF validation failed:")
     assert not source_path.exists()
-    assert len(list(error_dir.glob("fake*.pdf"))) == 1
+    assert len(list(failed_retained_dir.glob("fake*.pdf"))) == 1
     assert log_row["step_name"] == "pdf_validation"
     assert log_row["message"].startswith("[PDF_VALIDATION_FAILED] PDF validation failed:")
 
@@ -449,6 +461,55 @@ def test_pending_http_reference_resolved_after_insert(client, monkeypatch):
     assert reference_row["raw_reference"] == "https://example.com/resolve-me"
     assert reference_row["final_url"] == "https://final.example.com/destination"
     assert reference_row["resolution_status"] == "resolved"
+
+
+def test_force_reprocess_rebuilds_existing_hash_when_requested(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "force.pdf", "Reference https://example.com/original")
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    create_valid_pdf(input_dir / "force.pdf", "Reference https://example.com/original")
+
+    def fake_extract_references_from_pdf(_file_path, **_kwargs):
+        return (
+            [
+                ExtractedReference(
+                    page_number=1,
+                    source_type="text",
+                    reference_class="url",
+                    raw_reference="https://example.com/forced",
+                )
+            ],
+            [],
+            1,
+        )
+
+    monkeypatch.setattr(
+        "app.services.process_batch.extract_references_from_pdf",
+        fake_extract_references_from_pdf,
+    )
+
+    summary = run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+        force_reprocess=True,
+    )
+
+    assert summary.total_files_processed == 1
+    reference_rows = fetch_references(client.app.state.postgres_engine)
+    assert len(reference_rows) == 1
+    assert reference_rows[0]["raw_reference"] == "https://example.com/forced"
+    ingestion_row = fetch_one(
+        client.app.state.postgres_engine,
+        "SELECT ingestion_status, force_reprocess_requested FROM document_ingestions ORDER BY id DESC",
+    )
+    assert ingestion_row["ingestion_status"] == "forced_reprocess"
+    assert ingestion_row["force_reprocess_requested"] == 1
 
 
 def test_pending_http_reference_404_does_not_break_batch(client, monkeypatch):

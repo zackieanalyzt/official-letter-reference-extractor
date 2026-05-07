@@ -71,23 +71,22 @@ These directories contain runtime data and must not be committed.
 Default lightweight runtime database is SQLite:
 
 ```env
-DATABASE_URL=sqlite:///data/olre.sqlite3
+DATABASE_URL=sqlite:////app/data/olre.sqlite3
 ```
 
-PostgreSQL remains supported:
+Default runtime paths:
 
 ```env
-DATABASE_URL=postgresql+psycopg://olre_user:change-me@127.0.0.1:5432/olre_db
+INPUT_DIR=/app/data/input
+PROCESSED_DIR=/app/data/processed
+ERROR_DIR=/app/data/error
+QR_DEBUG_DIR=/app/data/debug/qr
 ```
 
-Legacy PostgreSQL variables are still supported when `DATABASE_URL` is not set:
+PostgreSQL remains a future profile note rather than a default runtime dependency:
 
 ```env
-POSTGRES_HOST=127.0.0.1
-POSTGRES_PORT=5432
-POSTGRES_DB=olre_db
-POSTGRES_USER=olre_user
-POSTGRES_PASSWORD=change-me
+# DATABASE_URL=postgresql+psycopg://olre_user:change-me@127.0.0.1:5432/olre_db
 ```
 
 Run migration:

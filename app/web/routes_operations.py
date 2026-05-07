@@ -25,7 +25,11 @@ from app.services.analytics_service import (
 from app.services.export_service import export_csv, export_excel, export_markdown
 from app.services.inbox_paths import get_inbox_path
 from app.services.results_service import DEFAULT_PAGE_SIZE, get_references
-from app.services.retry_service import retry_failed_document
+from app.services.retry_service import (
+    force_reprocess_document,
+    retry_document_resolution,
+    retry_failed_document,
+)
 from app.services.ui_views import (
     count_pending_inbox_files,
     fetch_export_summary,
@@ -277,7 +281,7 @@ async def delete_import_file(
 
 
 @router.get("/batch")
-async def batch_page(request: Request):
+async def batch_page(request: Request, force_reprocess_status: str | None = Query(default=None)):
     return _render(
         request,
         name="batch.html",
@@ -291,6 +295,7 @@ async def batch_page(request: Request):
                 request.app.state.settings,
                 request.app.state.database_engine,
             ),
+            "force_reprocess_status": force_reprocess_status,
         },
     )
 
@@ -349,6 +354,8 @@ async def results_page(
     date_from: str | None = Query(default=None),
     date_to: str | None = Query(default=None),
     domain: str | None = Query(default=None),
+    retry_status: str | None = Query(default=None),
+    force_reprocess_status: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
 ):
     filters = _collect_result_filters(
@@ -407,6 +414,8 @@ async def results_page(
                 filters=filters,
                 page=page + 1,
             ),
+            "retry_status": retry_status,
+            "force_reprocess_status": force_reprocess_status,
         },
     )
 
@@ -415,14 +424,52 @@ async def results_page(
 async def retry_document(request: Request, document_id: int):
     session_factory = get_session_factory(request.app.state.database_engine)
     with session_factory() as session:
-        result = retry_failed_document(session, request.app.state.settings, document_id)
+        result = retry_failed_document(
+            session,
+            request.app.state.settings,
+            request.app.state.database_engine,
+            document_id,
+        )
+        session.commit()
 
     if result.success:
-        logger.info("Retry queued document_id=%s destination=%s", document_id, result.destination_path)
-        return RedirectResponse(url="/imports", status_code=303)
+        logger.info("Retry queued document_id=%s batch_run_id=%s", document_id, result.batch_run_id)
+        return RedirectResponse(url="/batch", status_code=303)
 
     logger.warning("Retry skipped document_id=%s reason=%s", document_id, result.reason)
     return RedirectResponse(url=f"/results?retry_status={result.reason}", status_code=303)
+
+
+@router.post("/documents/{document_id}/retry-resolution")
+async def retry_document_url_resolution(request: Request, document_id: int):
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        result = retry_document_resolution(session, request.app.state.settings, document_id)
+        session.commit()
+
+    if result.success:
+        return RedirectResponse(url="/results?retry_status=resolution_retried", status_code=303)
+    return RedirectResponse(url=f"/results?retry_status={result.reason}", status_code=303)
+
+
+@router.post("/documents/{document_id}/force-reprocess")
+async def force_reprocess(request: Request, document_id: int):
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        result = force_reprocess_document(
+            session,
+            request.app.state.settings,
+            request.app.state.database_engine,
+            document_id,
+        )
+        session.commit()
+
+    if result.success:
+        return RedirectResponse(url="/batch?force_reprocess_status=queued", status_code=303)
+    return RedirectResponse(
+        url=f"/results?force_reprocess_status={result.reason}",
+        status_code=303,
+    )
 
 
 @router.get("/exports")

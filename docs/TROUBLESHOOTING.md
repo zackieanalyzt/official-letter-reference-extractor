@@ -74,7 +74,7 @@ Expected baseline:
 Use this in `.env`:
 
 ```env
-DATABASE_URL=sqlite:///data/olre.sqlite3
+DATABASE_URL=sqlite:////app/data/olre.sqlite3
 ```
 
 Then run:
@@ -87,9 +87,9 @@ python -m uvicorn app.main:app --reload
 If the database needs to be recreated during testing, stop the server and remove:
 
 ```text
-data/olre.sqlite3
-data/olre.sqlite3-wal
-data/olre.sqlite3-shm
+/app/data/olre.sqlite3
+/app/data/olre.sqlite3-wal
+/app/data/olre.sqlite3-shm
 ```
 
 Then rerun migration.
@@ -105,7 +105,7 @@ http://127.0.0.1:8000/healthz
 If it does not show `"database_backend":"sqlite"`, confirm `.env` contains:
 
 ```env
-DATABASE_URL=sqlite:///data/olre.sqlite3
+DATABASE_URL=sqlite:////app/data/olre.sqlite3
 ```
 
 Restart the server after changing `.env`.
@@ -113,7 +113,7 @@ Restart the server after changing `.env`.
 Then confirm data is in SQLite:
 
 ```powershell
-python -c "import sqlite3; con=sqlite3.connect('data/olre.sqlite3'); print(con.execute('select id, original_file_name from documents').fetchall()); con.close()"
+python -c "import sqlite3; con=sqlite3.connect('/app/data/olre.sqlite3'); print(con.execute('select id, original_file_name from documents').fetchall()); con.close()"
 ```
 
 ## SQLite Database Is Locked

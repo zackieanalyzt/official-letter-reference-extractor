@@ -21,7 +21,14 @@
                 <span class="card-kicker">{{ labels.start_job }}</span>
                 <h2>{{ labels.start_batch_now }}</h2>
                 <p class="muted-copy">{{ labels.start_batch_description }}</p>
+                {% if force_reprocess_status == "queued" %}
+                <div class="alert alert-success">{{ labels.force_reprocess_queued }}</div>
+                {% endif %}
                 <form method="post" action="/batch/process" class="batch-action-form">
+                    <label class="filter-field">
+                        <input type="checkbox" name="force_reprocess_duplicates" value="true">
+                        <span>{{ labels.force_reprocess_duplicates }}</span>
+                    </label>
                     <button type="submit" class="button button-primary">{{ labels.start_batch }}</button>
                 </form>
             </article>

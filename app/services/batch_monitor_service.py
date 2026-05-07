@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import BatchRun, Document, DocumentReference
+from app.db.models import BatchRun, Document, DocumentIngestion, DocumentReference
 
 
 def _format_datetime(value: datetime | None) -> str:
@@ -75,24 +75,29 @@ def get_batch_run_detail(session: Session, batch_run_id: int) -> dict | None:
 
     document_rows = session.execute(
         select(
-            Document.id,
-            Document.original_file_name,
+            DocumentIngestion.id.label("ingestion_id"),
+            Document.id.label("document_id"),
+            DocumentIngestion.uploaded_file_name.label("filename"),
             Document.content_hash,
-            Document.processing_status,
-            Document.processing_error_type,
+            DocumentIngestion.ingestion_status.label("processing_status"),
+            DocumentIngestion.error_type.label("processing_error_type"),
+            DocumentIngestion.used_cached_result.label("used_cached_result"),
             func.count(DocumentReference.id).label("reference_count"),
         )
-        .select_from(Document)
+        .select_from(DocumentIngestion)
+        .join(Document, DocumentIngestion.document_id == Document.id)
         .outerjoin(DocumentReference, DocumentReference.document_id == Document.id)
-        .where(Document.batch_run_id == batch_run_id)
+        .where(DocumentIngestion.batch_run_id == batch_run_id)
         .group_by(
+            DocumentIngestion.id,
             Document.id,
-            Document.original_file_name,
+            DocumentIngestion.uploaded_file_name,
             Document.content_hash,
-            Document.processing_status,
-            Document.processing_error_type,
+            DocumentIngestion.ingestion_status,
+            DocumentIngestion.error_type,
+            DocumentIngestion.used_cached_result,
         )
-        .order_by(Document.id.desc())
+        .order_by(DocumentIngestion.id.desc())
     ).all()
 
     return {
@@ -111,12 +116,13 @@ def get_batch_run_detail(session: Session, batch_run_id: int) -> dict | None:
         },
         "documents": [
             {
-                "document_id": row.id,
-                "filename": row.original_file_name,
+                "document_id": row.document_id,
+                "filename": row.filename,
                 "content_hash": row.content_hash,
                 "processing_status": row.processing_status,
                 "processing_error_type": row.processing_error_type,
                 "reference_count": row.reference_count,
+                "used_cached_result": bool(row.used_cached_result),
             }
             for row in document_rows
         ],
