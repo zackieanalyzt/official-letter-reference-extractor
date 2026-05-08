@@ -94,6 +94,97 @@ If the database needs to be recreated during testing, stop the server and remove
 
 Then rerun migration.
 
+## Docker Runtime Does Not Start
+
+Build and run the Docker profile directly:
+
+```powershell
+docker compose build
+docker compose up
+```
+
+Expected host URL:
+
+```text
+http://127.0.0.1:7777
+```
+
+Expected health check:
+
+```powershell
+curl http://localhost:7777/healthz
+```
+
+If startup fails, inspect logs:
+
+```powershell
+docker compose logs -f
+```
+
+## Docker `libGL.so.1` or `libxcb.so.1` Error
+
+Rebuild the image without cache:
+
+```powershell
+docker compose build --no-cache
+docker compose up
+```
+
+This repository's Docker image includes `libgl1`, `libglib2.0-0`, `libsm6`, `libxext6`, `libxrender1`, and `libxcb1` for OpenCV and PyMuPDF runtime compatibility.
+
+## Docker Data Did Not Persist
+
+The Compose file uses the named volume `olre_data` mounted at `/app/data`.
+
+Check:
+
+```powershell
+docker compose ps
+docker volume ls
+```
+
+Do not use this unless you intend to delete the database and runtime files:
+
+```powershell
+docker compose down -v
+```
+
+Safe stop that keeps data:
+
+```powershell
+docker compose down
+docker compose up -d
+```
+
+Then verify:
+
+```powershell
+curl http://localhost:7777/healthz
+docker compose logs --tail 100
+```
+
+## Docker Runtime Unexpectedly Uses Non-SQLite Database
+
+Check the container health response:
+
+```powershell
+curl http://localhost:7777/healthz
+```
+
+Expected:
+
+```json
+{"status":"ok","database_backend":"sqlite"}
+```
+
+The Docker runtime in this repository is intended to run with:
+
+```env
+DATABASE_URL=sqlite:////app/data/olre.sqlite3
+ENABLE_AUTH=false
+APP_LANG=th
+```
+
 ## App Still Writes to PostgreSQL
 
 Check `/healthz`:

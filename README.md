@@ -8,7 +8,8 @@ OLRE now targets a SQLite-first Docker runtime with zero external database setup
 
 - Default runtime database: `sqlite:////app/data/olre.sqlite3`
 - Runtime paths: everything lives under `/app/data`
-- Default web port: `8000`
+- Default Docker web port: `7777`
+- Default venv web port: `8000`
 - Container startup: validate paths, run Alembic migrations, start app
 - `/healthz`: lightweight process health
 - `/readyz`: database ping plus writable runtime path checks
@@ -44,23 +45,40 @@ Runtime files are stored under `/app/data/input`, `/app/data/processed`, `/app/d
 ## Quick Start with Docker
 
 ```powershell
-docker build -t olre .
-docker run --rm -p 8000:8000 -v olre_data:/app/data olre
+docker compose build
+docker compose up --build
 ```
 
 Open:
 
 ```text
-http://127.0.0.1:8000/imports
+http://127.0.0.1:7777
 ```
 
-Or use Compose:
+Verify health:
 
 ```powershell
-docker compose up --build
+curl http://localhost:7777/healthz
 ```
 
-## Quick Start on Windows
+Expected:
+
+```json
+{"status":"ok","database_backend":"sqlite"}
+```
+
+The Docker runtime is intentionally SQLite-first, single-container, and public-mode by default:
+
+- `ENABLE_AUTH=false`
+- `APP_LANG=th`
+- `DATABASE_URL=sqlite:////app/data/olre.sqlite3`
+- Named Docker volume `olre_data` mounted at `/app/data`
+
+Full guide:
+
+- [Docker SQLite runtime guide](docs/DOCKER_SQLITE_RUNTIME.md)
+
+## Quick Start on Windows venv
 
 SQLite is the default runtime:
 
@@ -99,6 +117,7 @@ Tesseract OCR and zbar are native Windows runtimes and still need separate insta
 - `ENABLE_AUTH=false` runs the public non-OAuth version.
 - `APP_TOKEN=` optionally protects `POST /batch/process` with `X-API-KEY`.
 - `APP_LANG=th` sets the default UI language when no cookie exists.
+- `APP_PORT=7777` is the Docker Compose default for this repository.
 - `INPUT_DIR=/app/data/input` stores pending PDFs.
 - `PROCESSED_DIR=/app/data/processed` stores processed PDFs.
 - `ERROR_DIR=/app/data/error` stores failed PDFs.
@@ -126,6 +145,7 @@ Exports preserve filters passed from `/results`.
 
 ## Documentation
 
+- [Docker SQLite runtime guide](docs/DOCKER_SQLITE_RUNTIME.md)
 - [Windows installation](docs/INSTALL_WINDOWS.md)
 - [SQLite runtime guide](docs/SQLITE_RUNTIME.md)
 - [Thai user manual](docs/USER_MANUAL_TH.md)
@@ -150,10 +170,10 @@ SQLite backup should include the database file and any WAL sidecars:
 /app/data/olre.sqlite3-shm
 ```
 
-Confirm the active database backend with:
+Confirm the active database backend with Docker:
 
 ```text
-http://127.0.0.1:8000/healthz
+http://127.0.0.1:7777/healthz
 ```
 
 SQLite mode should return:
