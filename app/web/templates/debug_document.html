@@ -38,7 +38,7 @@
                 <section class="debug-attempt">
                     <div class="debug-attempt-head">
                         <div>
-                            <strong>{{ attempt.zone }} | {{ attempt.variant }}</strong>
+                            <strong>{{ attempt.strategy_name }} | {{ attempt.variant }}</strong>
                             {% if attempt.success %}
                             <span class="status-badge status-badge-resolved">{{ labels.success }}</span>
                             {% else %}
@@ -46,6 +46,11 @@
                             {% endif %}
                         </div>
                     </div>
+                    <p class="muted-inline">{{ labels.region }}: {{ attempt.zone }}</p>
+                    {% if attempt.crop_bounds %}
+                    <p class="muted-inline">{{ labels.crop_bounds }}: x={{ attempt.crop_bounds.x }}, y={{ attempt.crop_bounds.y }}, w={{ attempt.crop_bounds.width }}, h={{ attempt.crop_bounds.height }}</p>
+                    {% endif %}
+                    <p class="muted-inline">{{ labels.decode_status }}: {{ attempt.decode_status }}</p>
                     {% if attempt.decoded_value %}
                     <p class="debug-decoded">{{ attempt.decoded_value }}</p>
                     {% endif %}

@@ -869,6 +869,45 @@ select:focus {
     font-size: 1.35rem;
 }
 
+.destination-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.55rem;
+}
+
+.destination-hint,
+.destination-host {
+    margin: 0.45rem 0 0;
+    color: var(--ink-soft);
+    line-height: 1.5;
+}
+
+.destination-host {
+    font-size: 0.86rem;
+}
+
+.destination-badge-form {
+    background: #fff1d6;
+    color: #8a5600;
+}
+
+.destination-badge-document {
+    background: #e8f2ff;
+    color: #1f5f9c;
+}
+
+.destination-badge-government {
+    background: #e8f8ea;
+    color: #1d6a3b;
+}
+
+.destination-badge-redirect,
+.destination-badge-external {
+    background: #eef1f4;
+    color: #435866;
+}
+
 .table-link {
     color: var(--brand-700);
     font-weight: 700;

@@ -41,6 +41,19 @@ def save_debug_image(img, meta: dict, settings) -> str | None:
     return str(path)
 
 
+def should_persist_debug_image(meta: dict) -> bool:
+    if meta.get("success"):
+        return True
+    zone = meta.get("zone")
+    return zone in {
+        "full_page",
+        "bottom_left_deep",
+        "lower_left_25_percent",
+        "lower_left_30_percent",
+        "qr_label_region",
+    }
+
+
 def save_debug_records(document_id: int | None, records: list[dict], settings) -> str | None:
     if not _debug_enabled(settings) or document_id is None:
         return None

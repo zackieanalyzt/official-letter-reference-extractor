@@ -192,6 +192,9 @@ def _process_document_from_source(
             "raw_reference": ref.raw_reference,
             "final_url": ref.final_url,
             "resolution_status": ref.resolution_status,
+            "destination_type": ref.destination_type,
+            "destination_host": ref.destination_host,
+            "requires_user_action": ref.requires_user_action,
             "http_status": ref.http_status,
             "resolution_error_type": ref.resolution_error_type,
             "resolution_error_detail": ref.resolution_error_detail,
@@ -291,6 +294,9 @@ def _process_document_from_source(
             )
             new_ref.final_url = ref["final_url"]
             new_ref.resolution_status = ref["resolution_status"]
+            new_ref.destination_type = ref["destination_type"]
+            new_ref.destination_host = ref["destination_host"]
+            new_ref.requires_user_action = ref["requires_user_action"]
             new_ref.http_status = ref["http_status"]
             new_ref.resolution_error_type = ref["resolution_error_type"]
             new_ref.resolution_error_detail = ref["resolution_error_detail"]

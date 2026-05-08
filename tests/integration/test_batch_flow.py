@@ -39,6 +39,7 @@ def fetch_references(engine):
         engine,
         """
         SELECT page_number, source_type, reference_class, raw_reference, resolution_status, final_url,
+               destination_type, destination_host, requires_user_action,
                resolution_error_type, resolution_error_detail
         FROM document_references
         ORDER BY id
@@ -300,6 +301,7 @@ def test_text_url_reference_persisted_from_pdf_text(client, monkeypatch):
     assert reference_rows[0]["raw_reference"] == "https://example.com/files/12345"
     assert reference_rows[0]["resolution_status"] == "resolved"
     assert reference_rows[0]["final_url"] == "https://resolved.example.com/files/12345"
+    assert reference_rows[0]["destination_type"] == "external"
 
 
 def test_short_url_reference_classified_from_pdf_text(client):
@@ -462,6 +464,114 @@ def test_pending_http_reference_resolved_after_insert(client, monkeypatch):
     assert reference_row["raw_reference"] == "https://example.com/resolve-me"
     assert reference_row["final_url"] == "https://final.example.com/destination"
     assert reference_row["resolution_status"] == "resolved"
+
+
+def test_google_form_destination_is_classified(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "google-form.pdf", "Reference https://short.example/form")
+
+    def fake_resolve_url(raw_url: str):
+        return {
+            "raw_url": raw_url,
+            "final_url": "https://docs.google.com/forms/d/e/test/viewform",
+            "status": "resolved",
+            "http_status_code": 200,
+            "error": None,
+            "attempts": 1,
+        }
+
+    monkeypatch.setattr("app.batch.url_resolution.resolve_url", fake_resolve_url)
+
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT destination_type, destination_host, requires_user_action
+        FROM document_references
+        ORDER BY id DESC
+        """,
+    )
+
+    assert reference_row["destination_type"] == "form"
+    assert reference_row["destination_host"] == "docs.google.com"
+    assert reference_row["requires_user_action"] == 1
+
+
+def test_google_drive_destination_is_classified(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "drive-doc.pdf", "Reference https://example.com/drive")
+
+    monkeypatch.setattr(
+        "app.batch.url_resolution.resolve_url",
+        lambda raw_url: {
+            "raw_url": raw_url,
+            "final_url": "https://drive.google.com/file/d/abc123/view",
+            "status": "resolved",
+            "http_status_code": 200,
+            "error": None,
+            "attempts": 1,
+        },
+    )
+
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT destination_type, destination_host, requires_user_action
+        FROM document_references
+        ORDER BY id DESC
+        """,
+    )
+
+    assert reference_row["destination_type"] == "document"
+    assert reference_row["destination_host"] == "drive.google.com"
+    assert reference_row["requires_user_action"] == 0
+
+
+def test_unknown_external_destination_is_classified(client, monkeypatch):
+    input_dir = Path(client.app.state.settings.input_dir)
+    create_valid_pdf(input_dir / "external-destination.pdf", "Reference https://example.com/external")
+
+    monkeypatch.setattr(
+        "app.batch.url_resolution.resolve_url",
+        lambda raw_url: {
+            "raw_url": raw_url,
+            "final_url": "https://partner.example.net/workflow",
+            "status": "resolved",
+            "http_status_code": 200,
+            "error": None,
+            "attempts": 1,
+        },
+    )
+
+    run_batch_registration(
+        client.app.state.settings,
+        client.app.state.postgres_engine,
+        triggered_by="alice",
+    )
+
+    reference_row = fetch_one(
+        client.app.state.postgres_engine,
+        """
+        SELECT destination_type, destination_host, requires_user_action
+        FROM document_references
+        ORDER BY id DESC
+        """,
+    )
+
+    assert reference_row["destination_type"] == "external"
+    assert reference_row["destination_host"] == "partner.example.net"
+    assert reference_row["requires_user_action"] == 0
 
 
 def test_force_reprocess_rebuilds_existing_hash_when_requested(client, monkeypatch):

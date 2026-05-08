@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import re
 import inspect
+import re
 from dataclasses import dataclass
 from typing import Callable
 
@@ -13,7 +13,7 @@ from app.batch.error_types import (
     TEXT_EXTRACTION_FAIL,
 )
 from app.batch.ocr import extract_text_with_ocr_if_needed
-from app.batch.qr_debug import save_debug_image, save_debug_records
+from app.batch.qr_debug import save_debug_image, save_debug_records, should_persist_debug_image
 from app.logging_config import get_logger
 
 
@@ -115,30 +115,127 @@ def _dedupe_qr_values(decoded_values: list[str]) -> list[str]:
     return unique_values
 
 
-def _build_debug_attempt_variants(image, grayscale, thresholded):
+def _crop_region(image, *, x0: int, y0: int, x1: int, y1: int):
+    height, width = image.shape[:2]
+    left = max(0, min(x0, width))
+    top = max(0, min(y0, height))
+    right = max(left + 1, min(x1, width))
+    bottom = max(top + 1, min(y1, height))
+    return image[top:bottom, left:right], {
+        "x": left,
+        "y": top,
+        "width": right - left,
+        "height": bottom - top,
+    }
+
+
+def _build_qr_attempts(image, grayscale, thresholded):
     import cv2
 
     height, width = grayscale.shape[:2]
     bottom_start = int(height * 0.55)
-    bottom_crop = grayscale[bottom_start:height, :]
     third_width = max(width // 3, 1)
+    adaptive_full = cv2.adaptiveThreshold(
+        grayscale,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        35,
+        11,
+    )
+    adaptive_low_contrast = cv2.adaptiveThreshold(
+        grayscale,
+        255,
+        cv2.ADAPTIVE_THRESH_MEAN_C,
+        cv2.THRESH_BINARY,
+        31,
+        7,
+    )
 
-    variants = [
-        ("full_page", "full_original", image),
-        ("full_page", "grayscale", grayscale),
-        ("full_page", "upscaled_6x", cv2.resize(grayscale, None, fx=6, fy=6, interpolation=cv2.INTER_CUBIC)),
-        ("full_page", "threshold", thresholded),
-        (
+    def build_attempt(zone: str, strategy_name: str, variant_name: str, variant_image, crop_bounds: dict):
+        if not variant_image.size:
+            return None
+        return {
+            "zone": zone,
+            "strategy_name": strategy_name,
+            "variant": variant_name,
+            "image": variant_image,
+            "crop_bounds": crop_bounds,
+        }
+
+    attempts = [
+        build_attempt(
             "full_page",
-            "adaptive_threshold",
-            cv2.adaptiveThreshold(grayscale, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 35, 11),
+            "full_page_original",
+            "full_original",
+            image,
+            {"x": 0, "y": 0, "width": width, "height": height},
         ),
-        ("bottom_crop", "grayscale", bottom_crop),
-        ("bottom_left", "grayscale", bottom_crop[:, :third_width]),
-        ("bottom_center", "grayscale", bottom_crop[:, third_width : third_width * 2]),
-        ("bottom_right", "grayscale", bottom_crop[:, third_width * 2 :]),
+        build_attempt(
+            "full_page",
+            "full_page_grayscale",
+            "grayscale",
+            grayscale,
+            {"x": 0, "y": 0, "width": width, "height": height},
+        ),
+        build_attempt(
+            "full_page",
+            "full_page_upscaled_6x",
+            "upscaled_6x",
+            cv2.resize(grayscale, None, fx=6, fy=6, interpolation=cv2.INTER_CUBIC),
+            {"x": 0, "y": 0, "width": width, "height": height},
+        ),
+        build_attempt(
+            "full_page",
+            "full_page_threshold",
+            "threshold",
+            thresholded,
+            {"x": 0, "y": 0, "width": width, "height": height},
+        ),
+        build_attempt(
+            "full_page",
+            "full_page_adaptive_threshold",
+            "adaptive_threshold",
+            adaptive_full,
+            {"x": 0, "y": 0, "width": width, "height": height},
+        ),
     ]
-    return [(zone, variant_name, variant) for zone, variant_name, variant in variants if variant.size]
+
+    region_specs = [
+        ("bottom_crop", "bottom_crop", 0, bottom_start, width, height),
+        ("bottom_left", "bottom_left", 0, bottom_start, third_width, height),
+        ("bottom_center", "bottom_center", third_width, bottom_start, third_width * 2, height),
+        ("bottom_right", "bottom_right", third_width * 2, bottom_start, width, height),
+        ("bottom_left_deep", "bottom_left_deep", 0, int(height * 0.62), int(width * 0.32), height),
+        ("lower_left_25_percent", "lower_left_25_percent", 0, int(height * 0.75), int(width * 0.25), height),
+        ("lower_left_30_percent", "lower_left_30_percent", 0, int(height * 0.7), int(width * 0.3), height),
+        ("qr_label_region", "qr_label_region", 0, int(height * 0.58), int(width * 0.42), height),
+    ]
+
+    source_variants = [
+        ("grayscale", grayscale),
+        ("threshold", thresholded),
+        ("adaptive_threshold", adaptive_full),
+        ("adaptive_threshold_low_contrast", adaptive_low_contrast),
+    ]
+
+    for zone, strategy_name, x0, y0, x1, y1 in region_specs:
+        for variant_name, source_variant in source_variants:
+            cropped, crop_bounds = _crop_region(source_variant, x0=x0, y0=y0, x1=x1, y1=y1)
+            attempts.append(build_attempt(zone, strategy_name, variant_name, cropped, crop_bounds))
+            if zone in {"bottom_left_deep", "lower_left_25_percent", "lower_left_30_percent", "qr_label_region"}:
+                upscaled = cv2.resize(cropped, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+                attempts.append(
+                    build_attempt(
+                        zone,
+                        f"{strategy_name}_upscaled",
+                        f"{variant_name}_upscaled_3x",
+                        upscaled,
+                        crop_bounds,
+                    )
+                )
+
+    return [attempt for attempt in attempts if attempt is not None]
 
 
 def _decode_with_pyzbar(image) -> list[str]:
@@ -176,66 +273,54 @@ def detect_qr_values_from_page(
     image = render_page_to_rgb_array(page)
     grayscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     _, thresholded = cv2.threshold(grayscale, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    variants = [
-        ("full_original", image),
-        ("grayscale", grayscale),
-        ("threshold", thresholded),
-    ]
-
+    attempts = _build_qr_attempts(image, grayscale, thresholded)
     detector = cv2.QRCodeDetector()
     decoded_values: list[str] = []
     debug_enabled = bool(settings is not None and getattr(settings, "qr_debug_export", False))
 
-    for variant_name, variant in variants:
-        variant_values = _decode_with_opencv(detector, variant)
+    for attempt in attempts:
+        variant_values = _decode_with_opencv(detector, attempt["image"])
         decoded_values.extend(variant_values)
+        normalized_values = _dedupe_qr_values(variant_values)
+
+        if normalized_values or debug_enabled:
+            logger.info(
+                "[QR_DETECT_ATTEMPT] page=%s strategy=%s zone=%s variant=%s success=%s values=%s crop=%s",
+                page_number,
+                attempt["strategy_name"],
+                attempt["zone"],
+                attempt["variant"],
+                bool(normalized_values),
+                len(normalized_values),
+                attempt["crop_bounds"],
+            )
 
         if debug_records is not None and debug_enabled and document_id is not None and page_number is not None:
-            normalized_values = _dedupe_qr_values(variant_values)
             meta = {
                 "document_id": document_id,
                 "page": page_number,
-                "zone": "full_page",
-                "variant": variant_name,
+                "zone": attempt["zone"],
+                "variant": attempt["variant"],
+                "strategy_name": attempt["strategy_name"],
+                "crop_bounds": attempt["crop_bounds"],
+                "success": bool(normalized_values),
             }
-            debug_path = save_debug_image(variant, meta, settings)
+            debug_path = save_debug_image(attempt["image"], meta, settings) if should_persist_debug_image(meta) else None
             debug_records.append(
                 {
                     "page": page_number,
-                    "zone": "full_page",
-                    "variant": variant_name,
+                    "zone": attempt["zone"],
+                    "variant": attempt["variant"],
+                    "strategy_name": attempt["strategy_name"],
+                    "crop_bounds": attempt["crop_bounds"],
                     "success": bool(normalized_values),
                     "decoded_value": " | ".join(normalized_values),
+                    "decode_status": "success" if normalized_values else "failed",
                     "image_path": debug_path,
                 }
             )
 
     unique_values = _dedupe_qr_values(decoded_values)
-
-    if debug_records is not None and debug_enabled and document_id is not None and page_number is not None:
-        output_variant_keys = {("full_page", variant_name) for variant_name, _ in variants}
-        for zone, variant_name, variant in _build_debug_attempt_variants(image, grayscale, thresholded):
-            if (zone, variant_name) in output_variant_keys:
-                continue
-            variant_values = _decode_with_opencv(detector, variant)
-            normalized_values = _dedupe_qr_values(variant_values)
-            meta = {
-                "document_id": document_id,
-                "page": page_number,
-                "zone": zone,
-                "variant": variant_name,
-            }
-            debug_path = save_debug_image(variant, meta, settings)
-            debug_records.append(
-                {
-                    "page": page_number,
-                    "zone": zone,
-                    "variant": variant_name,
-                    "success": bool(normalized_values),
-                    "decoded_value": " | ".join(normalized_values),
-                    "image_path": debug_path,
-                }
-            )
 
     fallback_decoder = getattr(settings, "qr_fallback_decoder", "none") if settings is not None else "none"
     if not unique_values and fallback_decoder == "pyzbar":

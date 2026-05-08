@@ -160,6 +160,70 @@ def test_results_page_loads(client):
     assert "beta-scan.pdf" in response.text
 
 
+def test_results_page_shows_google_form_destination_guidance(client):
+    with client.app.state.postgres_engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                INSERT INTO documents (
+                    id,
+                    batch_run_id,
+                    original_file_name,
+                    content_hash,
+                    file_size_bytes,
+                    page_count,
+                    document_number,
+                    processing_status,
+                    processing_error,
+                    processing_error_type,
+                    processing_error_detail,
+                    processed_at,
+                    moved_to_path,
+                    extraction_version,
+                    retention_mode,
+                    source_file_present,
+                    source_deleted_at,
+                    last_source_path,
+                    retry_requires_reupload,
+                    last_ingestion_used_cached_result
+                )
+                VALUES
+                    (10, NULL, 'google-form.pdf', 'hash-google-form', 120, 1, NULL, 'processed', NULL, NULL, NULL, '2026-04-24 12:00:00', NULL, 1, 'retain_failed_only', 0, '2026-04-24 12:01:00', NULL, 1, 0)
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO document_references (
+                    id,
+                    document_id,
+                    page_number,
+                    source_type,
+                    reference_class,
+                    raw_reference,
+                    final_url,
+                    resolution_status,
+                    destination_type,
+                    destination_host,
+                    requires_user_action,
+                    http_status,
+                    resolution_error_type,
+                    resolution_error_detail
+                )
+                VALUES
+                    (10, 10, 1, 'qr', 'qr', 'https://forms.gle/example', 'https://docs.google.com/forms/d/e/demo/viewform', 'resolved', 'form', 'docs.google.com', 1, 200, NULL, NULL)
+                """
+            )
+        )
+
+    response = client.get("/results")
+
+    assert response.status_code == 200
+    assert "Google Form" in response.text
+    assert LABELS["destination_hint_form"] in response.text
+
+
 def test_results_filtering_works(client):
     seed_reference_rows(client.app.state.postgres_engine)
 

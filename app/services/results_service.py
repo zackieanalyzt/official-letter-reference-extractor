@@ -6,6 +6,7 @@ from datetime import datetime, time
 from sqlalchemy import Select, case, func, or_, select
 from sqlalchemy.orm import Session
 
+from app.batch.destination_classification import destination_hint_key, destination_label_key
 from app.db.models import Document, DocumentReference
 
 
@@ -23,6 +24,11 @@ class ResultsReferenceRow:
     raw_reference: str | None
     final_url: str | None
     resolution_status: str | None
+    destination_type: str | None
+    destination_host: str | None
+    requires_user_action: bool | None
+    destination_label_key: str | None
+    operational_hint_key: str | None
     processing_status: str
     processing_error_type: str | None
     resolution_error_type: str | None
@@ -74,6 +80,9 @@ def _build_reference_statement(
             DocumentReference.raw_reference,
             DocumentReference.final_url,
             DocumentReference.resolution_status,
+            DocumentReference.destination_type,
+            DocumentReference.destination_host,
+            DocumentReference.requires_user_action,
             Document.processing_status,
             Document.processing_error_type,
             DocumentReference.resolution_error_type,
@@ -195,6 +204,15 @@ def get_references(
                 raw_reference=row.raw_reference,
                 final_url=row.final_url,
                 resolution_status=row.resolution_status,
+                destination_type=row.destination_type,
+                destination_host=row.destination_host,
+                requires_user_action=row.requires_user_action,
+                destination_label_key=(
+                    destination_label_key(row.destination_type, row.destination_host)
+                    if row.destination_type or row.destination_host
+                    else None
+                ),
+                operational_hint_key=destination_hint_key(row.destination_type) if row.destination_type else None,
                 processing_status=row.processing_status,
                 processing_error_type=row.processing_error_type,
                 resolution_error_type=row.resolution_error_type,

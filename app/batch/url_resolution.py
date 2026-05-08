@@ -6,6 +6,7 @@ import httpx
 from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
+from app.batch.destination_classification import classify_destination
 from app.batch.error_types import URL_HTTP_ERROR, URL_RESOLUTION_FAIL, URL_TIMEOUT
 from app.db.models import DocumentReference
 from app.logging_config import get_logger
@@ -138,9 +139,25 @@ def _resolve_references(session: Session, references: list[DocumentReference], *
 
         reference.final_url = result["final_url"]
         reference.resolution_status = result["status"]
+        classification = classify_destination(
+            raw_url=reference.raw_reference,
+            final_url=result["final_url"],
+        )
+        reference.destination_type = classification.destination_type if classification else None
+        reference.destination_host = classification.destination_host if classification else None
+        reference.requires_user_action = classification.requires_user_action if classification else None
         reference.http_status = result.get("http_status_code")
         reference.resolution_error_type = error_type
         reference.resolution_error_detail = result.get("error")
+
+        if classification is not None:
+            logger.info(
+                "[URL_DESTINATION_CLASSIFIED] reference_id=%s type=%s host=%s requires_user_action=%s",
+                reference.id,
+                reference.destination_type,
+                reference.destination_host,
+                reference.requires_user_action,
+            )
 
         if result["status"] == "resolved":
             summary["resolved"] += 1
@@ -200,6 +217,9 @@ def re_resolve_document_references(session: Session, document_id: int, *, settin
         if is_http_url(reference.raw_reference):
             reference.resolution_status = "pending"
             reference.final_url = None
+            reference.destination_type = None
+            reference.destination_host = None
+            reference.requires_user_action = None
             reference.http_status = None
             reference.resolution_error_type = None
             reference.resolution_error_detail = None

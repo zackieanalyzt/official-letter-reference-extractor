@@ -147,6 +147,20 @@
                             <td class="cell-wrap">
                                 {% if row.final_url %}
                                 <a class="table-link ellipsis-link" href="{{ row.final_url }}" target="_blank" rel="noopener noreferrer" title="{{ row.final_url }}">{{ row.final_url }}</a>
+                                {% if row.destination_label_key %}
+                                <div class="destination-meta">
+                                    <span class="status-badge destination-badge destination-badge-{{ row.destination_type or 'external' }}">{{ labels.get(row.destination_label_key, row.destination_type or labels.external) }}</span>
+                                    {% if row.requires_user_action %}
+                                    <span class="metric-chip">{{ labels.requires_user_action }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if row.operational_hint_key %}
+                                <p class="destination-hint">{{ labels.get(row.operational_hint_key, "") }}</p>
+                                {% endif %}
+                                {% if row.destination_host %}
+                                <p class="destination-host">{{ row.destination_host }}</p>
+                                {% endif %}
                                 {% else %}
                                 <span class="muted-inline">-</span>
                                 {% endif %}
