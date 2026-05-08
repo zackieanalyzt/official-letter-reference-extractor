@@ -206,10 +206,14 @@ def _build_qr_attempts(image, grayscale, thresholded):
         ("bottom_left", "bottom_left", 0, bottom_start, third_width, height),
         ("bottom_center", "bottom_center", third_width, bottom_start, third_width * 2, height),
         ("bottom_right", "bottom_right", third_width * 2, bottom_start, width, height),
+        ("left_band_40_65_percent", "left_band_40_65_percent", 0, int(height * 0.40), int(width * 0.35), int(height * 0.65)),
+        ("left_band_45_70_percent", "left_band_45_70_percent", 0, int(height * 0.45), int(width * 0.35), int(height * 0.70)),
+        ("left_lower_mid_35_percent", "left_lower_mid_35_percent", 0, int(height * 0.42), int(width * 0.40), int(height * 0.68)),
         ("bottom_left_deep", "bottom_left_deep", 0, int(height * 0.62), int(width * 0.32), height),
         ("lower_left_25_percent", "lower_left_25_percent", 0, int(height * 0.75), int(width * 0.25), height),
         ("lower_left_30_percent", "lower_left_30_percent", 0, int(height * 0.7), int(width * 0.3), height),
         ("qr_label_region", "qr_label_region", 0, int(height * 0.58), int(width * 0.42), height),
+        ("qr_label_band", "qr_label_band", 0, int(height * 0.46), int(width * 0.42), int(height * 0.74)),
     ]
 
     source_variants = [
@@ -223,7 +227,16 @@ def _build_qr_attempts(image, grayscale, thresholded):
         for variant_name, source_variant in source_variants:
             cropped, crop_bounds = _crop_region(source_variant, x0=x0, y0=y0, x1=x1, y1=y1)
             attempts.append(build_attempt(zone, strategy_name, variant_name, cropped, crop_bounds))
-            if zone in {"bottom_left_deep", "lower_left_25_percent", "lower_left_30_percent", "qr_label_region"}:
+            if zone in {
+                "left_band_40_65_percent",
+                "left_band_45_70_percent",
+                "left_lower_mid_35_percent",
+                "bottom_left_deep",
+                "lower_left_25_percent",
+                "lower_left_30_percent",
+                "qr_label_region",
+                "qr_label_band",
+            }:
                 upscaled = cv2.resize(cropped, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
                 attempts.append(
                     build_attempt(
@@ -234,6 +247,17 @@ def _build_qr_attempts(image, grayscale, thresholded):
                         crop_bounds,
                     )
                 )
+                if variant_name in {"grayscale", "adaptive_threshold", "adaptive_threshold_low_contrast"}:
+                    upscaled_4x = cv2.resize(cropped, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+                    attempts.append(
+                        build_attempt(
+                            zone,
+                            f"{strategy_name}_upscaled_4x",
+                            f"{variant_name}_upscaled_4x",
+                            upscaled_4x,
+                            crop_bounds,
+                        )
+                    )
 
     return [attempt for attempt in attempts if attempt is not None]
 

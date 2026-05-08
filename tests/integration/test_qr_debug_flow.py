@@ -80,10 +80,14 @@ def test_qr_debug_capture_includes_real_world_variants(tmp_path):
     assert ("full_page", "adaptive_threshold") in attempts
     assert ("bottom_crop", "grayscale") in attempts
     assert ("bottom_left", "grayscale") in attempts
+    assert ("left_band_40_65_percent", "grayscale_upscaled_4x") in attempts
+    assert ("left_band_45_70_percent", "adaptive_threshold_upscaled_4x") in attempts
+    assert ("left_lower_mid_35_percent", "adaptive_threshold_low_contrast_upscaled_4x") in attempts
     assert ("bottom_left_deep", "adaptive_threshold_upscaled_3x") in attempts
     assert ("lower_left_25_percent", "adaptive_threshold_low_contrast_upscaled_3x") in attempts
     assert ("lower_left_30_percent", "threshold_upscaled_3x") in attempts
     assert ("qr_label_region", "adaptive_threshold_upscaled_3x") in attempts
+    assert ("qr_label_band", "grayscale_upscaled_4x") in attempts
     assert "strategy_name" in records[0]
     assert "crop_bounds" in records[0]
     assert "decode_status" in records[0]

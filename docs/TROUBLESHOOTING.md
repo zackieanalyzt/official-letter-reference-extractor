@@ -299,6 +299,61 @@ QR_DEBUG_DIR=data/debug/qr
 
 Then process a document again. Existing documents will not have debug artifacts unless they were processed while debug export was enabled.
 
+## QR Exists but OLRE Still Does Not Detect It
+
+This can happen with real scanned government letters even when the QR is valid.
+
+Typical pattern:
+
+- the PDF is image-only or mostly scanned
+- the QR is physically small
+- the QR sits in the left half of the page
+- the QR is lower than the body text, but not deep enough to fall into the bottom 25 percent of the page
+- the page has large white margins, so full-page QR detection must find a small code in a very large image
+
+Observed real-world example:
+
+- a scanned official letter placed the QR in the lower-left operational area with a nearby `QRcode` label
+- the QR was valid, but a deep bottom-left crop alone could still miss it because the code sat higher than the crop start
+
+Why it fails:
+
+- full-page OpenCV decode may miss a small QR in a large scanned page
+- deep lower-left crops such as lower 25 percent or lower 30 percent may start below the actual QR position
+
+What OLRE now does:
+
+- keeps full-page multi-pass QR detection
+- adds left-middle-lower targeted crops such as `left_band_40_65_percent`, `left_band_45_70_percent`, `left_lower_mid_35_percent`, and `qr_label_band`
+- adds adaptive-threshold and upscale passes for those focused left-side regions
+
+If a document still fails:
+
+1. Enable QR debug:
+
+```env
+QR_DEBUG_EXPORT=true
+```
+
+2. Reprocess the document.
+
+3. Open the QR debug page and inspect these strategies first:
+
+- `left_band_40_65_percent`
+- `left_band_45_70_percent`
+- `left_lower_mid_35_percent`
+- `qr_label_band`
+- `bottom_left_deep`
+
+4. Confirm whether the QR is fully inside the recorded crop bounds.
+
+If the QR is visible in debug crops but decode still fails, the remaining cause is usually image quality:
+
+- low contrast
+- blur
+- scan compression artifacts
+- insufficient quiet zone around the QR
+
 ## Upload Succeeds but Batch Does Not See File
 
 Check:

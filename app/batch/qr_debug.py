@@ -47,10 +47,14 @@ def should_persist_debug_image(meta: dict) -> bool:
     zone = meta.get("zone")
     return zone in {
         "full_page",
+        "left_band_40_65_percent",
+        "left_band_45_70_percent",
+        "left_lower_mid_35_percent",
         "bottom_left_deep",
         "lower_left_25_percent",
         "lower_left_30_percent",
         "qr_label_region",
+        "qr_label_band",
     }
 
 
