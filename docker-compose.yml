@@ -3,18 +3,18 @@ services:
     build: .
     container_name: olre-sqlite
     ports:
-      - "7777:7777"
+      - "8000:8000"
     environment:
-      APP_ENV: ${APP_ENV:-production}
+      APP_ENV: ${APP_ENV:-docker}
       APP_HOST: 0.0.0.0
-      APP_PORT: ${APP_PORT:-7777}
+      APP_PORT: ${APP_PORT:-8000}
       APP_LANG: ${APP_LANG:-th}
       ENABLE_AUTH: ${ENABLE_AUTH:-false}
       DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/olre.sqlite3}
       INPUT_DIR: ${INPUT_DIR:-/app/data/input}
       PROCESSED_DIR: ${PROCESSED_DIR:-/app/data/processed}
       ERROR_DIR: ${ERROR_DIR:-/app/data/error}
-      QR_DEBUG_DIR: ${QR_DEBUG_DIR:-/app/data/debug/qr}
+      QR_DEBUG_DIR: ${QR_DEBUG_DIR:-/app/data/qr-debug}
       RUNTIME_TMP_DIR: ${RUNTIME_TMP_DIR:-/app/data/runtime/tmp}
       FAILED_RETAINED_DIR: ${FAILED_RETAINED_DIR:-/app/data/runtime/failed-retained}
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
@@ -29,7 +29,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7777/healthz', timeout=5).read()",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5).read()",
         ]
       interval: 30s
       timeout: 5s

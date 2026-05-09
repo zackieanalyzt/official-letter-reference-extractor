@@ -5,7 +5,7 @@ mkdir -p \
   "${INPUT_DIR:-/app/data/input}" \
   "${PROCESSED_DIR:-/app/data/processed}" \
   "${ERROR_DIR:-/app/data/error}" \
-  "${QR_DEBUG_DIR:-/app/data/debug/qr}" \
+  "${QR_DEBUG_DIR:-/app/data/qr-debug}" \
   "${RUNTIME_TMP_DIR:-/app/data/runtime/tmp}" \
   "${FAILED_RETAINED_DIR:-/app/data/runtime/failed-retained}"
 
@@ -39,4 +39,4 @@ PY
 python -m app.runtime validate
 python -m alembic upgrade head
 
-exec python -m uvicorn app.main:app --host "${APP_HOST:-0.0.0.0}" --port "${APP_PORT:-7777}"
+exec python -m uvicorn app.main:app --host "${APP_HOST:-0.0.0.0}" --port "${APP_PORT:-8000}"

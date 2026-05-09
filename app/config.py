@@ -1,13 +1,64 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 from sqlalchemy.engine import URL as EngineURL
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+PROFILE_DEFAULTS: dict[str, dict[str, int | str]] = {
+    "development": {
+        "app_port": 7777,
+        "database_url": "sqlite:///data/olre.sqlite3",
+        "input_dir": "data/input",
+        "processed_dir": "data/processed",
+        "error_dir": "data/error",
+        "qr_debug_dir": "data/qr-debug",
+        "runtime_tmp_dir": "data/runtime/tmp",
+        "failed_retained_dir": "data/runtime/failed-retained",
+    },
+    "docker": {
+        "app_port": 8000,
+        "database_url": "sqlite:////app/data/olre.sqlite3",
+        "input_dir": "/app/data/input",
+        "processed_dir": "/app/data/processed",
+        "error_dir": "/app/data/error",
+        "qr_debug_dir": "/app/data/qr-debug",
+        "runtime_tmp_dir": "/app/data/runtime/tmp",
+        "failed_retained_dir": "/app/data/runtime/failed-retained",
+    },
+    "testing": {
+        "app_port": 7777,
+        "database_url": "sqlite:///data/olre.sqlite3",
+        "input_dir": "data/input",
+        "processed_dir": "data/processed",
+        "error_dir": "data/error",
+        "qr_debug_dir": "data/qr-debug",
+        "runtime_tmp_dir": "data/runtime/tmp",
+        "failed_retained_dir": "data/runtime/failed-retained",
+    },
+    "production": {
+        "app_port": 8000,
+        "database_url": "sqlite:////app/data/olre.sqlite3",
+        "input_dir": "/app/data/input",
+        "processed_dir": "/app/data/processed",
+        "error_dir": "/app/data/error",
+        "qr_debug_dir": "/app/data/qr-debug",
+        "runtime_tmp_dir": "/app/data/runtime/tmp",
+        "failed_retained_dir": "/app/data/runtime/failed-retained",
+    },
+}
+PROFILE_ALIASES = {
+    "dev": "development",
+    "development": "development",
+    "docker": "docker",
+    "prod": "production",
+    "production": "production",
+    "test": "testing",
+    "testing": "testing",
+}
 
 
 def resolve_path(path_str: str) -> Path:
@@ -19,9 +70,9 @@ def resolve_path(path_str: str) -> Path:
 
 class Settings(BaseSettings):
     app_name: str = Field(default="Official Letter Reference Extractor", validation_alias="APP_NAME")
-    app_env: str = Field(default="development", validation_alias="APP_ENV")
+    app_env: str = Field(default="development", validation_alias=AliasChoices("APP_ENV", "ENVIRONMENT"))
     app_host: str = Field(default="0.0.0.0", validation_alias="APP_HOST")
-    app_port: int = Field(default=8000, validation_alias="APP_PORT")
+    app_port: int | None = Field(default=None, validation_alias="APP_PORT")
     app_lang: str = Field(default="th", validation_alias="APP_LANG")
     enable_auth: bool = Field(default=False, validation_alias="ENABLE_AUTH")
     app_token: str | None = Field(default=None, validation_alias="APP_TOKEN")
@@ -31,7 +82,7 @@ class Settings(BaseSettings):
     session_max_age_seconds: int = Field(default=28800, validation_alias="SESSION_MAX_AGE_SECONDS")
 
     database_url: str | None = Field(
-        default="sqlite:////app/data/olre.sqlite3",
+        default=None,
         validation_alias=AliasChoices("DATABASE_URL", "POSTGRES_DSN"),
     )
     postgres_host: str | None = Field(default=None, validation_alias="POSTGRES_HOST")
@@ -46,9 +97,9 @@ class Settings(BaseSettings):
     mariadb_user: str | None = Field(default=None, validation_alias="MARIADB_USER")
     mariadb_password: str | None = Field(default=None, validation_alias="MARIADB_PASSWORD")
 
-    input_dir: str = Field(default="/app/data/input", validation_alias="INPUT_DIR")
-    processed_dir: str = Field(default="/app/data/processed", validation_alias="PROCESSED_DIR")
-    error_dir: str = Field(default="/app/data/error", validation_alias="ERROR_DIR")
+    input_dir: str | None = Field(default=None, validation_alias="INPUT_DIR")
+    processed_dir: str | None = Field(default=None, validation_alias="PROCESSED_DIR")
+    error_dir: str | None = Field(default=None, validation_alias="ERROR_DIR")
     ocr_enabled: bool = Field(default=False, validation_alias="OCR_ENABLED")
     ocr_engine: str = Field(default="tesseract", validation_alias=AliasChoices("OCR_ENGINE", "OCR_COMMAND"))
     ocr_language: str = Field(default="eng", validation_alias=AliasChoices("OCR_LANG", "OCR_LANGUAGE"))
@@ -57,7 +108,7 @@ class Settings(BaseSettings):
     ocr_render_scale: float = Field(default=3.0, validation_alias=AliasChoices("OCR_DPI_SCALE", "OCR_RENDER_SCALE"))
     ocr_page_segmentation_mode: int = Field(default=6, validation_alias="OCR_PAGE_SEGMENTATION_MODE")
     qr_debug_export: bool = Field(default=False, validation_alias="QR_DEBUG_EXPORT")
-    qr_debug_dir: str = Field(default="/app/data/debug/qr", validation_alias="QR_DEBUG_DIR")
+    qr_debug_dir: str | None = Field(default=None, validation_alias="QR_DEBUG_DIR")
     qr_fallback_decoder: str = Field(default="none", validation_alias="QR_FALLBACK_DECODER")
     url_resolve_timeout_seconds: float = Field(default=5.0, validation_alias="URL_RESOLVE_TIMEOUT_SECONDS")
     url_resolve_max_attempts: int = Field(default=2, validation_alias="URL_RESOLVE_MAX_ATTEMPTS")
@@ -73,8 +124,8 @@ class Settings(BaseSettings):
     default_force_reprocess: bool = Field(default=False, validation_alias="DEFAULT_FORCE_REPROCESS")
     extraction_version: int = Field(default=1, validation_alias="EXTRACTION_VERSION")
     temp_file_max_age_hours: int = Field(default=24, validation_alias="TEMP_FILE_MAX_AGE_HOURS")
-    runtime_tmp_dir: str = Field(default="/app/data/runtime/tmp", validation_alias="RUNTIME_TMP_DIR")
-    failed_retained_dir: str = Field(default="/app/data/runtime/failed-retained", validation_alias="FAILED_RETAINED_DIR")
+    runtime_tmp_dir: str | None = Field(default=None, validation_alias="RUNTIME_TMP_DIR")
+    failed_retained_dir: str | None = Field(default=None, validation_alias="FAILED_RETAINED_DIR")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -83,29 +134,65 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    @field_validator("app_env", mode="before")
+    @classmethod
+    def normalize_app_env(cls, value: str | None) -> str:
+        normalized = PROFILE_ALIASES.get(str(value or "development").strip().lower())
+        if normalized is None:
+            raise ValueError("APP_ENV / ENVIRONMENT must be one of development, docker, testing, production.")
+        return normalized
+
+    @field_validator(
+        "app_port",
+        "database_url",
+        "input_dir",
+        "processed_dir",
+        "error_dir",
+        "qr_debug_dir",
+        "runtime_tmp_dir",
+        "failed_retained_dir",
+        mode="before",
+    )
+    @classmethod
+    def blank_values_to_none(cls, value):
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @model_validator(mode="after")
+    def apply_profile_defaults(self) -> "Settings":
+        profile_defaults = PROFILE_DEFAULTS[self.app_env]
+        for field_name, default_value in profile_defaults.items():
+            current_value = getattr(self, field_name)
+            if current_value is None:
+                setattr(self, field_name, default_value)
+        return self
+
     @property
     def input_path(self) -> Path:
-        return resolve_path(self.input_dir)
+        return resolve_path(self.input_dir or PROFILE_DEFAULTS[self.app_env]["input_dir"])
 
     @property
     def processed_path(self) -> Path:
-        return resolve_path(self.processed_dir)
+        return resolve_path(self.processed_dir or PROFILE_DEFAULTS[self.app_env]["processed_dir"])
 
     @property
     def error_path(self) -> Path:
-        return resolve_path(self.error_dir)
+        return resolve_path(self.error_dir or PROFILE_DEFAULTS[self.app_env]["error_dir"])
 
     @property
     def qr_debug_path(self) -> Path:
-        return resolve_path(self.qr_debug_dir)
+        return resolve_path(self.qr_debug_dir or PROFILE_DEFAULTS[self.app_env]["qr_debug_dir"])
 
     @property
     def runtime_tmp_path(self) -> Path:
-        return resolve_path(self.runtime_tmp_dir)
+        return resolve_path(self.runtime_tmp_dir or PROFILE_DEFAULTS[self.app_env]["runtime_tmp_dir"])
 
     @property
     def failed_retained_path(self) -> Path:
-        return resolve_path(self.failed_retained_dir)
+        return resolve_path(
+            self.failed_retained_dir or PROFILE_DEFAULTS[self.app_env]["failed_retained_dir"]
+        )
 
     @property
     def postgres_dsn(self) -> EngineURL:
@@ -124,7 +211,7 @@ class Settings(BaseSettings):
     def resolved_database_url(self) -> str:
         if self.database_url and self.database_url.strip():
             return self.database_url
-        return "sqlite:////app/data/olre.sqlite3"
+        return str(PROFILE_DEFAULTS[self.app_env]["database_url"])
 
     @property
     def mariadb_dsn(self) -> EngineURL:

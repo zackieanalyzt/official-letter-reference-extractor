@@ -13,7 +13,7 @@ def _debug_enabled(settings) -> bool:
 def _debug_base_dir(settings) -> Path:
     if hasattr(settings, "qr_debug_path"):
         return settings.qr_debug_path
-    return Path(getattr(settings, "qr_debug_dir", "data/debug/qr")).resolve()
+    return Path(getattr(settings, "qr_debug_dir", "data/qr-debug")).resolve()
 
 
 def _safe_part(value: Any) -> str:

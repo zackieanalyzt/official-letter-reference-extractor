@@ -33,6 +33,7 @@ def client(monkeypatch, tmp_path):
     runtime_tmp_dir.mkdir(parents=True)
     failed_retained_dir.mkdir(parents=True)
 
+    monkeypatch.setenv("APP_ENV", "testing")
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path.as_posix()}")
     monkeypatch.setenv("ENABLE_AUTH", "false")
     monkeypatch.setenv("SECRET_KEY", "test-secret-key")
