@@ -23,3 +23,6 @@ data/*.sqlite3-wal
 *.log
 
 .DS_Store
+
+# Local runtime backups
+data/backups/
