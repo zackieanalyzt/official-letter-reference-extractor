@@ -195,7 +195,7 @@ def test_processed_file_deleted_after_success_under_default_retention(client):
 
 def test_fake_pdf_marked_failed_and_moved_to_error(client):
     input_dir = Path(client.app.state.settings.input_dir)
-    failed_retained_dir = Path(client.app.state.settings.failed_retained_dir)
+    storage_root = Path(client.app.state.settings.storage_root)
     source_path = input_dir / "fake.pdf"
     create_fake_pdf(source_path)
 
@@ -208,7 +208,7 @@ def test_fake_pdf_marked_failed_and_moved_to_error(client):
     document_row = fetch_one(
         client.app.state.postgres_engine,
         """
-        SELECT processing_status, processing_error, processing_error_type, moved_to_path
+        SELECT processing_status, processing_error, processing_error_type, moved_to_path, storage_key, lifecycle_state
         FROM documents
         """
     )
@@ -226,11 +226,13 @@ def test_fake_pdf_marked_failed_and_moved_to_error(client):
     assert summary.total_files_processed == 0
     assert summary.status == "completed_with_errors"
     assert document_row["processing_status"] == "failed"
+    assert document_row["lifecycle_state"] == "retained"
     assert document_row["processing_error"]
     assert document_row["processing_error_type"] == INVALID_PDF
     assert document_row["processing_error"].startswith("[PDF_VALIDATION_FAILED] PDF validation failed:")
     assert not source_path.exists()
-    assert len(list(failed_retained_dir.glob("fake*.pdf"))) == 1
+    assert document_row["storage_key"].startswith("sha256/")
+    assert (storage_root / document_row["storage_key"]).exists()
     assert log_row["step_name"] == "pdf_validation"
     assert log_row["message"].startswith("[PDF_VALIDATION_FAILED] PDF validation failed:")
 

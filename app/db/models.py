@@ -40,6 +40,7 @@ class Document(Base):
     __table_args__ = (
         Index("ix_documents_content_hash", "content_hash", unique=True),
         Index("ix_documents_document_number", "document_number"),
+        Index("ix_documents_lifecycle_state", "lifecycle_state"),
         Index("ix_documents_source_file_present", "source_file_present"),
         Index("ix_documents_retry_requires_reupload", "retry_requires_reupload"),
     )
@@ -50,10 +51,17 @@ class Document(Base):
     )
     original_file_name: Mapped[str] = mapped_column(Text, nullable=False)
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    storage_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+    storage_backend: Mapped[str] = mapped_column(String(50), nullable=False, default="localfs", server_default="localfs")
+    mime_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
     file_size_bytes: Mapped[int] = mapped_column(PK_TYPE, nullable=False)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     document_number: Mapped[str | None] = mapped_column(String(255), nullable=True)
     processing_status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending")
+    lifecycle_state: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="uploaded", server_default="uploaded"
+    )
     processing_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     processing_error_type: Mapped[str | None] = mapped_column(Text, nullable=True)
     processing_error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)

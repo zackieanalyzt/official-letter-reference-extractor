@@ -42,6 +42,9 @@ def get_runtime_paths(settings: Settings) -> dict[str, Path]:
         "qr_debug_dir": settings.qr_debug_path,
         "runtime_tmp_dir": settings.runtime_tmp_path,
         "failed_retained_dir": settings.failed_retained_path,
+        "storage_root": settings.storage_root_path,
+        "export_dir": settings.export_path,
+        "backup_dir": settings.backup_path,
     }
 
 

@@ -17,6 +17,9 @@ PROFILE_CONTROLLED_ENV_VARS = (
     "QR_DEBUG_DIR",
     "RUNTIME_TMP_DIR",
     "FAILED_RETAINED_DIR",
+    "STORAGE_ROOT",
+    "EXPORT_DIR",
+    "BACKUP_DIR",
 )
 
 
@@ -39,6 +42,9 @@ def test_readyz_checks_database_and_runtime_paths(client):
     assert payload["writable_paths"]["error_dir"] is True
     assert payload["writable_paths"]["runtime_tmp_dir"] is True
     assert payload["writable_paths"]["failed_retained_dir"] is True
+    assert payload["writable_paths"]["storage_root"] is True
+    assert payload["writable_paths"]["export_dir"] is True
+    assert payload["writable_paths"]["backup_dir"] is True
     assert payload["writable_paths"]["database_dir"] is True
 
 
@@ -58,6 +64,9 @@ def test_local_profiles_resolve_local_data_paths(monkeypatch, profile_name):
     assert settings.qr_debug_path == (BASE_DIR / "data" / "qr-debug").resolve()
     assert settings.runtime_tmp_path == (BASE_DIR / "data" / "runtime" / "tmp").resolve()
     assert settings.failed_retained_path == (BASE_DIR / "data" / "runtime" / "failed-retained").resolve()
+    assert settings.storage_root_path == (BASE_DIR / "data" / "storage").resolve()
+    assert settings.export_path == (BASE_DIR / "data" / "exports").resolve()
+    assert settings.backup_path == (BASE_DIR / "data" / "backups").resolve()
 
 
 def test_docker_profile_resolves_app_data_paths(monkeypatch):
@@ -75,6 +84,9 @@ def test_docker_profile_resolves_app_data_paths(monkeypatch):
     assert settings.qr_debug_path == Path("/app/data/qr-debug")
     assert settings.runtime_tmp_path == Path("/app/data/runtime/tmp")
     assert settings.failed_retained_path == Path("/app/data/runtime/failed-retained")
+    assert settings.storage_root_path == Path("/app/data/storage")
+    assert settings.export_path == Path("/app/data/exports")
+    assert settings.backup_path == Path("/app/data/backups")
 
 
 def test_explicit_env_vars_override_profile_defaults(monkeypatch):
@@ -88,6 +100,9 @@ def test_explicit_env_vars_override_profile_defaults(monkeypatch):
     monkeypatch.setenv("QR_DEBUG_DIR", "custom/qr-debug")
     monkeypatch.setenv("RUNTIME_TMP_DIR", "custom/runtime/tmp")
     monkeypatch.setenv("FAILED_RETAINED_DIR", "custom/runtime/failed-retained")
+    monkeypatch.setenv("STORAGE_ROOT", "custom/storage")
+    monkeypatch.setenv("EXPORT_DIR", "custom/exports")
+    monkeypatch.setenv("BACKUP_DIR", "custom/backups")
 
     settings = Settings(_env_file=None)
 
@@ -100,6 +115,9 @@ def test_explicit_env_vars_override_profile_defaults(monkeypatch):
     assert settings.qr_debug_path == (BASE_DIR / "custom" / "qr-debug").resolve()
     assert settings.runtime_tmp_path == (BASE_DIR / "custom" / "runtime" / "tmp").resolve()
     assert settings.failed_retained_path == (BASE_DIR / "custom" / "runtime" / "failed-retained").resolve()
+    assert settings.storage_root_path == (BASE_DIR / "custom" / "storage").resolve()
+    assert settings.export_path == (BASE_DIR / "custom" / "exports").resolve()
+    assert settings.backup_path == (BASE_DIR / "custom" / "backups").resolve()
 
 
 def test_default_settings_do_not_read_local_env_file(monkeypatch, tmp_path):

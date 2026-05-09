@@ -18,6 +18,9 @@ PROFILE_DEFAULTS: dict[str, dict[str, int | str]] = {
         "qr_debug_dir": "data/qr-debug",
         "runtime_tmp_dir": "data/runtime/tmp",
         "failed_retained_dir": "data/runtime/failed-retained",
+        "storage_root": "data/storage",
+        "export_dir": "data/exports",
+        "backup_dir": "data/backups",
     },
     "docker": {
         "app_port": 8000,
@@ -28,6 +31,9 @@ PROFILE_DEFAULTS: dict[str, dict[str, int | str]] = {
         "qr_debug_dir": "/app/data/qr-debug",
         "runtime_tmp_dir": "/app/data/runtime/tmp",
         "failed_retained_dir": "/app/data/runtime/failed-retained",
+        "storage_root": "/app/data/storage",
+        "export_dir": "/app/data/exports",
+        "backup_dir": "/app/data/backups",
     },
     "testing": {
         "app_port": 7777,
@@ -38,6 +44,9 @@ PROFILE_DEFAULTS: dict[str, dict[str, int | str]] = {
         "qr_debug_dir": "data/qr-debug",
         "runtime_tmp_dir": "data/runtime/tmp",
         "failed_retained_dir": "data/runtime/failed-retained",
+        "storage_root": "data/storage",
+        "export_dir": "data/exports",
+        "backup_dir": "data/backups",
     },
     "production": {
         "app_port": 8000,
@@ -48,6 +57,9 @@ PROFILE_DEFAULTS: dict[str, dict[str, int | str]] = {
         "qr_debug_dir": "/app/data/qr-debug",
         "runtime_tmp_dir": "/app/data/runtime/tmp",
         "failed_retained_dir": "/app/data/runtime/failed-retained",
+        "storage_root": "/app/data/storage",
+        "export_dir": "/app/data/exports",
+        "backup_dir": "/app/data/backups",
     },
 }
 PROFILE_ALIASES = {
@@ -113,11 +125,16 @@ class Settings(BaseSettings):
     url_resolve_timeout_seconds: float = Field(default=5.0, validation_alias="URL_RESOLVE_TIMEOUT_SECONDS")
     url_resolve_max_attempts: int = Field(default=2, validation_alias="URL_RESOLVE_MAX_ATTEMPTS")
     url_resolve_user_agent: str = Field(default="OLRE/0.1 URL Resolver", validation_alias="URL_RESOLVE_USER_AGENT")
+    storage_backend: str = Field(default="localfs", validation_alias="STORAGE_BACKEND")
+    storage_root: str | None = Field(default=None, validation_alias="STORAGE_ROOT")
+    export_dir: str | None = Field(default=None, validation_alias="EXPORT_DIR")
+    backup_dir: str | None = Field(default=None, validation_alias="BACKUP_DIR")
     file_retention_mode: str = Field(default="retain_failed_only", validation_alias="FILE_RETENTION_MODE")
     success_source_retention_hours: int = Field(default=0, validation_alias="SUCCESS_SOURCE_RETENTION_HOURS")
-    failed_source_retention_hours: int = Field(default=168, validation_alias="FAILED_SOURCE_RETENTION_HOURS")
+    failed_source_retention_hours: int = Field(default=720, validation_alias="FAILED_SOURCE_RETENTION_HOURS")
     source_delete_on_cache_reuse: bool = Field(default=True, validation_alias="SOURCE_DELETE_ON_CACHE_REUSE")
-    qr_debug_retention_hours: int = Field(default=72, validation_alias="QR_DEBUG_RETENTION_HOURS")
+    qr_debug_retention_hours: int = Field(default=168, validation_alias="QR_DEBUG_RETENTION_HOURS")
+    export_retention_hours: int = Field(default=336, validation_alias="EXPORT_RETENTION_HOURS")
     cleanup_enabled: bool = Field(default=True, validation_alias="CLEANUP_ENABLED")
     cleanup_interval_minutes: int = Field(default=60, validation_alias="CLEANUP_INTERVAL_MINUTES")
     cleanup_startup_sweep: bool = Field(default=True, validation_alias="CLEANUP_STARTUP_SWEEP")
@@ -151,6 +168,9 @@ class Settings(BaseSettings):
         "qr_debug_dir",
         "runtime_tmp_dir",
         "failed_retained_dir",
+        "storage_root",
+        "export_dir",
+        "backup_dir",
         mode="before",
     )
     @classmethod
@@ -193,6 +213,18 @@ class Settings(BaseSettings):
         return resolve_path(
             self.failed_retained_dir or PROFILE_DEFAULTS[self.app_env]["failed_retained_dir"]
         )
+
+    @property
+    def storage_root_path(self) -> Path:
+        return resolve_path(self.storage_root or PROFILE_DEFAULTS[self.app_env]["storage_root"])
+
+    @property
+    def export_path(self) -> Path:
+        return resolve_path(self.export_dir or PROFILE_DEFAULTS[self.app_env]["export_dir"])
+
+    @property
+    def backup_path(self) -> Path:
+        return resolve_path(self.backup_dir or PROFILE_DEFAULTS[self.app_env]["backup_dir"])
 
     @property
     def postgres_dsn(self) -> EngineURL:

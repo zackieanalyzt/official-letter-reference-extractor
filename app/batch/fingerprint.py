@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from hashlib import sha256
+from mimetypes import guess_type
 from pathlib import Path
 
 
@@ -9,6 +10,7 @@ class FileFingerprint:
     original_file_name: str
     file_size_bytes: int
     content_hash: str
+    mime_type: str | None
 
 
 def compute_sha256(file_path: Path) -> str:
@@ -26,5 +28,5 @@ def build_file_fingerprint(file_path: Path) -> FileFingerprint:
         original_file_name=file_path.name,
         file_size_bytes=file_stat.st_size,
         content_hash=compute_sha256(file_path),
+        mime_type=guess_type(file_path.name)[0],
     )
-

@@ -1,85 +1,133 @@
 # Backup and Restore Guide
 
-OLRE stores data in the database and runtime directories. Back up both.
+OLRE v0.9.6 introduces executable SQLite backup utilities and moves the recommended backup workflow away from unsafe raw file-copy procedures.
 
-## What to Back Up
+## Scope
 
-For SQLite:
+This guide applies to the SQLite-first OLRE runtime.
+
+Current preferred backup method:
+
+```bash
+python -m app.cli.backup_sqlite
+```
+
+Current preferred verification method:
+
+```bash
+python -m app.cli.verify_backup
+```
+
+Both commands assume the active runtime profile and `DATABASE_URL` already point to the correct SQLite database.
+
+## Why This Changed
+
+OLRE runs SQLite in WAL mode. That means the live database state may be spread across:
+
+- `.sqlite3`
+- `-wal`
+- `-shm`
+
+Direct file copying while OLRE is running is operationally risky. v0.9.6 therefore uses the SQLite backup API for a consistent live backup.
+
+## Backup Command
+
+Default destination:
+
+- `data/backups` in `development` / `testing`
+- `/app/data/backups` in `docker` / `production`
+
+Run:
+
+```bash
+python -m app.cli.backup_sqlite
+```
+
+Example output:
 
 ```text
-data/olre.sqlite3
-data/olre.sqlite3-wal
-data/olre.sqlite3-shm
-data/input/
-data/processed/
-data/error/
-data/debug/
+backup_created=/app/data/backups/olre_20260510T010203Z.sqlite3
+source_database=/app/data/olre.sqlite3
 ```
 
-For PostgreSQL:
+To choose an explicit path:
+
+```bash
+python -m app.cli.backup_sqlite --output data/backups/olre_manual.sqlite3
+```
+
+## Backup Verification
+
+Verify the newest backup:
+
+```bash
+python -m app.cli.verify_backup
+```
+
+Verify a specific file:
+
+```bash
+python -m app.cli.verify_backup --backup-path data/backups/olre_manual.sqlite3
+```
+
+Verification checks:
+
+- backup file exists
+- `PRAGMA integrity_check`
+- non-system table count
+
+Expected result:
 
 ```text
-PostgreSQL database dump
-data/input/
-data/processed/
-data/error/
-data/debug/
+integrity_check=ok
 ```
 
-## SQLite Backup
+## Recommended Backup Set
 
-Preferred, if `sqlite3` CLI is installed:
+### Required
 
-```powershell
-New-Item -ItemType Directory -Force backup
-sqlite3 data\olre.sqlite3 ".backup 'backup\olre.sqlite3'"
-```
+- SQLite backup file created by `app.cli.backup_sqlite`
+- storage root:
+  - `data/storage` or `/app/data/storage`
 
-File-copy fallback:
+### Optional but recommended
 
-```powershell
-New-Item -ItemType Directory -Force backup
-Copy-Item data\olre.sqlite3 backup\
-Copy-Item data\olre.sqlite3-wal backup\ -ErrorAction SilentlyContinue
-Copy-Item data\olre.sqlite3-shm backup\ -ErrorAction SilentlyContinue
-```
+- exports directory when export artifacts are operationally important
+- debug artifacts only when investigating QR extraction issues
 
-For a cleaner file-copy backup, stop the server before copying.
+### Not recommended as primary backup mechanism
 
-## SQLite Restore
+- copying live `.sqlite3`, `-wal`, `-shm` files directly while OLRE is running
+
+## Restore Workflow
 
 Stop OLRE first.
 
-```powershell
-Copy-Item backup\olre.sqlite3 data\olre.sqlite3 -Force
-Copy-Item backup\olre.sqlite3-wal data\olre.sqlite3-wal -Force -ErrorAction SilentlyContinue
-Copy-Item backup\olre.sqlite3-shm data\olre.sqlite3-shm -Force -ErrorAction SilentlyContinue
+Restore by replacing the runtime database file with a verified backup copy, then validate:
+
+```bash
 python -m alembic current
+python -m app.cli.verify_backup --backup-path data/backups/olre_manual.sqlite3
+python -m uvicorn app.main:app --host 0.0.0.0 --port 7777
 ```
 
-Then start OLRE again.
+If the runtime database path is `data/olre.sqlite3`, place the verified backup file there before restart.
 
-## PostgreSQL Backup
+## Operational Verification
 
-```powershell
-pg_dump -h <host> -U <user> -d <database> -F c -f backup\olre.backup
-```
+After restore:
 
-## PostgreSQL Restore
-
-Stop OLRE first.
-
-```powershell
-pg_restore -h <host> -U <user> -d <database> --clean backup\olre.backup
-python -m alembic current
-```
+1. Open `/healthz`
+2. Open `/readyz`
+3. Confirm expected document counts in the UI
+4. Confirm storage root still contains the expected retained blobs
 
 ## Retention Guidance
 
-For small local use:
+Suggested baseline:
 
-- Keep daily backups for 7 days.
-- Keep weekly backups for 4 weeks.
-- Keep monthly backups for 6-12 months if documents are important.
+- daily backups for 7 days
+- weekly backups for 4 weeks
+- monthly backups for 6-12 months when documents are operationally important
 
-QR debug artifacts can grow quickly. Keep `QR_DEBUG_EXPORT=false` unless troubleshooting.
+Backup retention should be managed separately from OLRE runtime artifact retention.

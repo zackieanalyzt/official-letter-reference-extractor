@@ -37,6 +37,8 @@ def retry_failed_document(session, settings, database_engine, document_id: int) 
     if source_path is None:
         document.retry_requires_reupload = True
         document.source_file_present = False
+        if document.processing_status == "failed":
+            document.lifecycle_state = "deleted"
         session.flush()
         return RetryResult(False, "requires_reupload")
 
@@ -60,6 +62,8 @@ def force_reprocess_document(session, settings, database_engine, document_id: in
     if source_path is None:
         document.retry_requires_reupload = True
         document.source_file_present = False
+        if document.processing_status == "failed":
+            document.lifecycle_state = "deleted"
         session.flush()
         return RetryResult(False, "requires_reupload")
 

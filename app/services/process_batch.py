@@ -35,6 +35,7 @@ from app.batch.service import (
     get_latest_home_batch_summary,
     mark_document_failed,
     mark_document_ingestion_status,
+    mark_document_processing,
     mark_document_processed,
     set_document_processing_issue,
 )
@@ -136,6 +137,7 @@ def _process_document_from_source(
     settings: Settings,
 ) -> None:
     try:
+        mark_document_processing(session, document)
         validate_pdf_readable(fingerprint.path)
     except Exception as exc:
         error_message = f"[PDF_VALIDATION_FAILED] PDF validation failed: {exc}"
@@ -148,7 +150,12 @@ def _process_document_from_source(
             batch_run_id=batch_run_id,
             document_id=document.id,
         )
-        retention = apply_source_retention_for_failure(fingerprint.path, settings)
+        retention = apply_source_retention_for_failure(
+            fingerprint.path,
+            settings,
+            content_hash=fingerprint.content_hash,
+            mime_type=fingerprint.mime_type,
+        )
         mark_document_failed(
             session,
             document,
@@ -159,6 +166,10 @@ def _process_document_from_source(
             source_file_present=retention.source_file_present,
             retry_requires_reupload=retention.retry_requires_reupload,
         )
+        document.sha256 = fingerprint.content_hash
+        document.mime_type = fingerprint.mime_type
+        document.storage_key = retention.storage_key
+        document.storage_backend = settings.storage_backend
         mark_document_ingestion_status(
             session,
             ingestion,
@@ -238,6 +249,8 @@ def _process_document_from_source(
             error_detail = "No references found"
         set_document_processing_issue(session, document, error_type=error_type, error_detail=error_detail)
         document.original_file_name = fingerprint.original_file_name
+        document.sha256 = fingerprint.content_hash
+        document.mime_type = fingerprint.mime_type
         document.file_size_bytes = fingerprint.file_size_bytes
         document.extraction_version = settings.extraction_version
         resolve_document_references(session, document.id, settings=settings)
@@ -247,6 +260,7 @@ def _process_document_from_source(
             settings,
             reused_cached=False,
             content_hash=fingerprint.content_hash,
+            mime_type=fingerprint.mime_type,
         )
         mark_document_processed(
             session,
@@ -258,6 +272,8 @@ def _process_document_from_source(
             processing_error_type=error_type,
             processing_error_detail=error_detail,
         )
+        document.storage_key = retention.storage_key
+        document.storage_backend = settings.storage_backend
         document.retention_mode = settings.file_retention_mode
         document.last_ingestion_used_cached_result = False
         document.batch_run_id = batch_run_id
@@ -310,7 +326,12 @@ def _process_document_from_source(
             batch_run_id=batch_run_id,
             document_id=document.id,
         )
-        retention = apply_source_retention_for_failure(fingerprint.path, settings)
+        retention = apply_source_retention_for_failure(
+            fingerprint.path,
+            settings,
+            content_hash=fingerprint.content_hash,
+            mime_type=fingerprint.mime_type,
+        )
         if ingestion.force_reprocess_requested and previous_state["processing_status"] == "processed":
             document.retention_mode = settings.file_retention_mode
             document.last_ingestion_used_cached_result = False
@@ -318,6 +339,9 @@ def _process_document_from_source(
             document.retry_requires_reupload = retention.retry_requires_reupload
             document.last_source_path = retention.retained_path
             document.source_deleted_at = None if retention.source_file_present else datetime.now(UTC)
+            document.lifecycle_state = "retained" if retention.source_file_present else "failed"
+            document.storage_key = retention.storage_key or document.storage_key
+            document.storage_backend = settings.storage_backend
         else:
             mark_document_failed(
                 session,
@@ -329,6 +353,10 @@ def _process_document_from_source(
                 source_file_present=retention.source_file_present,
                 retry_requires_reupload=retention.retry_requires_reupload,
             )
+            document.sha256 = fingerprint.content_hash
+            document.mime_type = fingerprint.mime_type
+            document.storage_key = retention.storage_key
+            document.storage_backend = settings.storage_backend
             document.retention_mode = settings.file_retention_mode
             document.last_ingestion_used_cached_result = False
         mark_document_ingestion_status(
@@ -361,6 +389,7 @@ def _reuse_cached_document(
         settings,
         reused_cached=True,
         content_hash=fingerprint.content_hash,
+        mime_type=fingerprint.mime_type,
     )
     document.last_ingestion_used_cached_result = True
     document.retention_mode = settings.file_retention_mode
@@ -399,6 +428,9 @@ def run_batch_registration(
     ensure_directory(settings.processed_path)
     ensure_directory(settings.error_path)
     ensure_directory(settings.failed_retained_path)
+    ensure_directory(settings.storage_root_path)
+    ensure_directory(settings.export_path)
+    ensure_directory(settings.backup_path)
 
     force_reprocess = settings.default_force_reprocess if force_reprocess is None else force_reprocess
     pdf_files = discover_pdf_files(input_dir)
@@ -438,6 +470,7 @@ def run_batch_registration(
                     original_file_name=fingerprint.original_file_name,
                     content_hash=fingerprint.content_hash,
                     file_size_bytes=fingerprint.file_size_bytes,
+                    mime_type=fingerprint.mime_type,
                     extraction_version=settings.extraction_version,
                     retention_mode=settings.file_retention_mode,
                 )
