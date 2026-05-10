@@ -7,7 +7,6 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.batch.file_ops import ensure_directory
 from app.db.models import Document, DocumentIngestion
 from app.logging_config import get_logger
 from app.storage import get_storage_service
@@ -31,13 +30,6 @@ def _utcnow() -> datetime:
     return datetime.now(UTC)
 
 
-def _delete_file_if_exists(path: Path) -> bool:
-    if not path.exists():
-        return False
-    path.unlink()
-    return True
-
-
 def _retain_source(file_path: Path, settings, *, content_hash: str, mime_type: str | None) -> SourceRetentionOutcome:
     storage = get_storage_service(settings)
     stored = storage.save_document(
@@ -46,7 +38,7 @@ def _retain_source(file_path: Path, settings, *, content_hash: str, mime_type: s
         sha256=content_hash,
         mime_type=mime_type,
     )
-    _delete_file_if_exists(file_path)
+    storage.delete_legacy_path(file_path)
     return SourceRetentionOutcome(
         retained_path=str(stored.absolute_path),
         storage_key=stored.storage_key,
@@ -61,14 +53,15 @@ def apply_source_retention_for_success(
     file_path: Path, settings, *, reused_cached: bool, content_hash: str, mime_type: str | None
 ) -> SourceRetentionOutcome:
     mode = settings.file_retention_mode
+    storage = get_storage_service(settings)
     if reused_cached and settings.source_delete_on_cache_reuse:
-        _delete_file_if_exists(file_path)
+        storage.delete_legacy_path(file_path)
         return SourceRetentionOutcome(None, None, False, False, None, True)
 
     if mode == "retain_source":
         return _retain_source(file_path, settings, content_hash=content_hash, mime_type=mime_type)
 
-    _delete_file_if_exists(file_path)
+    storage.delete_legacy_path(file_path)
     return SourceRetentionOutcome(None, None, False, False, None, True)
 
 
@@ -76,8 +69,9 @@ def apply_source_retention_for_failure(
     file_path: Path, settings, *, content_hash: str, mime_type: str | None
 ) -> SourceRetentionOutcome:
     mode = settings.file_retention_mode
+    storage = get_storage_service(settings)
     if mode == "immediate_ephemeral":
-        _delete_file_if_exists(file_path)
+        storage.delete_legacy_path(file_path)
         return SourceRetentionOutcome(None, None, False, False, None, True)
 
     retained = _retain_source(file_path, settings, content_hash=content_hash, mime_type=mime_type)
@@ -117,7 +111,14 @@ def reconcile_document_source_flags(session: Session, document_id: int) -> None:
 
 def cleanup_retained_failures(session: Session, settings, *, dry_run: bool = False) -> dict[str, int]:
     now = _utcnow()
-    summary = {"failed_sources_deleted": 0, "ingestions_reconciled": 0}
+    summary = {
+        "cleanup_type": "retained_sources",
+        "candidates": 0,
+        "failed_sources_deleted": 0,
+        "ingestions_reconciled": 0,
+        "skipped_processing": 0,
+        "skipped_missing_reference": 0,
+    }
     storage = get_storage_service(settings)
 
     expired_ingestions = session.execute(
@@ -130,23 +131,29 @@ def cleanup_retained_failures(session: Session, settings, *, dry_run: bool = Fal
 
     affected_document_ids: set[int] = set()
     for ingestion in expired_ingestions:
-        if ingestion.source_file_path:
-            path = Path(ingestion.source_file_path)
-            storage_key = None
-            try:
-                storage_key = str(path.resolve().relative_to(settings.storage_root_path.resolve()))
-            except ValueError:
-                storage_key = None
-            deleted = False
-            if not dry_run:
-                if storage_key is not None:
-                    deleted = storage.delete_document(storage_key)
-                else:
-                    deleted = _delete_file_if_exists(path)
+        summary["candidates"] += 1
+        document = session.get(Document, ingestion.document_id)
+        if document is not None and document.processing_status == "processing":
+            summary["skipped_processing"] += 1
+            continue
+
+        deleted = False
+        preferred_storage_key = document.storage_key if document is not None else None
+        if preferred_storage_key:
+            if dry_run:
+                deleted = storage.has_document(preferred_storage_key)
             else:
-                deleted = path.exists()
-            if deleted:
-                summary["failed_sources_deleted"] += 1
+                deleted = storage.delete_document(preferred_storage_key)
+        elif ingestion.source_file_path:
+            if dry_run:
+                deleted = storage.legacy_path_exists_str(ingestion.source_file_path)
+            else:
+                deleted = storage.delete_legacy_path_str(ingestion.source_file_path)
+        else:
+            summary["skipped_missing_reference"] += 1
+
+        if deleted:
+            summary["failed_sources_deleted"] += 1
         if dry_run:
             continue
         ingestion.source_file_present = False
@@ -165,45 +172,42 @@ def cleanup_retained_failures(session: Session, settings, *, dry_run: bool = Fal
 
 def cleanup_old_debug_artifacts(settings, *, dry_run: bool = False) -> dict[str, int]:
     now = _utcnow()
-    summary = {"debug_deleted": 0}
-    debug_dir = ensure_directory(settings.qr_debug_path)
+    summary = {"cleanup_type": "debug_artifacts", "candidates": 0, "debug_deleted": 0}
+    storage = get_storage_service(settings)
     debug_cutoff = now - timedelta(hours=settings.qr_debug_retention_hours)
-    if debug_dir.exists():
-        for path in debug_dir.glob("*"):
-            if path.is_file() and datetime.fromtimestamp(path.stat().st_mtime, tz=UTC) <= debug_cutoff:
-                if not dry_run:
-                    path.unlink(missing_ok=True)
-                summary["debug_deleted"] += 1
+    for path in storage.list_expired_debug_files(cutoff=debug_cutoff):
+        summary["candidates"] += 1
+        if not dry_run:
+            storage.delete_debug_file(path)
+        summary["debug_deleted"] += 1
     logger.info("[RETENTION_CLEANUP_DEBUG] dry_run=%s summary=%s", dry_run, summary)
     return summary
 
 
 def cleanup_runtime_tmp(settings, *, dry_run: bool = False) -> dict[str, int]:
     now = _utcnow()
-    summary = {"temp_deleted": 0}
-    temp_dir = ensure_directory(settings.runtime_tmp_path)
+    summary = {"cleanup_type": "runtime_tmp", "candidates": 0, "temp_deleted": 0}
+    storage = get_storage_service(settings)
     temp_cutoff = now - timedelta(hours=settings.temp_file_max_age_hours)
-    if temp_dir.exists():
-        for path in temp_dir.glob("*"):
-            if path.is_file() and datetime.fromtimestamp(path.stat().st_mtime, tz=UTC) <= temp_cutoff:
-                if not dry_run:
-                    path.unlink(missing_ok=True)
-                summary["temp_deleted"] += 1
+    for path in storage.list_expired_temp_files(cutoff=temp_cutoff):
+        summary["candidates"] += 1
+        if not dry_run:
+            storage.delete_temp_file(path)
+        summary["temp_deleted"] += 1
     logger.info("[RETENTION_CLEANUP_TMP] dry_run=%s summary=%s", dry_run, summary)
     return summary
 
 
 def cleanup_expired_exports(settings, *, dry_run: bool = False) -> dict[str, int]:
     now = _utcnow()
-    summary = {"exports_deleted": 0}
-    export_dir = ensure_directory(settings.export_path)
+    summary = {"cleanup_type": "exports", "candidates": 0, "exports_deleted": 0}
+    storage = get_storage_service(settings)
     export_cutoff = now - timedelta(hours=settings.export_retention_hours)
-    if export_dir.exists():
-        for path in export_dir.glob("*"):
-            if path.is_file() and datetime.fromtimestamp(path.stat().st_mtime, tz=UTC) <= export_cutoff:
-                if not dry_run:
-                    path.unlink(missing_ok=True)
-                summary["exports_deleted"] += 1
+    for path in storage.list_expired_export_files(cutoff=export_cutoff):
+        summary["candidates"] += 1
+        if not dry_run:
+            storage.delete_export_file(path)
+        summary["exports_deleted"] += 1
     logger.info("[RETENTION_CLEANUP_EXPORTS] dry_run=%s summary=%s", dry_run, summary)
     return summary
 
@@ -228,9 +232,17 @@ def run_retention_cleanup(session: Session, settings, *, dry_run: bool = False) 
     present_ingestions = session.execute(
         select(DocumentIngestion).where(DocumentIngestion.source_file_present.is_(True))
     ).scalars().all()
+    storage = get_storage_service(settings)
     affected_document_ids: set[int] = set()
     for ingestion in present_ingestions:
-        if ingestion.source_file_path and not Path(ingestion.source_file_path).exists():
+        has_source = False
+        document = session.get(Document, ingestion.document_id)
+        preferred_storage_key = document.storage_key if document is not None else None
+        if preferred_storage_key:
+            has_source = storage.has_document(preferred_storage_key)
+        elif ingestion.source_file_path:
+            has_source = storage.legacy_path_exists_str(ingestion.source_file_path)
+        if ingestion.source_file_path and not has_source:
             ingestion.source_file_present = False
             ingestion.retry_source_available = False
             ingestion.source_deleted_at = _utcnow()

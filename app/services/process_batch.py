@@ -1,9 +1,7 @@
 import inspect
-import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
@@ -17,11 +15,9 @@ from app.batch.error_types import (
     TEXT_EXTRACTION_FAIL,
     UNKNOWN_ERROR,
 )
-from app.batch.file_ops import ensure_directory
 from app.batch.fingerprint import FileFingerprint, build_file_fingerprint
 from app.batch.pdf_validation import validate_pdf_readable
 from app.batch.reference_extraction import ExtractionIssue, extract_references_from_pdf
-from app.batch.scanner import discover_pdf_files
 from app.batch.service import (
     HomeBatchSummary,
     count_batch_references,
@@ -44,12 +40,12 @@ from app.config import Settings
 from app.db.models import Document, DocumentIngestion, DocumentReference
 from app.db.session import get_session_factory
 from app.logging_config import get_logger
-from app.services.inbox_paths import get_inbox_path
 from app.services.retention_service import (
     apply_source_retention_for_failure,
     apply_source_retention_for_success,
     reconcile_document_source_flags,
 )
+from app.storage import get_storage_service
 
 
 logger = get_logger(__name__)
@@ -424,16 +420,12 @@ def run_batch_registration(
     triggered_by: str,
     force_reprocess: bool | None = None,
 ) -> BatchProcessSummary:
-    input_dir = get_inbox_path(settings)
-    ensure_directory(settings.processed_path)
-    ensure_directory(settings.error_path)
-    ensure_directory(settings.failed_retained_path)
-    ensure_directory(settings.storage_root_path)
-    ensure_directory(settings.export_path)
-    ensure_directory(settings.backup_path)
+    storage = get_storage_service(settings)
+    runtime_dirs = storage.ensure_runtime_directories()
+    input_dir = runtime_dirs["inbox"]
 
     force_reprocess = settings.default_force_reprocess if force_reprocess is None else force_reprocess
-    pdf_files = discover_pdf_files(input_dir)
+    pdf_files = storage.list_inbox_pdf_files()
     logger.info(
         "Batch start triggered_by=%s inbox_path=%s files_seen=%s force_reprocess=%s",
         triggered_by,
@@ -549,9 +541,8 @@ def process_single_document_from_retained_source(
     force_reprocess: bool,
 ) -> BatchProcessSummary:
     session_factory = get_session_factory(database_engine)
-    temp_dir = ensure_directory(settings.runtime_tmp_path)
-    temp_source_path = temp_dir / f"{uuid4().hex}-{source_path.name}"
-    shutil.copy2(source_path, temp_source_path)
+    storage = get_storage_service(settings)
+    temp_source_path = storage.create_temp_working_copy(source_path)
     fingerprint = build_file_fingerprint(temp_source_path)
     with session_factory() as session:
         batch_run = create_batch_run(session, triggered_by=triggered_by)
@@ -580,12 +571,12 @@ def process_single_document_from_retained_source(
             total_processed = 1
             if force_reprocess:
                 ingestion.ingestion_status = "forced_reprocess"
-            if source_path.exists() and not canonical_document.source_file_present:
-                source_path.unlink(missing_ok=True)
+            if source_path.exists() and not canonical_document.source_file_present and canonical_document.storage_key:
+                storage.delete_document(canonical_document.storage_key)
             session.commit()
         except Exception:
             failed_files = 1
-            temp_source_path.unlink(missing_ok=True)
+            storage.delete_temp_file(temp_source_path)
             session.commit()
         total_references_found = count_batch_references(session, batch_run.id)
         finalize_batch_run(

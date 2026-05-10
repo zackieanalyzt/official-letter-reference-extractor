@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
@@ -13,7 +12,7 @@ from app.config import Settings
 from app.db.models import BatchRun, Document, DocumentReference, ProcessingLog
 from app.db.session import get_session_factory
 from app.logging_config import get_logger
-from app.services.inbox_paths import get_inbox_path
+from app.storage import get_storage_service
 
 
 logger = get_logger(__name__)
@@ -162,16 +161,13 @@ def _strip_issue_code(message: str) -> str:
 
 
 def list_inbox_files(settings: Settings, database_engine) -> list[InboxFileItem]:
-    input_dir = get_inbox_path(settings)
+    storage = get_storage_service(settings)
+    input_dir = storage.inbox_root
     session_factory = get_session_factory(database_engine)
     with session_factory() as session:
         processed_hashes = _fetch_processed_hashes(session)
 
-    files = sorted(
-        [path for path in input_dir.iterdir() if path.is_file() and path.suffix.lower() == ".pdf"],
-        key=lambda item: item.stat().st_mtime,
-        reverse=True,
-    )
+    files = sorted(storage.list_inbox_pdf_files(), key=lambda item: item.stat().st_mtime, reverse=True)
     logger.info(
         "Inbox listing path=%s files_found=%s files=%s",
         input_dir,
@@ -310,11 +306,3 @@ def fetch_export_summary(database_engine) -> ExportSummary:
         total_references=total_references,
         latest_batch=localize_batch_summary(latest_batch),
     )
-
-
-def safe_inbox_file_path(settings: Settings, file_name: str) -> Path | None:
-    input_root = get_inbox_path(settings)
-    candidate = (input_root / file_name).resolve()
-    if candidate.parent != input_root or not candidate.exists():
-        return None
-    return candidate

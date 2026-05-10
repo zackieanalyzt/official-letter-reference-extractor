@@ -23,7 +23,6 @@ from app.services.analytics_service import (
     get_reference_source_summary,
 )
 from app.services.export_service import export_csv, export_excel, export_markdown
-from app.services.inbox_paths import get_inbox_path
 from app.services.results_service import DEFAULT_PAGE_SIZE, get_references
 from app.services.retry_service import (
     force_reprocess_document,
@@ -37,8 +36,8 @@ from app.services.ui_views import (
     fetch_recent_batches,
     fetch_recent_error_insights,
     list_inbox_files,
-    safe_inbox_file_path,
 )
+from app.storage import get_storage_service
 from app.web.context import base_context
 
 
@@ -110,29 +109,16 @@ def _export_filter_context(filters: dict[str, str | None]) -> dict[str, str]:
     return {key: value or "" for key, value in filters.items()}
 
 
-def _save_uploaded_file(target_dir: Path, upload: UploadFile) -> tuple[bool, str]:
+def _save_uploaded_file(request: Request, upload: UploadFile) -> tuple[bool, str]:
     if not upload.filename:
         return False, "ไม่พบชื่อไฟล์"
     if Path(upload.filename).suffix.lower() != ".pdf":
         return False, "รองรับเฉพาะไฟล์ PDF"
 
     original_name = Path(upload.filename).name
-    candidate = target_dir / original_name
-    if candidate.exists():
-        stem = candidate.stem
-        suffix = candidate.suffix
-        counter = 1
-        while candidate.exists():
-            candidate = target_dir / f"{stem}_{counter}{suffix}"
-            counter += 1
-
-    with candidate.open("wb") as output_file:
-        while True:
-            chunk = upload.file.read(1024 * 1024)
-            if not chunk:
-                break
-            output_file.write(chunk)
-    return True, str(candidate.resolve())
+    storage = get_storage_service(request.app.state.settings)
+    saved_path = storage.save_upload_to_inbox(filename=original_name, fileobj=upload.file)
+    return True, str(saved_path)
 
 
 @router.post("/settings/language")
@@ -216,7 +202,8 @@ async def upload_imports(
 ):
     saved_files: list[str] = []
     failed_files: list[str] = []
-    target_dir = get_inbox_path(request.app.state.settings)
+    storage = get_storage_service(request.app.state.settings)
+    target_dir = storage.inbox_root
     logger.info(
         "Imports upload start inbox_path=%s requested_files=%s filenames=%s",
         target_dir,
@@ -225,7 +212,7 @@ async def upload_imports(
     )
 
     for upload in files:
-        success, value = _save_uploaded_file(target_dir, upload)
+        success, value = _save_uploaded_file(request, upload)
         if success:
             saved_files.append(value)
             logger.info(
@@ -270,12 +257,11 @@ async def delete_import_file(
     request: Request,
     file_name: str = Form(...),
 ):
-    target_path = safe_inbox_file_path(request.app.state.settings, file_name)
-    if target_path:
-        target_path.unlink(missing_ok=True)
-        logger.info("Imports delete removed file_name=%s file_path=%s", file_name, target_path)
+    storage = get_storage_service(request.app.state.settings)
+    if storage.delete_inbox_file(file_name):
+        logger.info("Imports delete removed file_name=%s inbox_path=%s", file_name, storage.inbox_root)
     else:
-        logger.warning("Imports delete skipped file_name=%s reason=not_found_or_outside_inbox", file_name)
+        logger.warning("Imports delete skipped file_name=%s reason=not_found", file_name)
 
     return RedirectResponse(url="/imports", status_code=303)
 

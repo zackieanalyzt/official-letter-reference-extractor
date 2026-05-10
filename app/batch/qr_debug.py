@@ -1,19 +1,14 @@
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from app.storage import get_storage_service
+
 
 def _debug_enabled(settings) -> bool:
     return bool(settings is not None and getattr(settings, "qr_debug_export", False))
-
-
-def _debug_base_dir(settings) -> Path:
-    if hasattr(settings, "qr_debug_path"):
-        return settings.qr_debug_path
-    return Path(getattr(settings, "qr_debug_dir", "data/qr-debug")).resolve()
 
 
 def _safe_part(value: Any) -> str:
@@ -27,18 +22,18 @@ def save_debug_image(img, meta: dict, settings) -> str | None:
 
     import cv2
 
-    base_dir = _debug_base_dir(settings)
-    base_dir.mkdir(parents=True, exist_ok=True)
-
     filename = (
         f"doc_{_safe_part(meta['document_id'])}_"
         f"page_{_safe_part(meta['page'])}_"
         f"{_safe_part(meta['zone'])}_"
         f"{_safe_part(meta['variant'])}.png"
     )
-    path = base_dir / filename
-    cv2.imwrite(str(path), img)
-    return str(path)
+    ok, encoded = cv2.imencode(".png", img)
+    if not ok:
+        return None
+    storage = get_storage_service(settings)
+    artifact = storage.save_debug_artifact(filename=filename, content=encoded.tobytes())
+    return str(artifact.absolute_path)
 
 
 def should_persist_debug_image(meta: dict) -> bool:
@@ -62,25 +57,21 @@ def save_debug_records(document_id: int | None, records: list[dict], settings) -
     if not _debug_enabled(settings) or document_id is None:
         return None
 
-    base_dir = _debug_base_dir(settings)
-    base_dir.mkdir(parents=True, exist_ok=True)
-    path = base_dir / f"doc_{document_id}.json"
     payload = {
         "document_id": document_id,
         "generated_at": datetime.now(UTC).isoformat(),
         "attempts": records,
     }
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    storage = get_storage_service(settings)
+    path = storage.write_debug_json(f"doc_{document_id}.json", payload)
     return str(path)
 
 
 def load_debug_payload(document_id: int, settings) -> dict:
-    base_dir = _debug_base_dir(settings)
-    path = base_dir / f"doc_{document_id}.json"
-    if not path.exists():
+    storage = get_storage_service(settings)
+    payload = storage.read_debug_json(f"doc_{document_id}.json")
+    if payload is None:
         return {"document_id": document_id, "pages": []}
-
-    payload = json.loads(path.read_text(encoding="utf-8"))
     pages: dict[int, list[dict]] = {}
     for attempt in payload.get("attempts", []):
         page_number = int(attempt.get("page") or 0)
