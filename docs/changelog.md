@@ -1385,3 +1385,39 @@ PRAGMA busy_timeout=5000;
 ### 13.6 ข้อจำกัด
 
 SQLite เหมาะกับงานเล็ก เครื่องเดียว หรือ deployment แบบง่าย แต่ยังเป็น single-writer database หากใช้งาน concurrent หนักหรือหลายผู้ใช้พร้อมกันมาก ควรใช้ PostgreSQL ต่อไป
+
+---
+
+## 14. Addendum - v0.9.8 Epic 2 Phase 1 Runtime Introspection
+
+เพิ่ม foundation สำหรับ runtime introspection และ diagnostics แบบ read-only โดยยังคงข้อจำกัดเดิมของ OLRE:
+
+- synchronous
+- SQLite-compatible
+- deterministic
+- ไม่เพิ่ม event bus / distributed queue / background reconciliation
+
+สิ่งที่เพิ่ม:
+
+- `app/ops` module
+- `GET /ops/runtime`
+- `GET /ops/storage/orphans`
+- `GET /ops/lifecycle/consistency-summary`
+- `GET /ops`
+- runtime snapshot พร้อม redacted database target
+- storage orphan summary แบบ count + sample
+- lifecycle consistency aggregate summary แบบ defensive scan limit
+
+สิ่งที่ยังไม่ทำ:
+
+- auto repair
+- delete/quarantine workflow
+- scheduled reconciliation
+- telemetry/dashboard platform
+
+การยืนยันเบื้องต้น:
+
+```text
+APP_ENV=development uv run ruff check app tests migrations -> All checks passed
+APP_ENV=testing uv run pytest tests/unit/test_ops_runtime.py tests/unit/test_ops_orphan_detection.py tests/unit/test_ops_diagnostics.py tests/integration/test_ops_flow.py -> 5 passed
+```
