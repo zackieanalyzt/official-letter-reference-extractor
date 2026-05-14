@@ -1,6 +1,6 @@
 # SQLite Runtime Guide
 
-OLRE v0.9.4 supports SQLite as the default lightweight runtime database. This is the recommended path for local use, small teams, demos, and future public container packaging.
+OLRE v0.9.7 keeps SQLite as the default lightweight runtime database and now pairs it with explicit runtime profiles plus storage boundary integration. This remains the recommended path for local use, small teams, demos, and simple operational deployments.
 
 ## When to Use SQLite
 
@@ -24,13 +24,21 @@ Use PostgreSQL when:
 In `.env`:
 
 ```env
-DATABASE_URL=sqlite:////app/data/olre.sqlite3
+APP_ENV=development
+DATABASE_URL=sqlite:///data/olre.sqlite3
 ENABLE_AUTH=false
 OCR_ENABLED=false
 QR_DEBUG_EXPORT=false
 ```
 
 `DATABASE_URL` is the source of truth. When it is set to SQLite, OLRE must not attempt a PostgreSQL connection.
+
+Docker/runtime profile note:
+
+```env
+APP_ENV=docker
+DATABASE_URL=sqlite:////app/data/olre.sqlite3
+```
 
 ## Initialize Database
 
@@ -39,22 +47,22 @@ python -m alembic upgrade head
 python -m alembic current
 ```
 
-Expected:
+Expected current head:
 
 ```text
-20260503_0007 (head)
+head
 ```
 
 ## Start App
 
 ```powershell
-python -m uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload --port 7777
 ```
 
 Open:
 
 ```text
-http://127.0.0.1:8000/imports
+http://127.0.0.1:7777/imports
 ```
 
 If port 8000 is stuck, use another port:
@@ -68,7 +76,7 @@ python -m uvicorn app.main:app --reload --port 8021
 Open:
 
 ```text
-http://127.0.0.1:8000/healthz
+http://127.0.0.1:7777/healthz
 ```
 
 Expected:
@@ -83,7 +91,7 @@ Expected:
 ## Confirm Data Is in SQLite
 
 ```powershell
-python -c "import sqlite3; con=sqlite3.connect('/app/data/olre.sqlite3'); print(con.execute('select id, original_file_name from documents').fetchall()); con.close()"
+python -c "import sqlite3; con=sqlite3.connect('data/olre.sqlite3'); print(con.execute('select id, original_file_name from documents').fetchall()); con.close()"
 ```
 
 After upload and batch processing, the new document should appear in this query.
@@ -105,11 +113,34 @@ This improves integrity and small-team usability while keeping SQLite simple.
 Stop the server first, then remove:
 
 ```powershell
-Remove-Item /app/data/olre.sqlite3,/app/data/olre.sqlite3-wal,/app/data/olre.sqlite3-shm -ErrorAction SilentlyContinue
+Remove-Item data/olre.sqlite3,data/olre.sqlite3-wal,data/olre.sqlite3-shm -ErrorAction SilentlyContinue
 python -m alembic upgrade head
 ```
 
 Do not delete the database in real use unless you already have a backup.
+
+## Storage Boundary Reminder
+
+As of `v0.9.7-storage-integration`, SQLite runtime operations coexist with a centralized storage boundary:
+
+- raw filesystem execution should live in `app/storage/*` or approved low-level adapters
+- business/service/web layers should request artifact operations rather than manipulating filesystem paths directly
+
+This guide describes runtime usage, not a return to path-centric business logic.
+
+## Latest Verification
+
+Latest verification commands:
+
+```bash
+APP_ENV=testing uv run pytest
+APP_ENV=development uv run ruff check app tests migrations
+```
+
+Latest results:
+
+- `79 passed`
+- `All checks passed`
 
 ## Known Limits
 

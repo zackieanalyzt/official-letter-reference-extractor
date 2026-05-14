@@ -2,14 +2,33 @@
 
 OLRE is a FastAPI web application for importing official-letter PDFs, extracting references from text, QR codes, and optional OCR, resolving URLs, reviewing quality, and exporting results for reporting.
 
-## v0.9.5 Runtime Direction
+## Current Stable Milestone
+
+Current stable milestone/tag:
+
+```text
+v0.9.7-storage-integration
+```
+
+Architecture progression to date:
+
+- `v0.9.5` runtime determinism
+- `v0.9.6` storage identity and lifecycle foundation
+- `v0.9.7` storage boundary integration
+
+Detailed phase handoff:
+
+- [v0.9.7 storage integration handoff](docs/changelog10May2026_v097_storage_integration.md)
+
+## Runtime Direction
 
 OLRE now targets a SQLite-first Docker runtime with zero external database setup:
 
 - Default runtime database: `sqlite:////app/data/olre.sqlite3`
-- Runtime paths: everything lives under `/app/data`
-- Default Docker web port: `7777`
-- Default venv web port: `8000`
+- Docker runtime paths: everything lives under `/app/data`
+- Local development profile defaults: repo-local `data/...`
+- Default Docker web port: `8000`
+- Default local development web port: `7777`
 - Container startup: validate paths, run Alembic migrations, start app
 - `/healthz`: lightweight process health
 - `/readyz`: database ping plus writable runtime path checks
@@ -37,10 +56,36 @@ FastAPI routes
 -> service layer
 -> SQLAlchemy models
 -> SQLite database
--> filesystem data directories under /app/data
+-> storage facade
+-> storage modules / approved low-level adapters
 ```
 
-Runtime files are stored under `/app/data/input`, `/app/data/processed`, `/app/data/error`, and optionally `/app/data/debug/qr`. These directories are ignored by git and must not be committed.
+Storage boundary rule:
+
+- raw filesystem execution should live in `app/storage/*` or approved low-level adapters
+- business/service/web layers should request artifact operations instead of manipulating filesystem paths directly
+
+Current storage module layout:
+
+- `app/storage/document_storage.py`
+- `app/storage/debug_storage.py`
+- `app/storage/export_storage.py`
+- `app/storage/temp_storage.py`
+- `app/storage/path_resolver.py`
+- `app/storage/types.py`
+- `app/storage/service.py` as the thin facade
+
+Compatibility-first policy:
+
+- write both
+- read prefer `storage_key`
+- fallback legacy path
+
+Compatibility fields intentionally retained:
+
+- `moved_to_path`
+- `last_source_path`
+- `source_file_path`
 
 ## Quick Start with Docker
 
@@ -52,13 +97,13 @@ docker compose up --build
 Open:
 
 ```text
-http://127.0.0.1:7777
+http://127.0.0.1:8000
 ```
 
 Verify health:
 
 ```powershell
-curl http://localhost:7777/healthz
+curl http://localhost:8000/healthz
 ```
 
 Expected:
@@ -88,19 +133,20 @@ python -m venv .venv
 python -m pip install -e ".[dev]"
 copy .env.example .env
 python -m alembic upgrade head
-python -m uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload --port 7777
 ```
 
 In `.env`, keep:
 
 ```env
-DATABASE_URL=sqlite:////app/data/olre.sqlite3
+APP_ENV=development
+DATABASE_URL=sqlite:///data/olre.sqlite3
 ```
 
 Open:
 
 ```text
-http://127.0.0.1:8000/imports
+http://127.0.0.1:7777/imports
 ```
 
 For OCR and pyzbar QR fallback:
@@ -113,11 +159,14 @@ Tesseract OCR and zbar are native Windows runtimes and still need separate insta
 
 ## Important Environment Variables
 
-- `DATABASE_URL=sqlite:////app/data/olre.sqlite3` uses the default SQLite runtime.
+- `APP_ENV=development` uses repo-local `data/...` defaults.
+- `APP_ENV=docker` uses `/app/data/...` defaults.
+- `DATABASE_URL=sqlite:////app/data/olre.sqlite3` is the default Docker SQLite runtime.
+- `DATABASE_URL=sqlite:///data/olre.sqlite3` is the default local development/testing SQLite runtime.
 - `ENABLE_AUTH=false` runs the public non-OAuth version.
 - `APP_TOKEN=` optionally protects `POST /batch/process` with `X-API-KEY`.
 - `APP_LANG=th` sets the default UI language when no cookie exists.
-- `APP_PORT=7777` is the Docker Compose default for this repository.
+- `APP_PORT=8000` is the Docker Compose default for this repository.
 - `INPUT_DIR=/app/data/input` stores pending PDFs.
 - `PROCESSED_DIR=/app/data/processed` stores processed PDFs.
 - `ERROR_DIR=/app/data/error` stores failed PDFs.
@@ -128,10 +177,15 @@ Tesseract OCR and zbar are native Windows runtimes and still need separate insta
 ## Run Tests and Lint
 
 ```powershell
-python -m pytest
-python -m ruff check app tests migrations
+APP_ENV=testing uv run pytest
+APP_ENV=development uv run ruff check app tests migrations
 python -m alembic current
 ```
+
+Latest verification status:
+
+- `APP_ENV=testing uv run pytest` -> `79 passed`
+- `APP_ENV=development uv run ruff check app tests migrations` -> `All checks passed`
 
 ## Export Formats
 
@@ -152,6 +206,7 @@ Exports preserve filters passed from `/results`.
 - [Admin guide](docs/ADMIN_GUIDE.md)
 - [Backup and restore](docs/BACKUP_RESTORE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [v0.9.7 storage integration handoff](docs/changelog10May2026_v097_storage_integration.md)
 - [Tesseract OCR setup](docs/TESSERACT_WINDOWS_SETUP.md)
 - [pyzbar/zbar setup](docs/PYZBAR_ZBAR_WINDOWS_SETUP.md)
 - [v0.9.3 browser QA checklist](docs/QA_BROWSER_CHECKLIST_v0.9.3.md)
@@ -173,7 +228,7 @@ SQLite backup should include the database file and any WAL sidecars:
 Confirm the active database backend with Docker:
 
 ```text
-http://127.0.0.1:7777/healthz
+http://127.0.0.1:8000/healthz
 ```
 
 SQLite mode should return:

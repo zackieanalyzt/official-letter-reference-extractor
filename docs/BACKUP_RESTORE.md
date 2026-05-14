@@ -1,6 +1,6 @@
 # Backup and Restore Guide
 
-OLRE v0.9.6 introduces executable SQLite backup utilities and moves the recommended backup workflow away from unsafe raw file-copy procedures.
+OLRE v0.9.7 continues the v0.9.6 SQLite backup model and clarifies it in the context of storage boundary integration. Backup remains SQLite-first, WAL-safe, and operationally conservative.
 
 ## Scope
 
@@ -19,6 +19,11 @@ python -m app.cli.verify_backup
 ```
 
 Both commands assume the active runtime profile and `DATABASE_URL` already point to the correct SQLite database.
+
+Runtime profile note:
+
+- `development` / `testing` typically use `sqlite:///data/olre.sqlite3`
+- `docker` / `production` typically use `sqlite:////app/data/olre.sqlite3`
 
 ## Why This Changed
 
@@ -94,6 +99,7 @@ integrity_check=ok
 
 - exports directory when export artifacts are operationally important
 - debug artifacts only when investigating QR extraction issues
+- runtime configuration awareness so the correct profile-specific backup location is understood before restore
 
 ### Not recommended as primary backup mechanism
 
@@ -121,6 +127,27 @@ After restore:
 2. Open `/readyz`
 3. Confirm expected document counts in the UI
 4. Confirm storage root still contains the expected retained blobs
+5. Confirm retained-source retry behavior still works when operationally important
+
+## Storage Boundary Reminder
+
+As of `v0.9.7-storage-integration`:
+
+- raw filesystem execution should live in `app/storage/*` or approved low-level adapters
+- storage identity is increasingly `storage_key`-first
+- compatibility fallback for legacy path fields still exists and should be preserved during restore validation
+
+Compatibility-first policy remains:
+
+- write both
+- read prefer `storage_key`
+- fallback legacy path
+
+Fields still intentionally retained for compatibility:
+
+- `moved_to_path`
+- `last_source_path`
+- `source_file_path`
 
 ## Retention Guidance
 
@@ -131,3 +158,19 @@ Suggested baseline:
 - monthly backups for 6-12 months when documents are operationally important
 
 Backup retention should be managed separately from OLRE runtime artifact retention.
+
+## Cleanup Safety Note
+
+Retention cleanup and backup retention are different concerns.
+
+Current OLRE cleanup model is:
+
+1. discover candidates
+2. validate lifecycle safety
+3. validate not-processing
+4. validate reference safety
+5. dry-run/report capability
+6. execute deletion through storage layer
+7. structured cleanup summary/log
+
+Quarantine/trash behavior is intentionally deferred after `v0.9.7`.

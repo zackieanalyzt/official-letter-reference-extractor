@@ -1,5 +1,17 @@
 # OLRE Troubleshooting
 
+Current stable milestone/tag:
+
+```text
+v0.9.7-storage-integration
+```
+
+Quick architecture reminder:
+
+- `v0.9.5` runtime determinism
+- `v0.9.6` storage identity and lifecycle foundation
+- `v0.9.7` storage boundary integration
+
 ## `git is not recognized`
 
 Install Git for Windows and choose `Use Git from the Windows Command Prompt`.
@@ -63,10 +75,10 @@ python -m alembic upgrade head
 python -m alembic current
 ```
 
-Expected baseline:
+Expected:
 
 ```text
-20260503_0007
+repository head
 ```
 
 ## SQLite Quick Start
@@ -74,22 +86,23 @@ Expected baseline:
 Use this in `.env`:
 
 ```env
-DATABASE_URL=sqlite:////app/data/olre.sqlite3
+APP_ENV=development
+DATABASE_URL=sqlite:///data/olre.sqlite3
 ```
 
 Then run:
 
 ```powershell
 python -m alembic upgrade head
-python -m uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload --port 7777
 ```
 
 If the database needs to be recreated during testing, stop the server and remove:
 
 ```text
-/app/data/olre.sqlite3
-/app/data/olre.sqlite3-wal
-/app/data/olre.sqlite3-shm
+data/olre.sqlite3
+data/olre.sqlite3-wal
+data/olre.sqlite3-shm
 ```
 
 Then rerun migration.
@@ -106,13 +119,13 @@ docker compose up
 Expected host URL:
 
 ```text
-http://127.0.0.1:7777
+http://127.0.0.1:8000
 ```
 
 Expected health check:
 
 ```powershell
-curl http://localhost:7777/healthz
+curl http://localhost:8000/healthz
 ```
 
 If startup fails, inspect logs:
@@ -159,7 +172,7 @@ docker compose up -d
 Then verify:
 
 ```powershell
-curl http://localhost:7777/healthz
+curl http://localhost:8000/healthz
 docker compose logs --tail 100
 ```
 
@@ -168,7 +181,7 @@ docker compose logs --tail 100
 Check the container health response:
 
 ```powershell
-curl http://localhost:7777/healthz
+curl http://localhost:8000/healthz
 ```
 
 Expected:
@@ -196,7 +209,8 @@ http://127.0.0.1:8000/healthz
 If it does not show `"database_backend":"sqlite"`, confirm `.env` contains:
 
 ```env
-DATABASE_URL=sqlite:////app/data/olre.sqlite3
+APP_ENV=development
+DATABASE_URL=sqlite:///data/olre.sqlite3
 ```
 
 Restart the server after changing `.env`.
@@ -204,7 +218,7 @@ Restart the server after changing `.env`.
 Then confirm data is in SQLite:
 
 ```powershell
-python -c "import sqlite3; con=sqlite3.connect('/app/data/olre.sqlite3'); print(con.execute('select id, original_file_name from documents').fetchall()); con.close()"
+python -c "import sqlite3; con=sqlite3.connect('data/olre.sqlite3'); print(con.execute('select id, original_file_name from documents').fetchall()); con.close()"
 ```
 
 ## SQLite Database Is Locked
@@ -232,6 +246,50 @@ Open:
 ```text
 http://127.0.0.1:8021/imports
 ```
+
+## Storage Boundary Confusion
+
+If a refactor or local patch starts manipulating paths directly in service or route code, stop and review the storage boundary rule.
+
+Operational rule:
+
+- raw filesystem execution should live in `app/storage/*` or approved low-level adapters
+- business/service/web layers should request artifact operations instead of opening, deleting, or copying files directly
+
+Accepted low-level exceptions in `v0.9.7`:
+
+- `app/batch/fingerprint.py`
+- `app/batch/pdf_validation.py`
+- `app/batch/reference_extraction.py`
+- `app/services/inbox_paths.py`
+
+If a new change falls outside those boundaries, it should usually be moved into the storage layer.
+
+## Cleanup Safety Verification
+
+Retention cleanup is high-risk infrastructure. Before trusting cleanup changes, verify that the implementation still follows this model:
+
+1. discover candidates
+2. validate lifecycle safety
+3. validate not-processing
+4. validate reference safety
+5. dry-run/report capability
+6. execute deletion through storage layer
+7. structured cleanup summary/log
+
+Quarantine/trash behavior is intentionally deferred after `v0.9.7`.
+
+## Latest Verification Commands
+
+```bash
+APP_ENV=testing uv run pytest
+APP_ENV=development uv run ruff check app tests migrations
+```
+
+Latest verified results:
+
+- `79 passed`
+- `All checks passed`
 
 ## `processing_error_type does not exist`
 

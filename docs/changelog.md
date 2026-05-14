@@ -1,3 +1,52 @@
+# OLRE Daily Changelog
+
+## Current Stable Milestone
+
+Current stable milestone/tag:
+
+```text
+v0.9.7-storage-integration
+```
+
+Current architecture progression:
+
+- `v0.9.5` runtime determinism
+- `v0.9.6` storage identity and lifecycle foundation
+- `v0.9.7` storage boundary integration
+
+Latest operational verification:
+
+- `APP_ENV=testing uv run pytest` -> `79 passed`
+- `APP_ENV=development uv run ruff check app tests migrations` -> `All checks passed`
+
+Next recommended phase:
+
+```text
+v0.9.8-observability-and-lifecycle-visibility
+```
+
+Suggested scope:
+
+- lifecycle visibility
+- storage metrics
+- cleanup observability
+- retry visibility
+- failed document analytics
+- retention status visibility
+- soft orphan detection
+- admin/runtime operational introspection
+
+Explicit non-goals:
+
+- object storage
+- distributed storage
+- Kubernetes
+- microservices
+- queue orchestration
+- blob registry/reference counting unless future operational pain justifies it
+
+---
+
 # OLRE Daily Changelog - 2026-05-03
 
 ## Project
