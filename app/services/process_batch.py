@@ -39,6 +39,33 @@ from app.batch.url_resolution import resolve_document_references
 from app.config import Settings
 from app.db.models import Document, DocumentIngestion, DocumentReference
 from app.db.session import get_session_factory
+from app.lifecycle import (
+    ACTOR_RETRY_SERVICE,
+    ACTOR_BATCH_PROCESSOR,
+    EVENT_DOCUMENT_DUPLICATE_REUSED,
+    EVENT_DOCUMENT_EXTRACTION_COMPLETED,
+    EVENT_DOCUMENT_FAILED,
+    EVENT_DOCUMENT_PROCESSING_STARTED,
+    EVENT_DOCUMENT_QUEUED,
+    EVENT_DOCUMENT_RETAINED,
+    EVENT_DOCUMENT_RETRY_COMPLETED,
+    EVENT_DOCUMENT_RETRY_STARTED,
+    EVENT_DOCUMENT_RESOLUTION_COMPLETED,
+    EVENT_DOCUMENT_UPLOADED,
+    EVENT_DOCUMENT_VALIDATED,
+    STATE_EXTRACTED,
+    STATE_FAILED,
+    STATE_PROCESSING,
+    STATE_QUEUED,
+    STATE_RETAINED,
+    STATE_RESOLVED,
+    STATE_UPLOADED,
+    STATE_VALIDATED,
+    document_has_lifecycle_history,
+    record_lifecycle_event,
+    record_non_state_event,
+    transition_document_state,
+)
 from app.logging_config import get_logger
 from app.services.retention_service import (
     apply_source_retention_for_failure,
@@ -71,6 +98,14 @@ class BatchProcessSummary:
     failed_files: int
     total_references_found: int
     status: str
+
+
+def _correlation_id_for(document_id: int, batch_run_id: int) -> str:
+    return f"document:{document_id}:batch:{batch_run_id}"
+
+
+def _operation_id_for(ingestion_id: int) -> str:
+    return f"ingestion:{ingestion_id}"
 
 
 def _select_document_issue(issues: list[ExtractionIssue]) -> tuple[str | None, str | None]:
@@ -131,10 +166,33 @@ def _process_document_from_source(
     ingestion: DocumentIngestion,
     fingerprint: FileFingerprint,
     settings: Settings,
+    correlation_id: str,
+    operation_id: str,
 ) -> None:
     try:
+        transition_document_state(
+            session,
+            document=document,
+            event_type=EVENT_DOCUMENT_PROCESSING_STARTED,
+            to_state=STATE_PROCESSING,
+            actor_source=ACTOR_BATCH_PROCESSOR,
+            correlation_id=correlation_id,
+            operation_id=operation_id,
+            batch_run_id=batch_run_id,
+        )
         mark_document_processing(session, document)
         validate_pdf_readable(fingerprint.path)
+        transition_document_state(
+            session,
+            document=document,
+            event_type=EVENT_DOCUMENT_VALIDATED,
+            to_state=STATE_VALIDATED,
+            actor_source=ACTOR_BATCH_PROCESSOR,
+            correlation_id=correlation_id,
+            operation_id=operation_id,
+            batch_run_id=batch_run_id,
+            metadata={"uploaded_file_name": fingerprint.original_file_name},
+        )
     except Exception as exc:
         error_message = f"[PDF_VALIDATION_FAILED] PDF validation failed: {exc}"
         logger.exception("PDF validation failed file=%s", fingerprint.path)
@@ -178,6 +236,31 @@ def _process_document_from_source(
             error_type=INVALID_PDF,
             error_detail=str(exc),
         )
+        transition_document_state(
+            session,
+            document=document,
+            event_type=EVENT_DOCUMENT_FAILED,
+            to_state=STATE_FAILED,
+            actor_source=ACTOR_BATCH_PROCESSOR,
+            correlation_id=correlation_id,
+            operation_id=operation_id,
+            batch_run_id=batch_run_id,
+            metadata={"step": "pdf_validation"},
+            error_type=INVALID_PDF,
+            error_detail=str(exc),
+        )
+        if retention.source_file_present:
+            transition_document_state(
+                session,
+                document=document,
+                event_type=EVENT_DOCUMENT_RETAINED,
+                to_state=STATE_RETAINED,
+                actor_source=ACTOR_BATCH_PROCESSOR,
+                correlation_id=correlation_id,
+                operation_id=operation_id,
+                batch_run_id=batch_run_id,
+                metadata={"reason": "failed_source_retained"},
+            )
         reconcile_document_source_flags(session, document.id)
         raise
 
@@ -239,6 +322,17 @@ def _process_document_from_source(
 
         inserted_count = _replace_document_references(session, document, references)
         logger.info("[DB_INSERT] file=%s document_id=%s inserted=%s", fingerprint.path, document.id, inserted_count)
+        transition_document_state(
+            session,
+            document=document,
+            event_type=EVENT_DOCUMENT_EXTRACTION_COMPLETED,
+            to_state=STATE_EXTRACTED,
+            actor_source=ACTOR_BATCH_PROCESSOR,
+            correlation_id=correlation_id,
+            operation_id=operation_id,
+            batch_run_id=batch_run_id,
+            metadata={"page_count": page_count, "reference_count": inserted_count},
+        )
         error_type, error_detail = _select_document_issue(extraction_issues)
         if not references and error_type is None:
             error_type = UNKNOWN_ERROR
@@ -282,6 +376,19 @@ def _process_document_from_source(
             source_file_present=retention.source_file_present,
             retry_source_available=retention.retry_source_available,
             cleanup_due_at=retention.cleanup_due_at,
+        )
+        transition_document_state(
+            session,
+            document=document,
+            event_type=EVENT_DOCUMENT_RESOLUTION_COMPLETED,
+            to_state=STATE_RESOLVED,
+            actor_source=ACTOR_BATCH_PROCESSOR,
+            correlation_id=correlation_id,
+            operation_id=operation_id,
+            batch_run_id=batch_run_id,
+            metadata={"reference_count": inserted_count, "used_cached_result": False},
+            error_type=error_type,
+            error_detail=error_detail,
         )
         reconcile_document_source_flags(session, document.id)
     except Exception as exc:
@@ -367,6 +474,31 @@ def _process_document_from_source(
             error_type=UNKNOWN_ERROR,
             error_detail=str(exc),
         )
+        transition_document_state(
+            session,
+            document=document,
+            event_type=EVENT_DOCUMENT_FAILED,
+            to_state=STATE_FAILED,
+            actor_source=ACTOR_BATCH_PROCESSOR,
+            correlation_id=correlation_id,
+            operation_id=operation_id,
+            batch_run_id=batch_run_id,
+            metadata={"step": "document_processing"},
+            error_type=UNKNOWN_ERROR,
+            error_detail=str(exc),
+        )
+        if retention.source_file_present:
+            transition_document_state(
+                session,
+                document=document,
+                event_type=EVENT_DOCUMENT_RETAINED,
+                to_state=STATE_RETAINED,
+                actor_source=ACTOR_BATCH_PROCESSOR,
+                correlation_id=correlation_id,
+                operation_id=operation_id,
+                batch_run_id=batch_run_id,
+                metadata={"reason": "failed_source_retained"},
+            )
         reconcile_document_source_flags(session, document.id)
         raise
 
@@ -456,6 +588,7 @@ def run_batch_registration(
                 else None
             )
             document = reusable_cached_document or existing_document
+            is_new_document = document is None
             if document is None:
                 document = create_or_get_document_row(
                     session,
@@ -475,9 +608,35 @@ def run_batch_registration(
                 force_reprocess_requested=force_reprocess,
                 source_file_path=str(file_path),
             )
+            correlation_id = _correlation_id_for(document.id, batch_run.id)
+            operation_id = _operation_id_for(ingestion.id)
+
+            if is_new_document and not document_has_lifecycle_history(session, document.id):
+                record_lifecycle_event(
+                    session,
+                    document_id=document.id,
+                    event_type=EVENT_DOCUMENT_UPLOADED,
+                    from_state=None,
+                    to_state=STATE_UPLOADED,
+                    actor_source=ACTOR_BATCH_PROCESSOR,
+                    correlation_id=correlation_id,
+                    operation_id=operation_id,
+                    batch_run_id=batch_run.id,
+                    metadata={"uploaded_file_name": fingerprint.original_file_name},
+                )
 
             if reusable_cached_document is not None:
                 duplicate_files_skipped += 1
+                record_non_state_event(
+                    session,
+                    document=document,
+                    event_type=EVENT_DOCUMENT_DUPLICATE_REUSED,
+                    actor_source=ACTOR_BATCH_PROCESSOR,
+                    correlation_id=correlation_id,
+                    operation_id=operation_id,
+                    batch_run_id=batch_run.id,
+                    metadata={"uploaded_file_name": fingerprint.original_file_name},
+                )
                 _reuse_cached_document(
                     session,
                     batch_run_id=batch_run.id,
@@ -490,6 +649,17 @@ def run_batch_registration(
                 continue
 
             try:
+                transition_document_state(
+                    session,
+                    document=document,
+                    event_type=EVENT_DOCUMENT_QUEUED,
+                    to_state=STATE_QUEUED,
+                    actor_source=ACTOR_BATCH_PROCESSOR,
+                    correlation_id=correlation_id,
+                    operation_id=operation_id,
+                    batch_run_id=batch_run.id,
+                    metadata={"uploaded_file_name": fingerprint.original_file_name},
+                )
                 _process_document_from_source(
                     session,
                     batch_run_id=batch_run.id,
@@ -497,6 +667,8 @@ def run_batch_registration(
                     ingestion=ingestion,
                     fingerprint=fingerprint,
                     settings=settings,
+                    correlation_id=correlation_id,
+                    operation_id=operation_id,
                 )
                 total_files_processed += 1
                 if force_reprocess and existing_document is not None:
@@ -539,6 +711,7 @@ def process_single_document_from_retained_source(
     source_path: Path,
     triggered_by: str,
     force_reprocess: bool,
+    correlation_id: str | None = None,
 ) -> BatchProcessSummary:
     session_factory = get_session_factory(database_engine)
     storage = get_storage_service(settings)
@@ -557,9 +730,32 @@ def process_single_document_from_retained_source(
             force_reprocess_requested=force_reprocess,
             source_file_path=str(source_path),
         )
+        lifecycle_correlation_id = correlation_id or _correlation_id_for(canonical_document.id, batch_run.id)
+        operation_id = _operation_id_for(ingestion.id)
         failed_files = 0
         total_processed = 0
         try:
+            record_non_state_event(
+                session,
+                document=canonical_document,
+                event_type=EVENT_DOCUMENT_RETRY_STARTED,
+                actor_source=ACTOR_RETRY_SERVICE,
+                correlation_id=lifecycle_correlation_id,
+                operation_id=operation_id,
+                batch_run_id=batch_run.id,
+                metadata={"triggered_by": triggered_by, "force_reprocess": force_reprocess},
+            )
+            transition_document_state(
+                session,
+                document=canonical_document,
+                event_type=EVENT_DOCUMENT_QUEUED,
+                to_state=STATE_QUEUED,
+                actor_source=ACTOR_RETRY_SERVICE,
+                correlation_id=lifecycle_correlation_id,
+                operation_id=operation_id,
+                batch_run_id=batch_run.id,
+                metadata={"triggered_by": triggered_by, "force_reprocess": force_reprocess},
+            )
             _process_document_from_source(
                 session,
                 batch_run_id=batch_run.id,
@@ -567,16 +763,38 @@ def process_single_document_from_retained_source(
                 ingestion=ingestion,
                 fingerprint=fingerprint,
                 settings=settings,
+                correlation_id=lifecycle_correlation_id,
+                operation_id=operation_id,
             )
             total_processed = 1
             if force_reprocess:
                 ingestion.ingestion_status = "forced_reprocess"
             if source_path.exists() and not canonical_document.source_file_present and canonical_document.storage_key:
                 storage.delete_document(canonical_document.storage_key)
+            record_non_state_event(
+                session,
+                document=canonical_document,
+                event_type=EVENT_DOCUMENT_RETRY_COMPLETED,
+                actor_source=ACTOR_RETRY_SERVICE,
+                correlation_id=lifecycle_correlation_id,
+                operation_id=operation_id,
+                batch_run_id=batch_run.id,
+                metadata={"triggered_by": triggered_by, "force_reprocess": force_reprocess, "success": True},
+            )
             session.commit()
         except Exception:
             failed_files = 1
             storage.delete_temp_file(temp_source_path)
+            record_non_state_event(
+                session,
+                document=canonical_document,
+                event_type=EVENT_DOCUMENT_RETRY_COMPLETED,
+                actor_source=ACTOR_RETRY_SERVICE,
+                correlation_id=lifecycle_correlation_id,
+                operation_id=operation_id,
+                batch_run_id=batch_run.id,
+                metadata={"triggered_by": triggered_by, "force_reprocess": force_reprocess, "success": False},
+            )
             session.commit()
         total_references_found = count_batch_references(session, batch_run.id)
         finalize_batch_run(

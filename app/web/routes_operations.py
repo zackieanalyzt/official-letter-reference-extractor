@@ -4,12 +4,16 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, File, Form, Query, Request, UploadFile
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.background import BackgroundTask
 
 from app.config import BASE_DIR
+from app.db.models import Document
 from app.db.session import get_session_factory
+from app.lifecycle import get_document_timeline
+from app.lifecycle.consistency import validate_document_consistency
+from app.lifecycle.presentation import build_document_lifecycle_payload
 from app.logging_config import get_logger
 from app.i18n import normalize_lang
 from app.security import safe_redirect_target
@@ -119,6 +123,19 @@ def _save_uploaded_file(request: Request, upload: UploadFile) -> tuple[bool, str
     storage = get_storage_service(request.app.state.settings)
     saved_path = storage.save_upload_to_inbox(filename=original_name, fileobj=upload.file)
     return True, str(saved_path)
+
+
+def _load_document_lifecycle_payload(request: Request, document_id: int) -> dict | None:
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        document = session.get(Document, document_id)
+        if document is None:
+            return None
+        timeline = get_document_timeline(session, document_id)
+        consistency = validate_document_consistency(session, document_id, settings=request.app.state.settings)
+        if consistency is None:
+            return None
+        return build_document_lifecycle_payload(document, events=timeline, consistency=consistency)
 
 
 @router.post("/settings/language")
@@ -403,6 +420,41 @@ async def results_page(
             "retry_status": retry_status,
             "force_reprocess_status": force_reprocess_status,
         },
+    )
+
+
+@router.get("/documents/{document_id}/lifecycle")
+async def document_lifecycle_timeline(request: Request, document_id: int):
+    payload = _load_document_lifecycle_payload(request, document_id)
+    if payload is None:
+        return JSONResponse({"detail": "Document not found"}, status_code=404)
+    return JSONResponse(payload)
+
+
+@router.get("/documents/{document_id}/lifecycle/consistency")
+async def document_lifecycle_consistency(request: Request, document_id: int):
+    payload = _load_document_lifecycle_payload(request, document_id)
+    if payload is None:
+        return JSONResponse({"detail": "Document not found"}, status_code=404)
+    return JSONResponse(
+        {
+            "document_id": document_id,
+            "current_state": payload["current_state"],
+            "consistency": payload["consistency"],
+        }
+    )
+
+
+@router.get("/documents/{document_id}/lifecycle/view")
+async def document_lifecycle_page(request: Request, document_id: int):
+    payload = _load_document_lifecycle_payload(request, document_id)
+    if payload is None:
+        return RedirectResponse(url="/results", status_code=303)
+    return _render(
+        request,
+        name="document_lifecycle.html",
+        current_page="results",
+        context={"lifecycle": payload},
     )
 
 

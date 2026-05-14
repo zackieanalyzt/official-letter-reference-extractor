@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import JSON, BigInteger, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -89,6 +89,9 @@ class Document(Base):
     ingestions: Mapped[list["DocumentIngestion"]] = relationship(
         back_populates="document", cascade="all, delete-orphan"
     )
+    lifecycle_events: Mapped[list["DocumentLifecycleEvent"]] = relationship(
+        back_populates="document", cascade="all, delete-orphan"
+    )
 
 
 class DocumentIngestion(Base):
@@ -167,6 +170,40 @@ class DocumentReference(Base):
     resolution_error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     document: Mapped[Document] = relationship(back_populates="references")
+
+
+class DocumentLifecycleEvent(Base):
+    __tablename__ = "document_lifecycle_events"
+    __table_args__ = (
+        Index("ix_document_lifecycle_events_document_occurred", "document_id", "occurred_at"),
+        Index("ix_document_lifecycle_events_event_occurred", "event_type", "occurred_at"),
+        Index("ix_document_lifecycle_events_batch_run_id", "batch_run_id"),
+        Index("ix_document_lifecycle_events_correlation_id", "correlation_id"),
+        Index("ix_document_lifecycle_events_to_state", "to_state"),
+    )
+
+    id: Mapped[int] = mapped_column(PK_TYPE, primary_key=True, autoincrement=True)
+    document_id: Mapped[int] = mapped_column(
+        PK_TYPE, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False
+    )
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    from_state: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    to_state: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    actor_source: Mapped[str] = mapped_column(String(100), nullable=False)
+    correlation_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    operation_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    batch_run_id: Mapped[int | None] = mapped_column(
+        PK_TYPE, ForeignKey("batch_runs.id", ondelete="SET NULL"), nullable=True
+    )
+    metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    error_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    document: Mapped[Document] = relationship(back_populates="lifecycle_events")
 
 
 class UserAudit(Base):
