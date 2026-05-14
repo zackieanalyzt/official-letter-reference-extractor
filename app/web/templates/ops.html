@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}{{ labels.ops|default("Operations") }} - OLRE{% endblock %}
+
+{% block content %}
+<section class="shell shell-wide">
+    <div class="page-header">
+        <p class="eyebrow">{{ labels.ops_eyebrow|default("Runtime Introspection") }}</p>
+        <h1>{{ labels.ops_title|default("Operations Snapshot") }}</h1>
+        <p class="page-lead">{{ labels.ops_lead|default("Read-only runtime, storage, and lifecycle diagnostics for operator review.") }}</p>
+    </div>
+
+    <section class="card">
+        <h2>{{ labels.runtime_snapshot|default("Runtime Snapshot") }}</h2>
+        <table>
+            <tbody>
+                <tr><th>{{ labels.environment|default("Environment") }}</th><td>{{ ops.runtime.app_env }}</td></tr>
+                <tr><th>{{ labels.database|default("Database") }}</th><td>{{ ops.runtime.configured_database_backend }} / {{ ops.runtime.active_database_backend }}</td></tr>
+                <tr><th>{{ labels.database_target|default("Database Target") }}</th><td><code>{{ ops.runtime.configured_database_target }}</code></td></tr>
+                <tr><th>{{ labels.storage_backend|default("Storage Backend") }}</th><td>{{ ops.runtime.storage_backend }}</td></tr>
+                <tr><th>{{ labels.lifecycle_table|default("Lifecycle Table") }}</th><td>{{ ops.runtime.lifecycle_table_available }}</td></tr>
+                <tr><th>{{ labels.total_documents|default("Total documents") }}</th><td>{{ ops.runtime.document_count }}</td></tr>
+                <tr><th>{{ labels.lifecycle_event_count|default("Lifecycle event count") }}</th><td>{{ ops.runtime.lifecycle_event_count }}</td></tr>
+                <tr><th>{{ labels.retained_documents|default("Retained documents") }}</th><td>{{ ops.runtime.retained_document_count }}</td></tr>
+                <tr><th>{{ labels.cleaned_documents|default("Cleaned documents") }}</th><td>{{ ops.runtime.cleaned_document_count }}</td></tr>
+                <tr><th>{{ labels.failed_documents|default("Failed documents") }}</th><td>{{ ops.runtime.failed_document_count }}</td></tr>
+                <tr><th>{{ labels.captured_at|default("Captured at") }}</th><td>{{ ops.runtime.captured_at }}</td></tr>
+            </tbody>
+        </table>
+
+        <h3>{{ labels.runtime_paths|default("Runtime Paths") }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ labels.path|default("Path") }}</th>
+                    <th>{{ labels.status|default("Status") }}</th>
+                    <th>{{ labels.readable|default("Readable") }}</th>
+                    <th>{{ labels.writable|default("Writable") }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for path in ops.runtime.paths %}
+                <tr>
+                    <td><strong>{{ path.name }}</strong><br><code>{{ path.path }}</code></td>
+                    <td>{{ path.exists }}</td>
+                    <td>{{ path.readable }}</td>
+                    <td>{{ path.writable }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="card">
+        <h2>{{ labels.storage_diagnostics|default("Storage Diagnostics") }}</h2>
+        <table>
+            <tbody>
+                <tr><th>{{ labels.documents|default("Documents") }}</th><td>{{ ops.orphans.scanned_documents }}</td></tr>
+                <tr><th>{{ labels.files|default("Files") }}</th><td>{{ ops.orphans.scanned_storage_files }}</td></tr>
+                <tr><th>{{ labels.unreferenced_files|default("Unreferenced storage files") }}</th><td>{{ ops.orphans.unreferenced_storage_file_count }}</td></tr>
+                <tr><th>{{ labels.missing_references|default("Missing referenced artifacts") }}</th><td>{{ ops.orphans.missing_referenced_artifact_count }}</td></tr>
+                <tr><th>{{ labels.retained_missing_source|default("Retained missing source") }}</th><td>{{ ops.orphans.retained_missing_source_count }}</td></tr>
+                <tr><th>{{ labels.cleaned_source_present|default("Cleaned source still present") }}</th><td>{{ ops.orphans.cleaned_source_still_present_count }}</td></tr>
+                <tr><th>{{ labels.source_expected_without_reference|default("Source expected without reference") }}</th><td>{{ ops.orphans.source_expected_without_reference_count }}</td></tr>
+            </tbody>
+        </table>
+
+        <h3>{{ labels.samples|default("Samples") }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ labels.code|default("Code") }}</th>
+                    <th>{{ labels.summary|default("Summary") }}</th>
+                    <th>{{ labels.details|default("Details") }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sample in ops.orphans.samples %}
+                <tr>
+                    <td>{{ sample.code }}</td>
+                    <td>{{ sample.summary }}</td>
+                    <td>{{ sample.document_id or sample.storage_key or sample.path or labels.none|default("None") }}{% if sample.details %}<br><small>{{ sample.details }}</small>{% endif %}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3">{{ labels.no_rows|default("No rows.") }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="card">
+        <h2>{{ labels.lifecycle_consistency_summary|default("Lifecycle Consistency Summary") }}</h2>
+        <table>
+            <tbody>
+                <tr><th>{{ labels.total_documents|default("Total documents") }}</th><td>{{ ops.lifecycle_consistency.total_documents }}</td></tr>
+                <tr><th>{{ labels.scanned_documents|default("Scanned documents") }}</th><td>{{ ops.lifecycle_consistency.scanned_documents }}</td></tr>
+                <tr><th>{{ labels.scan_limit|default("Scan limit") }}</th><td>{{ ops.lifecycle_consistency.scan_limit }}</td></tr>
+                <tr><th>{{ labels.pass_count|default("PASS") }}</th><td>{{ ops.lifecycle_consistency.pass_count }}</td></tr>
+                <tr><th>{{ labels.warning_count|default("WARNING") }}</th><td>{{ ops.lifecycle_consistency.warning_count }}</td></tr>
+                <tr><th>{{ labels.error_count|default("ERROR") }}</th><td>{{ ops.lifecycle_consistency.error_count }}</td></tr>
+                <tr><th>{{ labels.critical_count|default("CRITICAL") }}</th><td>{{ ops.lifecycle_consistency.critical_count }}</td></tr>
+                <tr><th>{{ labels.truncated|default("Truncated") }}</th><td>{{ ops.lifecycle_consistency.truncated }}</td></tr>
+            </tbody>
+        </table>
+
+        <h3>{{ labels.top_issue_codes|default("Top Issue Codes") }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ labels.code|default("Code") }}</th>
+                    <th>{{ labels.count|default("Count") }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for issue in ops.lifecycle_consistency.top_issue_codes %}
+                <tr>
+                    <td>{{ issue.code }}</td>
+                    <td>{{ issue.count }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="2">{{ labels.no_rows|default("No rows.") }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3>{{ labels.samples|default("Samples") }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ labels.document_id|default("Document ID") }}</th>
+                    <th>{{ labels.summary|default("Summary") }}</th>
+                    <th>{{ labels.details|default("Details") }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sample in ops.lifecycle_consistency.samples %}
+                <tr>
+                    <td>{{ sample.document_id }}</td>
+                    <td>{{ sample.summary }}</td>
+                    <td>{{ sample.code }}{% if sample.details %}<br><small>{{ sample.details }}</small>{% endif %}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3">{{ labels.no_rows|default("No rows.") }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</section>
+{% endblock %}

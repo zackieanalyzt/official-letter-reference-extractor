@@ -17,6 +17,7 @@ from app.web.routes_auth import router as auth_router
 from app.web.routes_batch import router as batch_router
 from app.web.routes_debug import router as debug_router
 from app.web.routes_home import router as home_router
+from app.web.routes_ops import router as ops_router
 from app.web.routes_operations import router as operations_router
 
 
@@ -133,4 +134,5 @@ if settings.enable_auth:
 app.include_router(batch_router)
 app.include_router(debug_router)
 app.include_router(home_router)
+app.include_router(ops_router)
 app.include_router(operations_router)
