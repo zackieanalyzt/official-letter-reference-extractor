@@ -120,7 +120,7 @@ def test_sqlite_backup_and_verify_round_trip(monkeypatch, tmp_path):
                 sha256="hash-backup",
                 file_size_bytes=12,
                 processing_status="processed",
-                lifecycle_state="processed",
+                lifecycle_state="resolved",
             )
         )
         session.commit()
@@ -191,4 +191,16 @@ def test_failed_document_retention_uses_content_addressable_storage_and_cleanup(
         lifecycle_state = connection.execute(
             text("SELECT lifecycle_state FROM documents ORDER BY id DESC LIMIT 1")
         ).scalar_one()
-    assert lifecycle_state == "deleted"
+        lifecycle_events = connection.execute(
+            text(
+                """
+                SELECT event_type
+                FROM document_lifecycle_events
+                WHERE document_id = :document_id
+                ORDER BY occurred_at, id
+                """
+            ),
+            {"document_id": row["id"]},
+        ).scalars().all()
+    assert lifecycle_state == "cleaned"
+    assert "DOCUMENT_CLEANED" in lifecycle_events

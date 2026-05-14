@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ labels.lifecycle }} | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">{{ labels.lifecycle }}</span>
+                <h1>{{ lifecycle.filename }}</h1>
+                <p class="lead">{{ labels.lifecycle_lead }}</p>
+            </div>
+            <div class="page-heading-side">
+                <a href="/results" class="button button-secondary button-small">{{ labels.back_to_results }}</a>
+                <a href="/documents/{{ lifecycle.document_id }}/lifecycle" class="button button-secondary button-small">{{ labels.lifecycle_json }}</a>
+            </div>
+        </div>
+
+        <article class="info-card">
+            <div class="section-head">
+                <div>
+                    <span class="card-kicker">{{ labels.document_id }} {{ lifecycle.document_id }}</span>
+                    <h2>{{ labels.lifecycle_current_state }}: {{ labels.get('lifecycle_state_' ~ lifecycle.current_state, lifecycle.current_state) }}</h2>
+                </div>
+                <div>
+                    <span class="status-badge status-badge-{{ lifecycle.consistency.status|lower }}">{{ lifecycle.consistency.status }}</span>
+                </div>
+            </div>
+            <p class="muted-copy">{{ lifecycle.consistency.summary }}</p>
+            <ul class="metric-list">
+                {% for check in lifecycle.consistency.checks %}
+                <li>
+                    <strong>{{ check.severity }}</strong>
+                    <span>{{ check.summary }}</span>
+                    {% if check.details %}
+                    <span class="muted-inline">({{ check.details }})</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </article>
+
+        {% for group in lifecycle.groups %}
+        <article class="info-card">
+            <div class="section-head">
+                <div>
+                    <span class="card-kicker">{{ labels.lifecycle_group }}</span>
+                    <h2>{{ labels.get(group["title_key"], group["title"]) }}</h2>
+                </div>
+                <div class="muted-inline">{{ group["correlation_id"] }}</div>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>{{ labels.time }}</th>
+                            <th>{{ labels.lifecycle_event }}</th>
+                            <th>{{ labels.status }}</th>
+                            <th>{{ labels.actor }}</th>
+                            <th>{{ labels.summary }}</th>
+                            <th>{{ labels.details }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in group["items"] %}
+                        <tr>
+                            <td>{{ event.occurred_at }}</td>
+                            <td>
+                                <strong>{{ labels.get(event.presentation.label_key, event.presentation.label) }}</strong>
+                                <div class="muted-inline">{{ labels.get(event.presentation.narrative_key, event.presentation.narrative) }}</div>
+                            </td>
+                            <td>
+                                {% if event.to_state %}
+                                <span class="status-badge">{{ labels.get('lifecycle_state_' ~ event.from_state, event.from_state or '-') if event.from_state else '-' }} -> {{ labels.get('lifecycle_state_' ~ event.to_state, event.to_state) }}</span>
+                                {% else %}
+                                <span class="metric-chip">{{ labels.lifecycle_non_state_event }}</span>
+                                {% endif %}
+                                <span class="metric-chip">{{ event.presentation.severity }}</span>
+                            </td>
+                            <td>
+                                {{ labels.get(event.actor_source, event.actor_source) }}
+                                {% if event.batch_run_id %}
+                                <div class="muted-inline">{{ labels.batch_id }} {{ event.batch_run_id }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if event.presentation.metadata_summary %}
+                                {{ event.presentation.metadata_summary }}
+                                {% elif event.error_type %}
+                                {{ event.error_type }}
+                                {% else %}
+                                <span class="muted-inline">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if event.error_detail %}
+                                <div>{{ event.error_detail }}</div>
+                                {% endif %}
+                                {% if event.metadata %}
+                                <details>
+                                    <summary>{{ labels.details }}</summary>
+                                    <pre>{{ event.metadata }}</pre>
+                                </details>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+        {% else %}
+        <article class="info-card">
+            <h2>{{ labels.no_rows }}</h2>
+            <p class="muted-copy">{{ labels.lifecycle_no_events }}</p>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

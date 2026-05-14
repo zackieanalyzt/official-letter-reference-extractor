@@ -160,6 +160,156 @@ def test_results_page_loads(client):
     assert "beta-scan.pdf" in response.text
 
 
+def test_lifecycle_view_page_renders_consistency_and_timeline(client):
+    with client.app.state.postgres_engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                INSERT INTO documents (
+                    id,
+                    batch_run_id,
+                    original_file_name,
+                    content_hash,
+                    file_size_bytes,
+                    page_count,
+                    document_number,
+                    processing_status,
+                    processing_error,
+                    processing_error_type,
+                    processing_error_detail,
+                    processed_at,
+                    moved_to_path,
+                    extraction_version,
+                    retention_mode,
+                    source_file_present,
+                    source_deleted_at,
+                    last_source_path,
+                    retry_requires_reupload,
+                    last_ingestion_used_cached_result,
+                    lifecycle_state
+                )
+                VALUES
+                    (50, NULL, 'timeline-view.pdf', 'hash-timeline-view', 100, 1, NULL, 'processed', NULL, NULL, NULL, '2026-04-24 10:00:00', NULL, 1, 'retain_failed_only', 0, '2026-04-24 10:01:00', NULL, 1, 0, 'resolved')
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO document_lifecycle_events (
+                    id, document_id, event_type, from_state, to_state, occurred_at,
+                    actor_source, correlation_id, operation_id, batch_run_id, metadata_json,
+                    error_type, error_detail
+                )
+                VALUES (
+                    :id, :document_id, :event_type, :from_state, :to_state, :occurred_at,
+                    :actor_source, :correlation_id, :operation_id, :batch_run_id, :metadata_json,
+                    :error_type, :error_detail
+                )
+                """
+            ),
+            [
+                {
+                    "id": 500,
+                    "document_id": 50,
+                    "event_type": "DOCUMENT_UPLOADED",
+                    "from_state": None,
+                    "to_state": "uploaded",
+                    "occurred_at": "2026-04-24 10:00:00",
+                    "actor_source": "batch_processor",
+                    "correlation_id": "document:50:batch:1",
+                    "operation_id": "ingestion:1",
+                    "batch_run_id": 1,
+                    "metadata_json": "{}",
+                    "error_type": None,
+                    "error_detail": None,
+                },
+                {
+                    "id": 501,
+                    "document_id": 50,
+                    "event_type": "DOCUMENT_QUEUED",
+                    "from_state": "uploaded",
+                    "to_state": "queued",
+                    "occurred_at": "2026-04-24 10:00:01",
+                    "actor_source": "batch_processor",
+                    "correlation_id": "document:50:batch:1",
+                    "operation_id": "ingestion:1",
+                    "batch_run_id": 1,
+                    "metadata_json": "{}",
+                    "error_type": None,
+                    "error_detail": None,
+                },
+                {
+                    "id": 502,
+                    "document_id": 50,
+                    "event_type": "DOCUMENT_PROCESSING_STARTED",
+                    "from_state": "queued",
+                    "to_state": "processing",
+                    "occurred_at": "2026-04-24 10:00:02",
+                    "actor_source": "batch_processor",
+                    "correlation_id": "document:50:batch:1",
+                    "operation_id": "ingestion:1",
+                    "batch_run_id": 1,
+                    "metadata_json": "{}",
+                    "error_type": None,
+                    "error_detail": None,
+                },
+                {
+                    "id": 503,
+                    "document_id": 50,
+                    "event_type": "DOCUMENT_VALIDATED",
+                    "from_state": "processing",
+                    "to_state": "validated",
+                    "occurred_at": "2026-04-24 10:00:03",
+                    "actor_source": "batch_processor",
+                    "correlation_id": "document:50:batch:1",
+                    "operation_id": "ingestion:1",
+                    "batch_run_id": 1,
+                    "metadata_json": "{}",
+                    "error_type": None,
+                    "error_detail": None,
+                },
+                {
+                    "id": 504,
+                    "document_id": 50,
+                    "event_type": "DOCUMENT_EXTRACTION_COMPLETED",
+                    "from_state": "validated",
+                    "to_state": "extracted",
+                    "occurred_at": "2026-04-24 10:00:04",
+                    "actor_source": "batch_processor",
+                    "correlation_id": "document:50:batch:1",
+                    "operation_id": "ingestion:1",
+                    "batch_run_id": 1,
+                    "metadata_json": "{\"page_count\":1,\"reference_count\":1}",
+                    "error_type": None,
+                    "error_detail": None,
+                },
+                {
+                    "id": 505,
+                    "document_id": 50,
+                    "event_type": "DOCUMENT_RESOLUTION_COMPLETED",
+                    "from_state": "extracted",
+                    "to_state": "resolved",
+                    "occurred_at": "2026-04-24 10:00:05",
+                    "actor_source": "batch_processor",
+                    "correlation_id": "document:50:batch:1",
+                    "operation_id": "ingestion:1",
+                    "batch_run_id": 1,
+                    "metadata_json": "{\"reference_count\":1}",
+                    "error_type": None,
+                    "error_detail": None,
+                },
+            ],
+        )
+
+    response = client.get("/documents/50/lifecycle/view")
+
+    assert response.status_code == 200
+    assert "timeline-view.pdf" in response.text
+    assert "PASS" in response.text
+    assert LABELS["lifecycle_group_processing_chain"] in response.text
+
+
 def test_results_page_shows_google_form_destination_guidance(client):
     with client.app.state.postgres_engine.begin() as connection:
         connection.execute(

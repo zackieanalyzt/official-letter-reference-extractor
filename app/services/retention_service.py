@@ -8,6 +8,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.models import Document, DocumentIngestion
+from app.lifecycle import (
+    ACTOR_RETENTION_SERVICE,
+    EVENT_DOCUMENT_CLEANED,
+    STATE_CLEANED,
+    transition_document_state,
+)
 from app.logging_config import get_logger
 from app.storage import get_storage_service
 
@@ -86,7 +92,7 @@ def apply_source_retention_for_failure(
     )
 
 
-def reconcile_document_source_flags(session: Session, document_id: int) -> None:
+def reconcile_document_source_flags(session: Session, document_id: int, *, update_lifecycle_state: bool = True) -> None:
     ingestions = session.execute(
         select(DocumentIngestion).where(DocumentIngestion.document_id == document_id)
     ).scalars().all()
@@ -100,12 +106,13 @@ def reconcile_document_source_flags(session: Session, document_id: int) -> None:
     document.retry_requires_reupload = not bool(latest_retained)
     document.last_source_path = latest_retained.source_file_path if latest_retained else None
     document.source_deleted_at = None if latest_retained else _utcnow()
-    if latest_retained is None and document.processing_status == "failed":
-        document.lifecycle_state = "deleted"
-    elif latest_retained is not None and document.processing_status == "failed":
-        document.lifecycle_state = "retained"
-    elif document.processing_status == "processed":
-        document.lifecycle_state = "processed"
+    if update_lifecycle_state:
+        if latest_retained is None and document.processing_status == "failed":
+            document.lifecycle_state = "cleaned"
+        elif latest_retained is not None and document.processing_status == "failed":
+            document.lifecycle_state = "retained"
+        elif document.processing_status == "processed":
+            document.lifecycle_state = "resolved"
     session.flush()
 
 
@@ -129,7 +136,7 @@ def cleanup_retained_failures(session: Session, settings, *, dry_run: bool = Fal
         )
     ).scalars().all()
 
-    affected_document_ids: set[int] = set()
+    affected_document_ids: dict[int, dict[str, object]] = {}
     for ingestion in expired_ingestions:
         summary["candidates"] += 1
         document = session.get(Document, ingestion.document_id)
@@ -159,10 +166,35 @@ def cleanup_retained_failures(session: Session, settings, *, dry_run: bool = Fal
         ingestion.source_file_present = False
         ingestion.retry_source_available = False
         ingestion.source_deleted_at = now
-        affected_document_ids.add(ingestion.document_id)
+        if ingestion.document_id not in affected_document_ids:
+            affected_document_ids[ingestion.document_id] = {
+                "storage_key_present_before": bool(preferred_storage_key),
+                "previous_state": document.lifecycle_state if document is not None else None,
+            }
 
-    for document_id in affected_document_ids:
-        reconcile_document_source_flags(session, document_id)
+    for document_id, context in affected_document_ids.items():
+        document = session.get(Document, document_id)
+        previous_state = context["previous_state"]
+        reconcile_document_source_flags(session, document_id, update_lifecycle_state=False)
+        if (
+            document is not None
+            and document.processing_status == "failed"
+            and not document.source_file_present
+            and previous_state in {"retained", "failed"}
+        ):
+            transition_document_state(
+                session,
+                document=document,
+                event_type=EVENT_DOCUMENT_CLEANED,
+                to_state=STATE_CLEANED,
+                actor_source=ACTOR_RETENTION_SERVICE,
+                metadata={
+                    "cleanup_type": "retained_sources",
+                    "reason": "retention_expired",
+                    "cleanup_trigger": "run_retention_cleanup",
+                    "storage_key_present_before": context["storage_key_present_before"],
+                },
+            )
         summary["ingestions_reconciled"] += 1
 
     session.flush()
