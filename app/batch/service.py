@@ -61,18 +61,6 @@ def find_document_by_hash(session: Session, content_hash: str) -> Document | Non
     return session.execute(statement).scalar_one_or_none()
 
 
-def _lifecycle_state_for(processing_status: str, *, source_file_present: bool) -> str:
-    if processing_status == "processing":
-        return "processing"
-    if processing_status == "processed":
-        return "processed"
-    if processing_status == "failed":
-        return "retained" if source_file_present else "failed"
-    if processing_status == "deleted":
-        return "deleted"
-    return "uploaded"
-
-
 def create_or_get_document_row(
     session: Session,
     *,
@@ -143,7 +131,6 @@ def mark_document_processed(
     processing_error_detail: str | None = None,
 ) -> Document:
     document.processing_status = "processed"
-    document.lifecycle_state = _lifecycle_state_for("processed", source_file_present=source_file_present)
     document.processing_error = None
     document.processing_error_type = processing_error_type
     document.processing_error_detail = processing_error_detail
@@ -170,7 +157,6 @@ def mark_document_failed(
     retry_requires_reupload: bool = True,
 ) -> Document:
     document.processing_status = "failed"
-    document.lifecycle_state = _lifecycle_state_for("failed", source_file_present=source_file_present)
     document.processing_error = error_message
     document.processing_error_type = error_type
     document.processing_error_detail = error_detail
@@ -197,7 +183,6 @@ def set_document_processing_issue(
 
 
 def mark_document_processing(session: Session, document: Document) -> Document:
-    document.lifecycle_state = _lifecycle_state_for("processing", source_file_present=document.source_file_present)
     session.flush()
     return document
 
