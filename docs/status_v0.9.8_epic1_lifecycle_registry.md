@@ -50,7 +50,7 @@ This is not an event bus, telemetry stack, replay engine, or distributed lifecyc
 
 Note:
 
-The current branch name does not reflect the logical milestone of the work now in the worktree. Lifecycle work for `v0.9.8` is currently present in this branch/worktree state and should be reviewed carefully during commit preparation.
+The branch name at the tagged milestone does not fully describe the logical milestone. Lifecycle work for `v0.9.8` is represented by the tag `v0.9.8-epic1-lifecycle-registry` and should be reviewed as the Epic 1 lifecycle handoff baseline.
 
 ## 3. Architectural Principle
 
@@ -101,20 +101,20 @@ Key behavior added in Phase 1:
 
 Primary files changed in Phase 1:
 
-- [app/lifecycle/__init__.py](/Users/chin/official-letter-reference-extractor/app/lifecycle/__init__.py)
-- [app/lifecycle/events.py](/Users/chin/official-letter-reference-extractor/app/lifecycle/events.py)
-- [app/lifecycle/states.py](/Users/chin/official-letter-reference-extractor/app/lifecycle/states.py)
-- [app/lifecycle/service.py](/Users/chin/official-letter-reference-extractor/app/lifecycle/service.py)
-- [app/lifecycle/validation.py](/Users/chin/official-letter-reference-extractor/app/lifecycle/validation.py)
-- [app/lifecycle/projection.py](/Users/chin/official-letter-reference-extractor/app/lifecycle/projection.py)
-- [app/db/models.py](/Users/chin/official-letter-reference-extractor/app/db/models.py)
-- [app/services/process_batch.py](/Users/chin/official-letter-reference-extractor/app/services/process_batch.py)
-- [app/services/retry_service.py](/Users/chin/official-letter-reference-extractor/app/services/retry_service.py)
-- [app/web/routes_operations.py](/Users/chin/official-letter-reference-extractor/app/web/routes_operations.py)
-- [migrations/versions/20260510_0011_add_document_lifecycle_events.py](/Users/chin/official-letter-reference-extractor/migrations/versions/20260510_0011_add_document_lifecycle_events.py)
-- [tests/unit/test_lifecycle_validation.py](/Users/chin/official-letter-reference-extractor/tests/unit/test_lifecycle_validation.py)
-- [tests/unit/test_lifecycle_service.py](/Users/chin/official-letter-reference-extractor/tests/unit/test_lifecycle_service.py)
-- [tests/integration/test_lifecycle_registry.py](/Users/chin/official-letter-reference-extractor/tests/integration/test_lifecycle_registry.py)
+- `app/lifecycle/__init__.py`
+- `app/lifecycle/events.py`
+- `app/lifecycle/states.py`
+- `app/lifecycle/service.py`
+- `app/lifecycle/validation.py`
+- `app/lifecycle/projection.py`
+- `app/db/models.py`
+- `app/services/process_batch.py`
+- `app/services/retry_service.py`
+- `app/web/routes_operations.py`
+- `migrations/versions/20260510_0011_add_document_lifecycle_events.py`
+- `tests/unit/test_lifecycle_validation.py`
+- `tests/unit/test_lifecycle_service.py`
+- `tests/integration/test_lifecycle_registry.py`
 
 ## 5. Phase 2 — Lifecycle Visibility & Consistency
 
@@ -135,23 +135,23 @@ Delivered:
 
 Primary files changed in Phase 2:
 
-- [app/lifecycle/taxonomy.py](/Users/chin/official-letter-reference-extractor/app/lifecycle/taxonomy.py)
-- [app/lifecycle/metadata.py](/Users/chin/official-letter-reference-extractor/app/lifecycle/metadata.py)
-- [app/lifecycle/consistency.py](/Users/chin/official-letter-reference-extractor/app/lifecycle/consistency.py)
-- [app/lifecycle/presentation.py](/Users/chin/official-letter-reference-extractor/app/lifecycle/presentation.py)
-- [app/services/retention_service.py](/Users/chin/official-letter-reference-extractor/app/services/retention_service.py)
-- [app/web/routes_operations.py](/Users/chin/official-letter-reference-extractor/app/web/routes_operations.py)
-- [app/web/templates/document_lifecycle.html](/Users/chin/official-letter-reference-extractor/app/web/templates/document_lifecycle.html)
-- [app/web/templates/results.html](/Users/chin/official-letter-reference-extractor/app/web/templates/results.html)
-- [app/i18n/en.py](/Users/chin/official-letter-reference-extractor/app/i18n/en.py)
-- [app/i18n/th.py](/Users/chin/official-letter-reference-extractor/app/i18n/th.py)
-- [docs/LIFECYCLE_EVENT_TAXONOMY.md](/Users/chin/official-letter-reference-extractor/docs/LIFECYCLE_EVENT_TAXONOMY.md)
-- [docs/LIFECYCLE_METADATA_CONVENTIONS.md](/Users/chin/official-letter-reference-extractor/docs/LIFECYCLE_METADATA_CONVENTIONS.md)
-- [docs/adr/0001-lifecycle-registry.md](/Users/chin/official-letter-reference-extractor/docs/adr/0001-lifecycle-registry.md)
-- [tests/unit/test_lifecycle_consistency.py](/Users/chin/official-letter-reference-extractor/tests/unit/test_lifecycle_consistency.py)
-- [tests/unit/test_lifecycle_presentation.py](/Users/chin/official-letter-reference-extractor/tests/unit/test_lifecycle_presentation.py)
-- [tests/integration/test_ui_flow.py](/Users/chin/official-letter-reference-extractor/tests/integration/test_ui_flow.py)
-- [tests/integration/test_storage_hardening.py](/Users/chin/official-letter-reference-extractor/tests/integration/test_storage_hardening.py)
+- `app/lifecycle/taxonomy.py`
+- `app/lifecycle/metadata.py`
+- `app/lifecycle/consistency.py`
+- `app/lifecycle/presentation.py`
+- `app/services/retention_service.py`
+- `app/web/routes_operations.py`
+- `app/web/templates/document_lifecycle.html`
+- `app/web/templates/results.html`
+- `app/i18n/en.py`
+- `app/i18n/th.py`
+- `docs/LIFECYCLE_EVENT_TAXONOMY.md`
+- `docs/LIFECYCLE_METADATA_CONVENTIONS.md`
+- `docs/adr/0001-lifecycle-registry.md`
+- `tests/unit/test_lifecycle_consistency.py`
+- `tests/unit/test_lifecycle_presentation.py`
+- `tests/integration/test_ui_flow.py`
+- `tests/integration/test_storage_hardening.py`
 
 ## 6. New Runtime Behavior
 
@@ -320,7 +320,7 @@ Current validator checks include:
 
 ## 10. Governance Documents Added
 
-### [docs/LIFECYCLE_EVENT_TAXONOMY.md](/Users/chin/official-letter-reference-extractor/docs/LIFECYCLE_EVENT_TAXONOMY.md)
+### `docs/LIFECYCLE_EVENT_TAXONOMY.md`
 
 Purpose:
 
@@ -329,7 +329,7 @@ Purpose:
 - define allowed actors
 - document severity semantics
 
-### [docs/LIFECYCLE_METADATA_CONVENTIONS.md](/Users/chin/official-letter-reference-extractor/docs/LIFECYCLE_METADATA_CONVENTIONS.md)
+### `docs/LIFECYCLE_METADATA_CONVENTIONS.md`
 
 Purpose:
 
@@ -338,7 +338,7 @@ Purpose:
 - prevent uncontrolled metadata growth
 - keep metadata small and operational
 
-### [docs/adr/0001-lifecycle-registry.md](/Users/chin/official-letter-reference-extractor/docs/adr/0001-lifecycle-registry.md)
+### `docs/adr/0001-lifecycle-registry.md`
 
 Purpose:
 
@@ -393,12 +393,12 @@ Result:
 
 ## 12. Git Status / Commit Preparation Notes
 
-Current worktree characteristics:
+Current worktree characteristics at the tagged Epic 1 handoff:
 
 - contains Phase 1 lifecycle foundation changes
 - contains Phase 2 lifecycle visibility/consistency changes
 - still contains docs-only changes from previous rounds
-- not committed as a clean, isolated Epic 1 sequence yet
+- was not originally prepared as a clean, isolated Epic 1 sequence before handoff writing
 
 Observed worktree includes:
 
