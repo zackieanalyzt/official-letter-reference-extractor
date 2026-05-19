@@ -10,15 +10,24 @@ Current stable milestone/tag:
 v0.9.7-storage-integration
 ```
 
+Current v0.9.8 operational candidate:
+
+```text
+v0.9.8 Epic 2 Phase 1 — Runtime Introspection & Ops Diagnostics Foundation
+```
+
 Architecture progression to date:
 
 - `v0.9.5` runtime determinism
 - `v0.9.6` storage identity and lifecycle foundation
 - `v0.9.7` storage boundary integration
+- `v0.9.8 Epic 1` lifecycle registry and document lifecycle visibility
+- `v0.9.8 Epic 2 Phase 1` runtime introspection and read-only ops diagnostics
 
 Detailed phase handoff:
 
 - [v0.9.7 storage integration handoff](docs/changelog10May2026_v097_storage_integration.md)
+- [v0.9.8 production readiness validation](docs/production_readiness_validation_v0.9.8.md)
 
 ## Runtime Direction
 
@@ -184,7 +193,7 @@ python -m alembic current
 
 Latest verification status:
 
-- `APP_ENV=testing uv run pytest` -> `79 passed`
+- `APP_ENV=testing uv run pytest` -> `100 passed`
 - `APP_ENV=development uv run ruff check app tests migrations` -> `All checks passed`
 
 ## Export Formats
@@ -207,6 +216,7 @@ Exports preserve filters passed from `/results`.
 - [Backup and restore](docs/BACKUP_RESTORE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [v0.9.7 storage integration handoff](docs/changelog10May2026_v097_storage_integration.md)
+- [v0.9.8 production readiness validation](docs/production_readiness_validation_v0.9.8.md)
 - [Tesseract OCR setup](docs/TESSERACT_WINDOWS_SETUP.md)
 - [pyzbar/zbar setup](docs/PYZBAR_ZBAR_WINDOWS_SETUP.md)
 - [v0.9.3 browser QA checklist](docs/QA_BROWSER_CHECKLIST_v0.9.3.md)

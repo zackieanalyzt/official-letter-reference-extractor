@@ -284,7 +284,7 @@ def get_latest_home_batch_summary(session: Session) -> HomeBatchSummary | None:
 
 def count_batch_references(session: Session, batch_run_id: int) -> int:
     return session.execute(
-        select(func.count(DocumentReference.id))
+        select(func.count(func.distinct(DocumentReference.id)))
         .select_from(DocumentReference)
         .join(Document, DocumentReference.document_id == Document.id)
         .join(DocumentIngestion, DocumentIngestion.document_id == Document.id)

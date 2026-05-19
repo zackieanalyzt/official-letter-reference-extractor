@@ -15,6 +15,7 @@ data/input/
 data/processed/
 data/error/
 data/debug/
+data/storage/
 data/*.sqlite
 data/*.sqlite3
 data/*.sqlite3-shm

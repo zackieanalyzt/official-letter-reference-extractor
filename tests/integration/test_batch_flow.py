@@ -4,10 +4,18 @@ from types import SimpleNamespace
 import fitz
 import httpx
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.batch import url_resolution
 from app.batch.error_types import INVALID_PDF, URL_HTTP_ERROR, URL_TIMEOUT
 from app.batch.reference_extraction import ExtractedReference
+from app.batch.service import (
+    count_batch_references,
+    create_batch_run,
+    create_document_ingestion,
+    create_document_reference,
+    create_or_get_document_row,
+)
 from app.services.batch_monitor_service import get_batch_run_detail, list_batch_runs
 from app.services.process_batch import fetch_home_batch_summary, run_batch_registration
 
@@ -144,6 +152,48 @@ def test_duplicate_content_skip_does_not_create_new_processed_record(client):
     )
     assert ingestion_row["ingestion_status"] == "reused_cached"
     assert ingestion_row["used_cached_result"] == 1
+
+
+def test_batch_reference_count_deduplicates_reused_ingestions(client):
+    with Session(client.app.state.postgres_engine) as session:
+        batch_run = create_batch_run(session, triggered_by="alice")
+        document = create_or_get_document_row(
+            session,
+            original_file_name="letter-a.pdf",
+            content_hash="hash-reused-ingestion",
+            file_size_bytes=10,
+            mime_type="application/pdf",
+            extraction_version=client.app.state.settings.extraction_version,
+            retention_mode=client.app.state.settings.file_retention_mode,
+        )
+        create_document_reference(
+            session,
+            document_id=document.id,
+            page_number=1,
+            source_type="text",
+            reference_class="url",
+            raw_reference="https://example.com/ref",
+        )
+        create_document_ingestion(
+            session,
+            document_id=document.id,
+            batch_run_id=batch_run.id,
+            uploaded_file_name="letter-a.pdf",
+            retention_mode_used=client.app.state.settings.file_retention_mode,
+            force_reprocess_requested=False,
+            source_file_path="/tmp/letter-a.pdf",
+        )
+        create_document_ingestion(
+            session,
+            document_id=document.id,
+            batch_run_id=batch_run.id,
+            uploaded_file_name="letter-b.pdf",
+            retention_mode_used=client.app.state.settings.file_retention_mode,
+            force_reprocess_requested=False,
+            source_file_path="/tmp/letter-b.pdf",
+        )
+
+        assert count_batch_references(session, batch_run.id) == 1
 
 
 def test_same_filename_different_content_treated_as_new(client):
