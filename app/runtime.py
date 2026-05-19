@@ -45,6 +45,7 @@ def get_runtime_paths(settings: Settings) -> dict[str, Path]:
         "storage_root": settings.storage_root_path,
         "export_dir": settings.export_path,
         "backup_dir": settings.backup_path,
+        "traversal_storage_dir": settings.traversal_storage_path,
     }
 
 

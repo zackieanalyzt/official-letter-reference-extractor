@@ -109,8 +109,11 @@ def test_lifecycle_migration_creates_event_table(monkeypatch, tmp_path):
         }
 
     assert "document_lifecycle_events" in table_names
+    assert "reference_traversals" in table_names
     assert "ix_document_lifecycle_events_document_occurred" in index_names
     assert "ix_document_lifecycle_events_event_occurred" in index_names
+    assert "ix_reference_traversals_parent_depth" in index_names
+    assert "ix_reference_traversals_status" in index_names
 
 
 def test_batch_flow_emits_lifecycle_history(client):

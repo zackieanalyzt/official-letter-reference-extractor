@@ -42,6 +42,7 @@ from app.services.ui_views import (
     list_inbox_files,
 )
 from app.storage import get_storage_service
+from app.traversal import build_document_traversal_payload
 from app.web.context import base_context
 
 
@@ -455,6 +456,43 @@ async def document_lifecycle_page(request: Request, document_id: int):
         name="document_lifecycle.html",
         current_page="results",
         context={"lifecycle": payload},
+    )
+
+
+@router.get("/documents/{document_id}/traversal")
+async def document_traversal_plan(request: Request, document_id: int):
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        payload = build_document_traversal_payload(
+            session,
+            document_id=document_id,
+            settings=request.app.state.settings,
+        )
+        if payload is not None:
+            session.commit()
+    if payload is None:
+        return JSONResponse({"detail": "Document not found"}, status_code=404)
+    return JSONResponse(payload)
+
+
+@router.get("/documents/{document_id}/traversal/view")
+async def document_traversal_page(request: Request, document_id: int):
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        payload = build_document_traversal_payload(
+            session,
+            document_id=document_id,
+            settings=request.app.state.settings,
+        )
+        if payload is not None:
+            session.commit()
+    if payload is None:
+        return RedirectResponse(url="/results", status_code=303)
+    return _render(
+        request,
+        name="document_traversal.html",
+        current_page="results",
+        context={"traversal": payload},
     )
 
 

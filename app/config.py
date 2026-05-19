@@ -21,6 +21,7 @@ PROFILE_DEFAULTS: dict[str, dict[str, int | str]] = {
         "storage_root": "data/storage",
         "export_dir": "data/exports",
         "backup_dir": "data/backups",
+        "traversal_storage_dir": "data/runtime/linked-documents",
     },
     "docker": {
         "app_port": 8000,
@@ -34,6 +35,7 @@ PROFILE_DEFAULTS: dict[str, dict[str, int | str]] = {
         "storage_root": "/app/data/storage",
         "export_dir": "/app/data/exports",
         "backup_dir": "/app/data/backups",
+        "traversal_storage_dir": "/app/data/runtime/linked-documents",
     },
     "testing": {
         "app_port": 7777,
@@ -47,6 +49,7 @@ PROFILE_DEFAULTS: dict[str, dict[str, int | str]] = {
         "storage_root": "data/storage",
         "export_dir": "data/exports",
         "backup_dir": "data/backups",
+        "traversal_storage_dir": "data/runtime/linked-documents",
     },
     "production": {
         "app_port": 8000,
@@ -60,6 +63,7 @@ PROFILE_DEFAULTS: dict[str, dict[str, int | str]] = {
         "storage_root": "/app/data/storage",
         "export_dir": "/app/data/exports",
         "backup_dir": "/app/data/backups",
+        "traversal_storage_dir": "/app/data/runtime/linked-documents",
     },
 }
 PROFILE_ALIASES = {
@@ -151,6 +155,21 @@ class Settings(BaseSettings):
     release_status: str | None = Field(default=None, validation_alias="OLRE_RELEASE_STATUS")
     release_note: str | None = Field(default=None, validation_alias="OLRE_RELEASE_NOTE")
     release_highlights: str | None = Field(default=None, validation_alias="OLRE_RELEASE_HIGHLIGHTS")
+    traversal_enabled: bool = Field(default=False, validation_alias="TRAVERSAL_ENABLED")
+    traversal_max_depth: int = Field(default=1, validation_alias="TRAVERSAL_MAX_DEPTH")
+    traversal_max_documents_per_batch: int = Field(
+        default=20,
+        validation_alias="TRAVERSAL_MAX_DOCUMENTS_PER_BATCH",
+    )
+    traversal_allowed_content_types: str = Field(
+        default="application/pdf",
+        validation_alias="TRAVERSAL_ALLOWED_CONTENT_TYPES",
+    )
+    traversal_timeout_seconds: int = Field(default=15, validation_alias="TRAVERSAL_TIMEOUT_SECONDS")
+    traversal_max_download_mb: int = Field(default=20, validation_alias="TRAVERSAL_MAX_DOWNLOAD_MB")
+    traversal_allowed_domains: str | None = Field(default=None, validation_alias="TRAVERSAL_ALLOWED_DOMAINS")
+    traversal_block_private_ips: bool = Field(default=True, validation_alias="TRAVERSAL_BLOCK_PRIVATE_IPS")
+    traversal_storage_dir: str | None = Field(default=None, validation_alias="TRAVERSAL_STORAGE_DIR")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -187,6 +206,8 @@ class Settings(BaseSettings):
         "release_status",
         "release_note",
         "release_highlights",
+        "traversal_allowed_domains",
+        "traversal_storage_dir",
         mode="before",
     )
     @classmethod
@@ -241,6 +262,12 @@ class Settings(BaseSettings):
     @property
     def backup_path(self) -> Path:
         return resolve_path(self.backup_dir or PROFILE_DEFAULTS[self.app_env]["backup_dir"])
+
+    @property
+    def traversal_storage_path(self) -> Path:
+        return resolve_path(
+            self.traversal_storage_dir or PROFILE_DEFAULTS[self.app_env]["traversal_storage_dir"]
+        )
 
     @property
     def postgres_dsn(self) -> EngineURL:

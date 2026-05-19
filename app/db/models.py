@@ -92,6 +92,15 @@ class Document(Base):
     lifecycle_events: Mapped[list["DocumentLifecycleEvent"]] = relationship(
         back_populates="document", cascade="all, delete-orphan"
     )
+    outbound_traversals: Mapped[list["ReferenceTraversal"]] = relationship(
+        foreign_keys="ReferenceTraversal.parent_document_id",
+        back_populates="parent_document",
+        cascade="all, delete-orphan",
+    )
+    inbound_traversals: Mapped[list["ReferenceTraversal"]] = relationship(
+        foreign_keys="ReferenceTraversal.child_document_id",
+        back_populates="child_document",
+    )
 
 
 class DocumentIngestion(Base):
@@ -170,6 +179,64 @@ class DocumentReference(Base):
     resolution_error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     document: Mapped[Document] = relationship(back_populates="references")
+    traversals: Mapped[list["ReferenceTraversal"]] = relationship(
+        back_populates="source_reference",
+        cascade="all, delete-orphan",
+    )
+
+
+class ReferenceTraversal(Base):
+    __tablename__ = "reference_traversals"
+    __table_args__ = (
+        Index("ix_reference_traversals_parent_depth", "parent_document_id", "traversal_depth"),
+        Index("ix_reference_traversals_source_reference_id", "source_reference_id"),
+        Index("ix_reference_traversals_child_document_id", "child_document_id"),
+        Index("ix_reference_traversals_status", "traversal_status"),
+        UniqueConstraint(
+            "parent_document_id",
+            "source_reference_id",
+            "raw_url",
+            name="uq_reference_traversals_parent_source_raw_url",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(PK_TYPE, primary_key=True, autoincrement=True)
+    parent_document_id: Mapped[int] = mapped_column(
+        PK_TYPE, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False
+    )
+    source_reference_id: Mapped[int] = mapped_column(
+        PK_TYPE, ForeignKey("document_references.id", ondelete="CASCADE"), nullable=False
+    )
+    child_document_id: Mapped[int | None] = mapped_column(
+        PK_TYPE, ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
+    )
+    raw_url: Mapped[str] = mapped_column(Text, nullable=False)
+    resolved_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    traversal_depth: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    traversal_status: Mapped[str] = mapped_column(String(50), nullable=False)
+    target_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    content_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    content_length_bytes: Mapped[int | None] = mapped_column(PK_TYPE, nullable=True)
+    policy_decision: Mapped[str] = mapped_column(String(50), nullable=False)
+    policy_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    parent_document: Mapped[Document] = relationship(
+        foreign_keys=[parent_document_id],
+        back_populates="outbound_traversals",
+    )
+    source_reference: Mapped[DocumentReference] = relationship(back_populates="traversals")
+    child_document: Mapped[Document | None] = relationship(
+        foreign_keys=[child_document_id],
+        back_populates="inbound_traversals",
+    )
 
 
 class DocumentLifecycleEvent(Base):

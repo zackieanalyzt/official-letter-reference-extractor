@@ -17,6 +17,9 @@ from app.lifecycle.events import (
     EVENT_DOCUMENT_RETRY_STARTED,
     EVENT_DOCUMENT_UPLOADED,
     EVENT_DOCUMENT_VALIDATED,
+    EVENT_TRAVERSAL_CANDIDATE_DETECTED,
+    EVENT_TRAVERSAL_DEPTH_LIMIT_REACHED,
+    EVENT_TRAVERSAL_SKIPPED,
 )
 from app.lifecycle.taxonomy import require_known_event_type
 
@@ -36,6 +39,36 @@ ALLOWED_METADATA_KEYS: dict[str, set[str]] = {
     EVENT_DOCUMENT_RETRY_COMPLETED: {"triggered_by", "force_reprocess", "success"},
     EVENT_DOCUMENT_DUPLICATE_REUSED: {"uploaded_file_name"},
     EVENT_DOCUMENT_EXPORTED: {"export_type"},
+    EVENT_TRAVERSAL_CANDIDATE_DETECTED: {
+        "traversal_id",
+        "parent_document_id",
+        "source_reference_id",
+        "traversal_depth",
+        "traversal_status",
+        "target_type",
+        "policy_decision",
+        "policy_reason",
+    },
+    EVENT_TRAVERSAL_SKIPPED: {
+        "traversal_id",
+        "parent_document_id",
+        "source_reference_id",
+        "traversal_depth",
+        "traversal_status",
+        "target_type",
+        "policy_decision",
+        "policy_reason",
+    },
+    EVENT_TRAVERSAL_DEPTH_LIMIT_REACHED: {
+        "traversal_id",
+        "parent_document_id",
+        "source_reference_id",
+        "traversal_depth",
+        "traversal_status",
+        "target_type",
+        "policy_decision",
+        "policy_reason",
+    },
 }
 
 

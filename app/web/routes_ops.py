@@ -12,6 +12,7 @@ from app.ops import (
     build_orphan_detection_summary,
     build_runtime_snapshot,
 )
+from app.traversal import build_ops_traversal_summary
 from app.web.context import base_context
 
 
@@ -48,6 +49,21 @@ async def ops_lifecycle_consistency_summary(request: Request):
     with session_factory() as session:
         summary = build_lifecycle_consistency_summary(session, settings=request.app.state.settings)
     return JSONResponse(summary.to_dict())
+
+
+@router.get("/ops/traversal")
+async def ops_traversal(request: Request):
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        summary = build_ops_traversal_summary(session)
+    return JSONResponse(
+        {
+            "total": summary.total,
+            "by_status": summary.by_status,
+            "by_policy_decision": summary.by_policy_decision,
+            "by_target_type": summary.by_target_type,
+        }
+    )
 
 
 @router.get("/ops")

@@ -29,6 +29,7 @@ def client(monkeypatch, tmp_path):
     storage_root = tmp_path / "storage"
     export_dir = tmp_path / "exports"
     backup_dir = tmp_path / "backups"
+    traversal_storage_dir = tmp_path / "runtime" / "linked-documents"
     qr_debug_dir = tmp_path / "debug" / "qr"
     input_dir.mkdir()
     processed_dir.mkdir()
@@ -38,6 +39,7 @@ def client(monkeypatch, tmp_path):
     storage_root.mkdir(parents=True)
     export_dir.mkdir(parents=True)
     backup_dir.mkdir(parents=True)
+    traversal_storage_dir.mkdir(parents=True)
 
     monkeypatch.setenv("APP_ENV", "testing")
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path.as_posix()}")
@@ -77,6 +79,15 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setenv("TEMP_FILE_MAX_AGE_HOURS", "24")
     monkeypatch.setenv("RUNTIME_TMP_DIR", str(runtime_tmp_dir))
     monkeypatch.setenv("FAILED_RETAINED_DIR", str(failed_retained_dir))
+    monkeypatch.setenv("TRAVERSAL_ENABLED", "false")
+    monkeypatch.setenv("TRAVERSAL_MAX_DEPTH", "1")
+    monkeypatch.setenv("TRAVERSAL_MAX_DOCUMENTS_PER_BATCH", "20")
+    monkeypatch.setenv("TRAVERSAL_ALLOWED_CONTENT_TYPES", "application/pdf")
+    monkeypatch.setenv("TRAVERSAL_TIMEOUT_SECONDS", "15")
+    monkeypatch.setenv("TRAVERSAL_MAX_DOWNLOAD_MB", "20")
+    monkeypatch.setenv("TRAVERSAL_ALLOWED_DOMAINS", "")
+    monkeypatch.setenv("TRAVERSAL_BLOCK_PRIVATE_IPS", "true")
+    monkeypatch.setenv("TRAVERSAL_STORAGE_DIR", str(traversal_storage_dir))
 
     import app.config as config_module
     import app.main as main_module

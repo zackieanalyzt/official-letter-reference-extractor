@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ labels.traversal }} | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="shell shell-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">{{ labels.traversal }}</span>
+                <h1>{{ labels.traversal_plan }}</h1>
+                <p class="lead">{{ labels.traversal_lead }}</p>
+            </div>
+            <div class="page-heading-side">
+                <a href="/results" class="button button-secondary button-small">{{ labels.back_to_results }}</a>
+                <a href="/documents/{{ traversal.document_id }}/traversal" class="button button-secondary button-small">{{ labels.traversal_json }}</a>
+            </div>
+        </div>
+
+        <article class="info-card">
+            <div class="section-head">
+                <div>
+                    <span class="card-kicker">{{ labels.document_id }} {{ traversal.document_id }}</span>
+                    <h2>{{ labels.traversal_summary }}</h2>
+                </div>
+            </div>
+            <div class="kpi-grid">
+                <article class="info-card stat-card">
+                    <span class="card-kicker">{{ labels.created }}</span>
+                    <strong class="stat-value">{{ traversal.planning_summary.created }}</strong>
+                </article>
+                <article class="info-card stat-card">
+                    <span class="card-kicker">{{ labels.updated }}</span>
+                    <strong class="stat-value">{{ traversal.planning_summary.updated }}</strong>
+                </article>
+                <article class="info-card stat-card">
+                    <span class="card-kicker">{{ labels.total }}</span>
+                    <strong class="stat-value">{{ traversal.planning_summary.total }}</strong>
+                </article>
+            </div>
+        </article>
+
+        <article class="info-card table-card">
+            <div class="section-head">
+                <div>
+                    <span class="card-kicker">{{ labels.traversal_candidates }}</span>
+                    <h2>{{ labels.traversal_visibility }}</h2>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>{{ labels.reference_id }}</th>
+                            <th>{{ labels.url }}</th>
+                            <th>{{ labels.target_type }}</th>
+                            <th>{{ labels.status }}</th>
+                            <th>{{ labels.policy_decision }}</th>
+                            <th>{{ labels.policy_reason }}</th>
+                            <th>{{ labels.depth }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in traversal.traversals %}
+                        <tr>
+                            <td>{{ item.source_reference_id }}</td>
+                            <td class="ellipsis-cell">{{ item.resolved_url or item.raw_url }}</td>
+                            <td>{{ item.target_type }}</td>
+                            <td><span class="status-badge">{{ item.traversal_status }}</span></td>
+                            <td>{{ item.policy_decision }}</td>
+                            <td>{{ item.policy_reason or "-" }}</td>
+                            <td>{{ item.traversal_depth }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="7" class="table-empty">{{ labels.no_rows }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

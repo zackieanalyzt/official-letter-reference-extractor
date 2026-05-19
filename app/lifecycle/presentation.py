@@ -20,6 +20,9 @@ from app.lifecycle.events import (
     EVENT_DOCUMENT_RETRY_STARTED,
     EVENT_DOCUMENT_UPLOADED,
     EVENT_DOCUMENT_VALIDATED,
+    EVENT_TRAVERSAL_CANDIDATE_DETECTED,
+    EVENT_TRAVERSAL_DEPTH_LIMIT_REACHED,
+    EVENT_TRAVERSAL_SKIPPED,
 )
 from app.lifecycle.taxonomy import event_family_for
 
@@ -39,6 +42,9 @@ EVENT_LABEL_KEYS = {
     EVENT_DOCUMENT_RETRY_COMPLETED: "lifecycle_event_retry_completed",
     EVENT_DOCUMENT_DUPLICATE_REUSED: "lifecycle_event_duplicate_reused",
     EVENT_DOCUMENT_EXPORTED: "lifecycle_event_exported",
+    EVENT_TRAVERSAL_CANDIDATE_DETECTED: "lifecycle_event_traversal_candidate_detected",
+    EVENT_TRAVERSAL_SKIPPED: "lifecycle_event_traversal_skipped",
+    EVENT_TRAVERSAL_DEPTH_LIMIT_REACHED: "lifecycle_event_traversal_depth_limit_reached",
 }
 
 EVENT_DEFAULT_LABELS = {
@@ -56,6 +62,9 @@ EVENT_DEFAULT_LABELS = {
     EVENT_DOCUMENT_RETRY_COMPLETED: "Retry completed",
     EVENT_DOCUMENT_DUPLICATE_REUSED: "Duplicate reused",
     EVENT_DOCUMENT_EXPORTED: "Exported",
+    EVENT_TRAVERSAL_CANDIDATE_DETECTED: "Traversal candidate detected",
+    EVENT_TRAVERSAL_SKIPPED: "Traversal skipped",
+    EVENT_TRAVERSAL_DEPTH_LIMIT_REACHED: "Traversal depth limit reached",
 }
 
 
@@ -113,6 +122,8 @@ def _severity_for_event(event: DocumentLifecycleEvent) -> str:
         return SEVERITY_ERROR
     if event.event_type == EVENT_DOCUMENT_CLEANED:
         return SEVERITY_WARNING
+    if event.event_type in {EVENT_TRAVERSAL_SKIPPED, EVENT_TRAVERSAL_DEPTH_LIMIT_REACHED}:
+        return SEVERITY_WARNING
     if event.event_type in {EVENT_DOCUMENT_RETRY_REQUESTED, EVENT_DOCUMENT_RETRY_STARTED}:
         return SEVERITY_WARNING
     return SEVERITY_PASS
@@ -141,6 +152,15 @@ def _metadata_summary(event: DocumentLifecycleEvent) -> str | None:
             return "Retry completed with failure"
     if event.event_type in {EVENT_DOCUMENT_RETAINED, EVENT_DOCUMENT_CLEANED}:
         return metadata.get("reason") or metadata.get("cleanup_type")
+    if event.event_type in {
+        EVENT_TRAVERSAL_CANDIDATE_DETECTED,
+        EVENT_TRAVERSAL_SKIPPED,
+        EVENT_TRAVERSAL_DEPTH_LIMIT_REACHED,
+    }:
+        target_type = metadata.get("target_type")
+        status = metadata.get("traversal_status")
+        if target_type and status:
+            return f"{target_type}: {status}"
     return None
 
 
@@ -162,6 +182,12 @@ def _narrative_for_event(event: DocumentLifecycleEvent) -> tuple[str, str]:
         return "lifecycle_narrative_retained", "Source retained for recovery"
     if event.event_type == EVENT_DOCUMENT_CLEANED:
         return "lifecycle_narrative_cleaned", "Source cleaned after retention policy"
+    if event.event_type == EVENT_TRAVERSAL_CANDIDATE_DETECTED:
+        return "lifecycle_narrative_traversal_candidate_detected", "Traversal candidate was planned"
+    if event.event_type == EVENT_TRAVERSAL_SKIPPED:
+        return "lifecycle_narrative_traversal_skipped", "Traversal candidate was skipped by policy"
+    if event.event_type == EVENT_TRAVERSAL_DEPTH_LIMIT_REACHED:
+        return "lifecycle_narrative_traversal_depth_limit_reached", "Traversal depth limit was reached"
     return "lifecycle_narrative_default", EVENT_DEFAULT_LABELS.get(event.event_type, event.event_type)
 
 

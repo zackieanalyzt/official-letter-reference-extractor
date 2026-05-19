@@ -20,6 +20,7 @@ PROFILE_CONTROLLED_ENV_VARS = (
     "STORAGE_ROOT",
     "EXPORT_DIR",
     "BACKUP_DIR",
+    "TRAVERSAL_STORAGE_DIR",
 )
 
 
@@ -45,6 +46,7 @@ def test_readyz_checks_database_and_runtime_paths(client):
     assert payload["writable_paths"]["storage_root"] is True
     assert payload["writable_paths"]["export_dir"] is True
     assert payload["writable_paths"]["backup_dir"] is True
+    assert payload["writable_paths"]["traversal_storage_dir"] is True
     assert payload["writable_paths"]["database_dir"] is True
 
 
@@ -67,6 +69,7 @@ def test_local_profiles_resolve_local_data_paths(monkeypatch, profile_name):
     assert settings.storage_root_path == (BASE_DIR / "data" / "storage").resolve()
     assert settings.export_path == (BASE_DIR / "data" / "exports").resolve()
     assert settings.backup_path == (BASE_DIR / "data" / "backups").resolve()
+    assert settings.traversal_storage_path == (BASE_DIR / "data" / "runtime" / "linked-documents").resolve()
 
 
 def test_docker_profile_resolves_app_data_paths(monkeypatch):
@@ -87,6 +90,7 @@ def test_docker_profile_resolves_app_data_paths(monkeypatch):
     assert settings.storage_root_path == Path("/app/data/storage")
     assert settings.export_path == Path("/app/data/exports")
     assert settings.backup_path == Path("/app/data/backups")
+    assert settings.traversal_storage_path == Path("/app/data/runtime/linked-documents")
 
 
 def test_explicit_env_vars_override_profile_defaults(monkeypatch):
@@ -103,6 +107,7 @@ def test_explicit_env_vars_override_profile_defaults(monkeypatch):
     monkeypatch.setenv("STORAGE_ROOT", "custom/storage")
     monkeypatch.setenv("EXPORT_DIR", "custom/exports")
     monkeypatch.setenv("BACKUP_DIR", "custom/backups")
+    monkeypatch.setenv("TRAVERSAL_STORAGE_DIR", "custom/runtime/linked-documents")
 
     settings = Settings(_env_file=None)
 
@@ -118,6 +123,7 @@ def test_explicit_env_vars_override_profile_defaults(monkeypatch):
     assert settings.storage_root_path == (BASE_DIR / "custom" / "storage").resolve()
     assert settings.export_path == (BASE_DIR / "custom" / "exports").resolve()
     assert settings.backup_path == (BASE_DIR / "custom" / "backups").resolve()
+    assert settings.traversal_storage_path == (BASE_DIR / "custom" / "runtime" / "linked-documents").resolve()
 
 
 def test_default_settings_do_not_read_local_env_file(monkeypatch, tmp_path):

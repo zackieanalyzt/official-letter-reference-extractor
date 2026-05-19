@@ -179,6 +179,7 @@
                             <td>
                                 <a class="button button-secondary button-small" href="/debug/document/{{ row.document_id }}">{{ labels.debug }}</a>
                                 <a class="button button-secondary button-small" href="/documents/{{ row.document_id }}/lifecycle/view">{{ labels.lifecycle }}</a>
+                                <a class="button button-secondary button-small" href="/documents/{{ row.document_id }}/traversal/view">{{ labels.traversal }}</a>
                                 {% if row.retryable %}
                                 <form method="post" action="/documents/{{ row.document_id }}/retry" class="inline-form">
                                     <button class="button button-ghost button-small" type="submit">{{ labels.retry_from_stored_file }}</button>
