@@ -176,6 +176,14 @@ Tesseract OCR and zbar are native Windows runtimes and still need separate insta
 - `APP_TOKEN=` optionally protects `POST /batch/process` with `X-API-KEY`.
 - `APP_LANG=th` sets the default UI language when no cookie exists.
 - `APP_PORT=8000` is the Docker Compose default for this repository.
+- `OLRE_APP_VERSION=0.9.8` sets the release version shown on the home/imports page.
+- `OLRE_RELEASE_NAME=Controlled Pilot` sets the release name shown to operators.
+- `OLRE_RELEASE_DATE=2026-05-19` sets the release date.
+- `OLRE_RELEASE_CHANNEL=controlled-pilot` sets the release channel.
+- `OLRE_RELEASE_STATUS=Ready for controlled pilot use` sets the readiness status.
+- `OLRE_RELEASE_NOTE=Not recommended for broad unattended rollout yet.` sets the operational note.
+- `OLRE_RELEASE_HIGHLIGHTS=Lifecycle Registry|Lifecycle Visibility|Runtime/Ops readiness validation` sets pipe-separated highlights.
+- `OLRE_RELEASE_METADATA_FILE=config/release.json` optionally points to a JSON metadata file used when env values are absent.
 - `INPUT_DIR=/app/data/input` stores pending PDFs.
 - `PROCESSED_DIR=/app/data/processed` stores processed PDFs.
 - `ERROR_DIR=/app/data/error` stores failed PDFs.
@@ -195,6 +203,16 @@ Latest verification status:
 
 - `APP_ENV=testing uv run pytest` -> `100 passed`
 - `APP_ENV=development uv run ruff check app tests migrations` -> `All checks passed`
+
+## Release Metadata
+
+The release panel on the home/imports page is rendered from centralized metadata, not hardcoded template text. Resolution order is:
+
+```text
+environment variable -> config/release.json -> safe default
+```
+
+Supported JSON keys are `version`, `name`, `release_date`, `channel`, `status`, `note`, and `highlights`. `highlights` may be a JSON list in the metadata file, while `OLRE_RELEASE_HIGHLIGHTS` uses pipe-separated text.
 
 ## Export Formats
 

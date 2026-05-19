@@ -37,12 +37,13 @@ def test_language_switch_sets_cookie_and_redirects(client):
 def test_switching_to_english_changes_labels(client):
     response = client.post(
         "/settings/language",
-        data={"lang": "en", "next": "/dashboard"},
+        data={"lang": "en", "next": "/imports"},
         follow_redirects=True,
     )
 
     assert response.status_code == 200
-    assert EN_LABELS["dashboard_title"] in response.text
+    assert EN_LABELS["release_information"] in response.text
+    assert EN_LABELS["release_version"] in response.text
     assert EN_LABELS["results"] in response.text
 
 
@@ -51,12 +52,13 @@ def test_switching_to_thai_changes_labels(client):
 
     response = client.post(
         "/settings/language",
-        data={"lang": "th", "next": "/dashboard"},
+        data={"lang": "th", "next": "/imports"},
         follow_redirects=True,
     )
 
     assert response.status_code == 200
-    assert TH_LABELS["dashboard_title"] in response.text
+    assert TH_LABELS["release_information"] in response.text
+    assert TH_LABELS["release_version"] in response.text
     assert TH_LABELS["results"] in response.text
 
 

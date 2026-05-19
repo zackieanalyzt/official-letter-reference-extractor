@@ -143,6 +143,14 @@ class Settings(BaseSettings):
     temp_file_max_age_hours: int = Field(default=24, validation_alias="TEMP_FILE_MAX_AGE_HOURS")
     runtime_tmp_dir: str | None = Field(default=None, validation_alias="RUNTIME_TMP_DIR")
     failed_retained_dir: str | None = Field(default=None, validation_alias="FAILED_RETAINED_DIR")
+    release_metadata_file: str | None = Field(default=None, validation_alias="OLRE_RELEASE_METADATA_FILE")
+    release_app_version: str | None = Field(default=None, validation_alias="OLRE_APP_VERSION")
+    release_name: str | None = Field(default=None, validation_alias="OLRE_RELEASE_NAME")
+    release_date: str | None = Field(default=None, validation_alias="OLRE_RELEASE_DATE")
+    release_channel: str | None = Field(default=None, validation_alias="OLRE_RELEASE_CHANNEL")
+    release_status: str | None = Field(default=None, validation_alias="OLRE_RELEASE_STATUS")
+    release_note: str | None = Field(default=None, validation_alias="OLRE_RELEASE_NOTE")
+    release_highlights: str | None = Field(default=None, validation_alias="OLRE_RELEASE_HIGHLIGHTS")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -171,6 +179,14 @@ class Settings(BaseSettings):
         "storage_root",
         "export_dir",
         "backup_dir",
+        "release_metadata_file",
+        "release_app_version",
+        "release_name",
+        "release_date",
+        "release_channel",
+        "release_status",
+        "release_note",
+        "release_highlights",
         mode="before",
     )
     @classmethod

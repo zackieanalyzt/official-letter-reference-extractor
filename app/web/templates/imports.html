@@ -16,6 +16,43 @@
             </div>
         </div>
 
+        <article class="info-card release-panel">
+            <div class="release-panel-main">
+                <div>
+                    <span class="card-kicker">{{ labels.release_information }}</span>
+                    <h2>{{ release_info.name }}</h2>
+                </div>
+                <span class="status-badge release-status">{{ release_info.status }}</span>
+            </div>
+            <dl class="release-meta-grid">
+                <div>
+                    <dt>{{ labels.release_version }}</dt>
+                    <dd>{{ release_info.version }}</dd>
+                </div>
+                <div>
+                    <dt>{{ labels.release_channel }}</dt>
+                    <dd>{{ release_info.channel }}</dd>
+                </div>
+                <div>
+                    <dt>{{ labels.release_date }}</dt>
+                    <dd>{{ release_info.release_date }}</dd>
+                </div>
+            </dl>
+            {% if release_info.highlights %}
+            <div class="release-highlights">
+                <span class="card-kicker">{{ labels.release_highlights }}</span>
+                <ul class="compact-list">
+                    {% for highlight in release_info.highlights %}
+                    <li>{{ highlight }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% if release_info.note %}
+            <p class="release-note"><strong>{{ labels.release_note }}:</strong> {{ release_info.note }}</p>
+            {% endif %}
+        </article>
+
         {% if upload_summary %}
         <div class="alert alert-success">
             {{ labels.upload_success }} {{ upload_summary.saved_count }} {{ labels.file }}

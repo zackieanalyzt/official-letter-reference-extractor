@@ -90,6 +90,38 @@ def test_home_navigation_rendered_in_thai(client):
     assert "/exports" in response.text
 
 
+def test_home_renders_release_info_from_context(client):
+    settings = client.app.state.settings
+    settings.release_app_version = "test-version-context"
+    settings.release_name = "Context Release"
+    settings.release_channel = "context-channel"
+    settings.release_date = "2026-05-19"
+    settings.release_status = "Context ready"
+    settings.release_note = "Context note"
+    settings.release_highlights = "Context highlight A|Context highlight B"
+
+    response = client.get("/", follow_redirects=True)
+
+    assert response.status_code == 200
+    assert LABELS["release_information"] in response.text
+    assert "test-version-context" in response.text
+    assert "Context Release" in response.text
+    assert "context-channel" in response.text
+    assert "2026-05-19" in response.text
+    assert "Context ready" in response.text
+    assert "Context note" in response.text
+    assert "Context highlight A" in response.text
+    assert "Context highlight B" in response.text
+
+
+def test_release_template_does_not_hardcode_pilot_values():
+    template = Path("app/web/templates/imports.html").read_text(encoding="utf-8")
+
+    assert "Controlled Pilot" not in template
+    assert "0.9.8" not in template
+    assert "v0.9.8" not in template
+
+
 def test_imports_page_supports_multiple_pdf_uploads(client):
     response = client.post(
         "/imports/upload",

@@ -8,6 +8,20 @@ Validation mode: production-readiness validation only
 
 OLRE was validated against the v0.9.8 lifecycle/ops maturity goal using a local SQLite development runtime, browser workflow checks, HTTP endpoint checks, export checks, lifecycle consistency checks, and a realistic mixed batch of 13 PDF inputs.
 
+Release metadata for deployments should be provided through environment variables or
+`config/release.json`; the UI release panel must not hardcode release strings in templates.
+Recommended controlled-pilot values:
+
+```env
+OLRE_APP_VERSION=0.9.8
+OLRE_RELEASE_NAME=Controlled Pilot
+OLRE_RELEASE_DATE=2026-05-19
+OLRE_RELEASE_CHANNEL=controlled-pilot
+OLRE_RELEASE_STATUS=Ready for controlled pilot use
+OLRE_RELEASE_NOTE=Not recommended for broad unattended rollout yet.
+OLRE_RELEASE_HIGHLIGHTS=Lifecycle Registry|Lifecycle Visibility|Runtime/Ops readiness validation
+```
+
 Result:
 
 - Release recommendation: **ready for controlled pilot use, not broad unattended rollout yet**

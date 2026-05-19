@@ -1,5 +1,17 @@
 # OLRE Daily Changelog
 
+## 2026-05-19 - Dynamic release metadata panel
+
+- Added centralized release metadata in `app/release.py`.
+- Added release fields to `Settings` with environment overrides:
+  `OLRE_APP_VERSION`, `OLRE_RELEASE_NAME`, `OLRE_RELEASE_DATE`, `OLRE_RELEASE_CHANNEL`,
+  `OLRE_RELEASE_STATUS`, `OLRE_RELEASE_NOTE`, `OLRE_RELEASE_HIGHLIGHTS`,
+  and `OLRE_RELEASE_METADATA_FILE`.
+- Added a home/imports release panel that renders only from `release_info`.
+- Documented env/file override flow and `.env` examples.
+- Added unit and integration coverage for defaults, overrides, highlights parsing, i18n labels,
+  and missing metadata handling.
+
 ## Current Stable Milestone
 
 Current stable milestone/tag:

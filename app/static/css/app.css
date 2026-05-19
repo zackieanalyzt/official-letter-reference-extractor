@@ -258,6 +258,86 @@ select {
     padding-top: 0.2rem;
 }
 
+.release-panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.release-panel-main,
+.release-meta-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.release-panel-main {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+}
+
+.release-panel h2 {
+    margin: 0.2rem 0 0;
+    color: var(--ink-strong);
+    font-size: 1.35rem;
+}
+
+.release-status {
+    justify-self: end;
+    max-width: 24rem;
+    text-align: center;
+}
+
+.release-meta-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+}
+
+.release-meta-grid div {
+    padding: 0.85rem;
+    border: 1px solid var(--surface-line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+}
+
+.release-meta-grid dt {
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.release-meta-grid dd {
+    margin: 0.2rem 0 0;
+    color: var(--ink-strong);
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.release-highlights {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.compact-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.compact-list li {
+    padding: 0.45rem 0.65rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent-100);
+    color: var(--brand-700);
+    font-weight: 700;
+}
+
+.release-note {
+    margin: 0;
+    color: var(--ink-soft);
+}
+
 .page-stack {
     display: grid;
     gap: 1rem;
@@ -1008,6 +1088,7 @@ select:focus {
 @media (max-width: 1100px) {
     .topbar-inner,
     .auth-hero,
+    .release-meta-grid,
     .dashboard-main-grid {
         grid-template-columns: 1fr;
     }
@@ -1035,11 +1116,21 @@ select:focus {
     }
 
     .page-heading,
+    .release-panel-main,
     .section-head,
     .upload-actions,
     .pagination-bar {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .release-panel-main {
+        grid-template-columns: 1fr;
+    }
+
+    .release-status {
+        justify-self: start;
+        max-width: 100%;
     }
 
     .filters-bar {
