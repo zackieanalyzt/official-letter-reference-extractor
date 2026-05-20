@@ -4,6 +4,19 @@ Status: Implementation-ready draft
 
 ---
 
+## Current Controlled-Pilot Note
+
+As of `release/v0.9.8-controlled-pilot`, the implemented runtime differs from this original SRS baseline in important ways:
+
+- SQLite-first runtime is the controlled-pilot baseline
+- lifecycle registry and append-only lifecycle events are implemented
+- ops/runtime diagnostics are implemented
+- release metadata is centralized
+- traversal planning runtime is implemented as Epic 3 Phase 2A
+- traversal has no downloader, no URL-following execution, no child document creation, no recursion, and no HTML crawling
+
+Use `docs/CURRENT_STATUS_HANDOFF.md` as the current entrypoint, then read this SRS for original functional requirements and requirement history.
+
 ## 1. Introduction
 
 ### 1.1 Purpose

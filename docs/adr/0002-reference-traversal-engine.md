@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed for Epic 3 Phase 1.
+Accepted for Epic 3 Phase 1. Extended by Epic 3 Phase 2A traversal planning runtime.
 
 ## Context
 
@@ -16,9 +16,9 @@ The main architectural risk is implementing a downloader before the provenance m
 
 ## Decision
 
-Build Epic 3 Phase 1 as a docs-only architecture foundation for a future Reference Traversal Engine.
+Build Epic 3 Phase 1 as a docs-only architecture foundation for a future Reference Traversal Engine, then implement Phase 2A as planning runtime only.
 
-Phase 1 will lock:
+Phase 1 locked:
 
 - controlled linked-document traversal terminology
 - proposed `reference_traversals` persistence model
@@ -30,7 +30,18 @@ Phase 1 will lock:
 - lifecycle and visibility design
 - Phase 2 implementation sequence
 
-Phase 1 will not add runtime behavior.
+Phase 1 did not add runtime behavior.
+
+Phase 2A adds:
+
+- `reference_traversals` persistence
+- traversal classifier
+- traversal policy/security checks
+- traversal planner
+- traversal lifecycle planning events
+- read-only document and ops visibility
+
+Phase 2A does not add downloader behavior, URL following for traversal, recursive processing, background jobs, child document creation, or HTML crawling.
 
 ## Provenance Invariant
 
@@ -67,7 +78,7 @@ Only controlled linked-document traversal from already-extracted references is i
 
 ## Non-Goals
 
-Phase 1 does not include:
+Phase 1 did not include, and Phase 2A still does not include:
 
 - downloader
 - URL following
@@ -77,9 +88,7 @@ Phase 1 does not include:
 - auto traversal
 - HTML crawling
 - internet-dependent tests
-- migration
-- runtime model
-- public runtime behavior
+- child document creation
 
 The broader Epic 3 also does not aim to create:
 
@@ -100,24 +109,25 @@ Positive:
 
 Tradeoffs:
 
-- Phase 1 does not deliver linked-document downloading.
-- Phase 2 must still implement schema, classifier, policy service, UI, and downloader carefully.
+- Phase 2A still does not deliver linked-document downloading.
+- Runtime now has planning records and visibility, so future downloader work must preserve existing planning/provenance semantics.
 - Some target types, especially HTML pages, remain unsupported even if they contain PDF links.
 
-## Phase 2 Entry Criteria
+## Phase 2B Entry Criteria
 
-Phase 2 may begin only when:
+Downloader/runtime execution may begin only when:
 
-- Phase 1 docs are reviewed
-- security guardrails are approved
-- provenance model is approved
-- policy config defaults are approved
-- there is no objection to the proposed schema
+- Phase 2A is deployed and operationally validated on the Linux pilot server
+- `reference_traversals` migration is applied successfully
+- traversal UI/API are reviewed by operators
+- no downloader side effects are observed
+- no child document creation is observed
+- lifecycle/ops consistency remains stable after traversal planning
 - the controlled pilot branch remains stable
 
-## Phase 2 Downloader Rule
+## Downloader Rule
 
-If Phase 2 adds a downloader, it must be:
+If a future phase adds a downloader, it must be:
 
 ```text
 manual single-depth operator-triggered traversal
@@ -131,4 +141,3 @@ It must not be automatic recursive crawl behavior. It must remain policy-gated, 
 - `docs/TRAVERSAL_POLICY.md`
 - `docs/LIFECYCLE_EVENT_TAXONOMY.md`
 - `docs/LIFECYCLE_METADATA_CONVENTIONS.md`
-

@@ -5,6 +5,19 @@ Target environment: LAN on Debian physical server
 
 ---
 
+## Current Controlled-Pilot Note
+
+As of `release/v0.9.8-controlled-pilot`, OLRE has evolved from the original implementation draft into a controlled operational pilot:
+
+- runtime baseline is SQLite-first, single-node, Docker single-container
+- lifecycle registry and lifecycle consistency validation are implemented
+- ops/runtime visibility is implemented
+- release identity is centralized through metadata
+- Epic 3 Phase 2A traversal planning runtime is implemented
+- traversal remains planning-only with no downloader, no child document creation, no recursive processing, and no HTML crawling
+
+This PRD remains useful for product intent and original scope, but current operational handoff should start with `docs/CURRENT_STATUS_HANDOFF.md`.
+
 ## 1. Executive Summary
 
 Official Letter Reference Extractor (OLRE) is an internal web application that scans batches of official-letter PDFs, extracts QR code payloads and URLs/short URLs, resolves final destination URLs when possible, and presents the results in a searchable table. The system is designed for LAN-only deployment, manual batch execution, and moderate daily volume.

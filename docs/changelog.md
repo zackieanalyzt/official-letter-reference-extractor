@@ -1,5 +1,13 @@
 # OLRE Daily Changelog
 
+## 2026-05-20 - Controlled pilot handoff and traversal planning docs refresh
+
+- Added `docs/CURRENT_STATUS_HANDOFF.md` as the recommended new-chat starting document.
+- Added `docs/status_v0.9.8_epic3_traversal_planning.md` for Epic 3 Phase 2A status.
+- Updated admin guidance from the older `v0.9.7` storage milestone to `release/v0.9.8-controlled-pilot`.
+- Updated traversal architecture, policy, and ADR docs to reflect that Phase 2A planning runtime is implemented.
+- Reaffirmed that traversal remains planning-only: no downloader, no URL-following traversal, no child document creation, no recursive processing, and no HTML crawling.
+
 ## 2026-05-19 - Dynamic release metadata panel
 
 - Added centralized release metadata in `app/release.py`.
@@ -17,7 +25,7 @@
 Current stable milestone/tag:
 
 ```text
-v0.9.7-storage-integration
+release/v0.9.8-controlled-pilot
 ```
 
 Current architecture progression:
@@ -25,28 +33,30 @@ Current architecture progression:
 - `v0.9.5` runtime determinism
 - `v0.9.6` storage identity and lifecycle foundation
 - `v0.9.7` storage boundary integration
+- `v0.9.8` controlled pilot: lifecycle registry, ops visibility, release identity, traversal planning runtime
 
 Latest operational verification:
 
-- `APP_ENV=testing uv run pytest` -> `79 passed`
+- `APP_ENV=testing uv run pytest` -> `121 passed, 6 warnings` after traversal planning runtime handoff
 - `APP_ENV=development uv run ruff check app tests migrations` -> `All checks passed`
 
 Next recommended phase:
 
 ```text
-v0.9.8-observability-and-lifecycle-visibility
+operational validation of traversal planning runtime
 ```
 
 Suggested scope:
 
-- lifecycle visibility
-- storage metrics
-- cleanup observability
-- retry visibility
-- failed document analytics
-- retention status visibility
-- soft orphan detection
-- admin/runtime operational introspection
+- deploy latest branch on Linux server
+- rebuild container
+- run migration
+- verify traversal UI/API
+- confirm traversal remains inert
+- confirm no downloader side effects
+- confirm no child document creation
+- confirm lifecycle/ops still stable
+- collect pilot operator feedback
 
 Explicit non-goals:
 
@@ -56,6 +66,11 @@ Explicit non-goals:
 - microservices
 - queue orchestration
 - blob registry/reference counting unless future operational pain justifies it
+- automatic recursive traversal
+- downloader execution runtime
+- background traversal workers
+- HTML crawling
+- AI/RAG/vector database work
 
 ---
 

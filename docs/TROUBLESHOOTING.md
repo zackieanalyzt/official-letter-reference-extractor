@@ -3,7 +3,7 @@
 Current stable milestone/tag:
 
 ```text
-v0.9.7-storage-integration
+release/v0.9.8-controlled-pilot
 ```
 
 Quick architecture reminder:
@@ -11,6 +11,9 @@ Quick architecture reminder:
 - `v0.9.5` runtime determinism
 - `v0.9.6` storage identity and lifecycle foundation
 - `v0.9.7` storage boundary integration
+- `v0.9.8` lifecycle registry, ops visibility, release identity, traversal planning runtime
+
+For the current handoff, start with `docs/CURRENT_STATUS_HANDOFF.md`.
 
 ## `git is not recognized`
 
@@ -277,7 +280,7 @@ Retention cleanup is high-risk infrastructure. Before trusting cleanup changes, 
 6. execute deletion through storage layer
 7. structured cleanup summary/log
 
-Quarantine/trash behavior is intentionally deferred after `v0.9.7`.
+Quarantine/trash behavior is intentionally deferred after the current controlled-pilot release.
 
 ## Latest Verification Commands
 
@@ -288,7 +291,7 @@ APP_ENV=development uv run ruff check app tests migrations
 
 Latest verified results:
 
-- `79 passed`
+- `121 passed, 6 warnings` after traversal planning runtime handoff
 - `All checks passed`
 
 ## `processing_error_type does not exist`

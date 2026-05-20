@@ -1,7 +1,8 @@
 # OLRE v0.9.8 Production Readiness Validation Report
 
 Date: 2026-05-19  
-Branch: `codex/v0.9.8-epic2-runtime-introspection`  
+Original validation branch: `codex/v0.9.8-epic2-runtime-introspection`
+Current controlled-pilot branch: `release/v0.9.8-controlled-pilot`
 Validation mode: production-readiness validation only
 
 ## 1. Executive Summary
@@ -30,7 +31,8 @@ Result:
 - Residual production-readiness risk: **~5-6%**, reduced from the previous ~10% estimate
 - Verification after code change:
   - `APP_ENV=development uv run ruff check app tests migrations` -> **All checks passed**
-  - `APP_ENV=testing uv run pytest` -> **100 passed, 6 warnings**
+  - original validation suite: `APP_ENV=testing uv run pytest` -> **100 passed, 6 warnings**
+  - after traversal planning runtime handoff: `APP_ENV=testing uv run pytest` -> **121 passed, 6 warnings**
 
 One production-readiness bug was found and fixed during validation:
 
@@ -213,3 +215,20 @@ Rationale:
 - Lifecycle and ops diagnostics were coherent and support-readable.
 - No unresolved critical bug remains.
 - Residual risk is now concentrated in real-corpus variance, document-number extraction, and performance tuning rather than lifecycle/ops correctness.
+
+## 10. Post-Validation Handoff Note
+
+After this production-readiness validation, Epic 3 Phase 2A added traversal planning runtime. That work is planning-only and does not change the recommendation against broad unattended rollout.
+
+New validation priority:
+
+```text
+Operational validation of traversal planning runtime on the Linux controlled-pilot server.
+```
+
+See:
+
+- `docs/CURRENT_STATUS_HANDOFF.md`
+- `docs/status_v0.9.8_epic3_traversal_planning.md`
+- `docs/TRAVERSAL_ARCHITECTURE.md`
+- `docs/TRAVERSAL_POLICY.md`

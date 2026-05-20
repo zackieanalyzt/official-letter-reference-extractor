@@ -131,11 +131,12 @@ After restore:
 
 ## Storage Boundary Reminder
 
-As of `v0.9.7-storage-integration`:
+As of `release/v0.9.8-controlled-pilot`:
 
 - raw filesystem execution should live in `app/storage/*` or approved low-level adapters
 - storage identity is increasingly `storage_key`-first
 - compatibility fallback for legacy path fields still exists and should be preserved during restore validation
+- traversal planning metadata lives in the database; linked-document downloader artifacts are not yet produced in the current planning-only runtime
 
 Compatibility-first policy remains:
 

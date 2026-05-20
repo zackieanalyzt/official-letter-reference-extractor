@@ -6,7 +6,14 @@
 
 Epic 3 introduces controlled linked-document traversal for official-letter references that OLRE has already extracted from PDFs through QR codes, short URLs, direct PDF URLs, or other downloadable references. It must not discover arbitrary web links, expand HTML pages, run autonomous crawling, or behave like a search engine.
 
-Phase 1 is architecture lock-in only. It does not add downloader code, URL following, recursive processing, background jobs, migrations, runtime models, public endpoints, or runtime behavior.
+Current status:
+
+```text
+Phase 1 completed: docs-only architecture lock-in.
+Phase 2A completed: traversal planning runtime.
+```
+
+Phase 2A adds runtime planning, persistence, policy evaluation, lifecycle planning events, and read-only visibility. It still does not add downloader code, URL following, recursive processing, background jobs, child document creation, or HTML crawling.
 
 The target capability for later phases is:
 
@@ -58,10 +65,10 @@ Which policy decision allowed or blocked traversal?
 
 Traversal planning starts only from already-extracted references. It must not parse HTML pages or discover additional links.
 
-| Target type | Traversable | Phase 1 meaning |
+| Target type | Traversable | Current Phase 2A meaning |
 | --- | --- | --- |
-| `pdf_url` | yes | Direct PDF URL candidate |
-| `known_short_url` | maybe | Candidate only after policy checks; no follow in Phase 1 |
+| `pdf_url` | yes | Direct PDF URL candidate may be planned and policy-evaluated |
+| `known_short_url` | maybe | Candidate may be planned; no traversal URL follow/download occurs |
 | `html_page` | no | Unsupported; no HTML crawling or link expansion |
 | `image_url` | no | Unsupported |
 | `malformed_url` | no | Unsupported |
@@ -86,17 +93,17 @@ The proposed status model is:
 | `FAILED` | Future phase attempted traversal and failed |
 | `DEPTH_LIMIT_REACHED` | Traversal would exceed the configured depth limit |
 
-Phase 1 only documents this taxonomy. It does not emit these statuses at runtime.
+Phase 2A emits planning statuses only. It may persist `NOT_FOLLOWED`, `SKIPPED_BY_POLICY`, `UNSUPPORTED`, and `DEPTH_LIMIT_REACHED`. Downloader-phase statuses such as `DOWNLOADED`, `DUPLICATE`, `PROCESSED`, and `FAILED` remain reserved for later phases.
 
-## Proposed Persistence Model
+## Persistence Model
 
-Phase 2 should add one primary provenance table rather than a graph subsystem:
+Phase 2A adds one primary provenance table rather than a graph subsystem:
 
 ```text
 reference_traversals
 ```
 
-Proposed fields:
+Current fields:
 
 | Field | Purpose |
 | --- | --- |
@@ -126,15 +133,18 @@ Proposed indexes:
 - `(traversal_status)`
 - unique `(parent_document_id, source_reference_id, resolved_url)` where supported by the active database backend
 
-The table should not replace `document_references`; it adds traversal planning and provenance on top of already-extracted references.
+The table does not replace `document_references`; it adds traversal planning and provenance on top of already-extracted references.
 
 ## Lifecycle Additions
 
-Proposed non-state lifecycle event additions for a later implementation phase:
+Phase 2A implements these non-state lifecycle event additions:
 
 - `TRAVERSAL_CANDIDATE_DETECTED`
 - `TRAVERSAL_SKIPPED`
 - `TRAVERSAL_DEPTH_LIMIT_REACHED`
+
+These remain reserved for later downloader phases:
+
 - `LINKED_DOCUMENT_DOWNLOADED`
 - `LINKED_DOCUMENT_DUPLICATE`
 - `TRAVERSAL_FAILED`
@@ -155,12 +165,13 @@ Recommended metadata for traversal lifecycle events:
 
 ## Visibility Design
 
-Future visibility endpoints should be read-only unless Phase 2 explicitly adds a manual action endpoint.
+Current visibility endpoints are read-only:
 
-Proposed endpoints:
+Implemented endpoints:
 
 ```text
 GET /documents/{id}/traversal
+GET /documents/{id}/traversal/view
 GET /ops/traversal
 ```
 
@@ -174,13 +185,12 @@ GET /ops/traversal
 - traversal status
 - child document link if one exists
 
-`GET /ops/traversal` should show:
+`GET /ops/traversal` shows:
 
 - candidate counts by status
-- candidates blocked by policy reason
-- depth-limit counts
-- duplicate linked document counts
-- failed traversal counts in future phases
+- candidate counts by policy decision
+- candidate counts by target type
+- depth-limit counts when present
 
 Minimal UI should be server-rendered and table/tree oriented, for example:
 
@@ -198,7 +208,7 @@ No graph visualization framework is required.
 
 ## Storage Model
 
-Future linked-document files must use a controlled runtime area, for example:
+Future linked-document files must use a controlled runtime area:
 
 ```text
 /app/data/runtime/linked-documents
@@ -212,36 +222,52 @@ data/runtime/linked-documents
 
 Linked downloads must not be written directly into the normal import inbox. A future Phase 2 downloader should place temporary linked files in traversal storage, fingerprint them, apply policy, detect duplicates, and only then create or associate document records.
 
-## Phase 2 Entry Criteria
+Phase 2A uses this storage path for readiness/configuration only. It does not write linked downloads.
 
-Phase 2 may start only when:
+## Phase 2A Completion Criteria
 
-- Phase 1 docs are reviewed
-- security guardrails are approved
-- provenance model is approved
-- policy config defaults are approved
-- there is no objection to the proposed schema
+Phase 2A is considered complete when these are present:
+
+- traversal settings with strict defaults
+- migration and ORM model for `reference_traversals`
+- classifier and policy services without downloader side effects
+- plan creation from existing resolved/raw references
+- read-only `/documents/{id}/traversal`, `/documents/{id}/traversal/view`, and `/ops/traversal` visibility
+- traversal lifecycle planning events
+- no-internet tests using mocks or local fixtures only
+
+These criteria are implemented in the current controlled-pilot branch.
+
+## Phase 2B Entry Criteria
+
+Downloader/runtime execution must not start until:
+
+- Phase 2A is operationally validated on the Linux pilot server
+- migration has been applied successfully in the pilot runtime
+- traversal UI/API have been reviewed by operators
+- no downloader side effects are observed
+- no child document creation is observed
+- lifecycle/ops consistency remains stable after planning
 - the controlled pilot branch remains stable
 
-## Phase 2 Implementation Sequence
+## Phase 2B Implementation Sequence
 
-Phase 2 should implement **manual single-depth operator-triggered traversal** only. It must not implement automatic recursive crawling.
+The next implementation phase, if approved, should implement **manual single-depth operator-triggered traversal** only. It must not implement automatic recursive crawling.
 
 Recommended sequence:
 
-1. Add traversal settings with `TRAVERSAL_ENABLED=false` and `TRAVERSAL_MAX_DEPTH=1`.
-2. Add migration and ORM model for `reference_traversals`.
-3. Add classifier and policy services without downloader side effects.
-4. Add plan creation from existing resolved references.
-5. Add read-only `/documents/{id}/traversal` and `/ops/traversal` visibility.
-6. Add minimal server-rendered traversal UI.
-7. Add manual operator action for depth-1 traversal only, still default disabled.
-8. Add downloader behind the manual action and policy gates.
-9. Add no-internet tests using mocks or local fixtures only.
+1. Add explicit manual operator action for depth-1 traversal only, still default disabled.
+2. Add downloader behind the manual action and policy gates.
+3. Apply pre-download and post-redirect security checks.
+4. Enforce content type, timeout, and file-size caps.
+5. Store linked downloads only in traversal storage.
+6. Fingerprint and deduplicate before child document creation.
+7. Preserve parent/reference provenance for every downloaded candidate.
+8. Add no-internet tests using mocks or local fixtures only.
 
-## Phase 1 Non-Goals
+## Current Non-Goals
 
-Phase 1 does not include:
+The current controlled-pilot branch does not include:
 
 - downloader
 - URL following
@@ -251,7 +277,4 @@ Phase 1 does not include:
 - auto traversal
 - HTML crawling
 - internet-dependent tests
-- migration
-- runtime model
-- public runtime behavior
-
+- child document creation

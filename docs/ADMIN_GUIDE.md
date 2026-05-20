@@ -3,7 +3,7 @@
 Current stable milestone/tag:
 
 ```text
-v0.9.7-storage-integration
+release/v0.9.8-controlled-pilot
 ```
 
 Architecture progression:
@@ -11,9 +11,13 @@ Architecture progression:
 - `v0.9.5` runtime determinism
 - `v0.9.6` storage identity and lifecycle foundation
 - `v0.9.7` storage boundary integration
+- `v0.9.8` lifecycle registry, ops visibility, release identity, controlled traversal planning
 
 Detailed handoff:
 
+- [current status and handoff](CURRENT_STATUS_HANDOFF.md)
+- [v0.9.8 Epic 3 traversal planning runtime](status_v0.9.8_epic3_traversal_planning.md)
+- [v0.9.8 production readiness validation](production_readiness_validation_v0.9.8.md)
 - [v0.9.7 storage integration handoff](changelog10May2026_v097_storage_integration.md)
 
 ## Runtime Mode
@@ -25,6 +29,24 @@ ENABLE_AUTH=false
 ```
 
 When auth is disabled, `/login` and `/logout` are not mounted and MariaDB session integration is not used.
+
+## Release Identity
+
+Release metadata is centralized and should be configured through environment variables or `config/release.json`.
+
+Recommended controlled-pilot values:
+
+```env
+OLRE_APP_VERSION=0.9.8
+OLRE_RELEASE_NAME=Controlled Pilot
+OLRE_RELEASE_DATE=2026-05-19
+OLRE_RELEASE_CHANNEL=controlled-pilot
+OLRE_RELEASE_STATUS=Ready for controlled pilot use
+OLRE_RELEASE_NOTE=Not recommended for broad unattended rollout yet.
+OLRE_RELEASE_HIGHLIGHTS=Lifecycle Registry|Lifecycle Visibility|Runtime/Ops readiness validation|Traversal Planning Runtime
+```
+
+Do not hardcode release strings in templates.
 
 ## Health Check
 
@@ -206,6 +228,42 @@ Supported values:
 
 `pyzbar` is optional and requires both the Python package and zbar native runtime.
 
+## Traversal Planning Config
+
+Traversal is currently planning-only. It records policy decisions and operator-visible traversal candidates for already-extracted references.
+
+Default:
+
+```env
+TRAVERSAL_ENABLED=false
+TRAVERSAL_MAX_DEPTH=1
+TRAVERSAL_MAX_DOCUMENTS_PER_BATCH=20
+TRAVERSAL_ALLOWED_CONTENT_TYPES=application/pdf
+TRAVERSAL_TIMEOUT_SECONDS=15
+TRAVERSAL_MAX_DOWNLOAD_MB=20
+TRAVERSAL_ALLOWED_DOMAINS=
+TRAVERSAL_BLOCK_PRIVATE_IPS=true
+TRAVERSAL_STORAGE_DIR=/app/data/runtime/linked-documents
+```
+
+Current traversal routes:
+
+```text
+/documents/{id}/traversal
+/documents/{id}/traversal/view
+/ops/traversal
+```
+
+Current guarantees:
+
+- no downloader
+- no URL following for traversal
+- no child document creation
+- no recursive processing
+- no background traversal worker
+- no HTML crawling
+- no network-dependent tests
+
 ## Backup Guidance
 
 See [Backup and Restore Guide](BACKUP_RESTORE.md) for command examples.
@@ -252,7 +310,7 @@ Cleanup logging now also uses deterministic structured summaries for retained-so
 
 ## Accepted Low-Level Exceptions
 
-The following remain intentionally accepted in v0.9.7:
+The following remain intentionally accepted in the current controlled-pilot branch:
 
 - `app/batch/fingerprint.py`
 - `app/batch/pdf_validation.py`
@@ -278,7 +336,7 @@ Current retention cleanup model:
 6. execute deletion through storage layer
 7. structured cleanup summary/log
 
-Quarantine/trash behavior is intentionally deferred and is not part of v0.9.7.
+Quarantine/trash behavior is intentionally deferred and is not part of the current controlled-pilot release.
 
 ## Operational Verification
 
@@ -291,7 +349,7 @@ APP_ENV=development uv run ruff check app tests migrations
 
 Latest results:
 
-- `79 passed`
+- `121 passed, 6 warnings` after traversal planning runtime handoff
 - `All checks passed`
 
 ## Next Recommended Phase
@@ -299,19 +357,20 @@ Latest results:
 Suggested next phase:
 
 ```text
-v0.9.8-observability-and-lifecycle-visibility
+operational validation of traversal planning runtime
 ```
 
 Suggested scope:
 
-- lifecycle visibility
-- storage metrics
-- cleanup observability
-- retry visibility
-- failed document analytics
-- retention status visibility
-- soft orphan detection
-- admin/runtime operational introspection
+- deploy latest branch on Linux server
+- rebuild container
+- run migration
+- verify traversal UI/API
+- confirm traversal remains inert
+- confirm no downloader side effects
+- confirm no child document creation
+- confirm lifecycle/ops still stable
+- collect pilot operator feedback
 
 Explicit non-goals:
 
@@ -321,6 +380,11 @@ Explicit non-goals:
 - microservices
 - queue orchestration
 - blob registry/reference counting unless future operational pain justifies it
+- automatic recursive traversal
+- downloader execution runtime
+- background traversal workers
+- HTML crawling
+- AI/RAG/vector database work
 
 ## SQLite Runtime Notes
 

@@ -121,7 +121,7 @@ Do not delete the database in real use unless you already have a backup.
 
 ## Storage Boundary Reminder
 
-As of `v0.9.7-storage-integration`, SQLite runtime operations coexist with a centralized storage boundary:
+As of `release/v0.9.8-controlled-pilot`, SQLite runtime operations coexist with a centralized storage boundary, lifecycle registry, ops visibility, and traversal planning runtime:
 
 - raw filesystem execution should live in `app/storage/*` or approved low-level adapters
 - business/service/web layers should request artifact operations rather than manipulating filesystem paths directly
@@ -139,7 +139,7 @@ APP_ENV=development uv run ruff check app tests migrations
 
 Latest results:
 
-- `79 passed`
+- `121 passed, 6 warnings` after traversal planning runtime handoff
 - `All checks passed`
 
 ## Known Limits

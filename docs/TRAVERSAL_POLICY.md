@@ -6,7 +6,14 @@
 
 Traversal policy exists to keep linked-document handling controlled, deterministic, auditable, bounded, and safe. It applies only to references that OLRE has already extracted from official-letter PDFs. It must not expand arbitrary HTML links or discover new URLs beyond extracted QR/URL references.
 
-Phase 1 is docs-only. No traversal policy is active in runtime until a later implementation phase adds settings, services, and storage.
+Current status:
+
+```text
+Phase 1 completed: docs-only architecture lock.
+Phase 2A completed: planning runtime only.
+```
+
+Traversal policy is active for planning decisions only. It does not authorize downloader behavior, child document creation, recursive processing, or HTML crawling.
 
 ## Strict Defaults
 
@@ -17,9 +24,9 @@ TRAVERSAL_ENABLED=false
 TRAVERSAL_MAX_DEPTH=1
 ```
 
-Traversal must not run automatically by default. In Phase 2, any downloader must be manual, single-depth, and operator-triggered.
+Traversal must not run automatically by default. Any future downloader must be manual, single-depth, and operator-triggered.
 
-## Proposed Configuration
+## Configuration
 
 Recommended future settings:
 
@@ -41,11 +48,11 @@ TRAVERSAL_STORAGE_DIR=/app/data/runtime/linked-documents
 | `TRAVERSAL_MAX_DEPTH` | `1` | Maximum allowed traversal depth |
 | `TRAVERSAL_MAX_DOCUMENTS_PER_BATCH` | `20` | Upper bound for linked-document actions in one batch/manual operation |
 | `TRAVERSAL_ALLOWED_CONTENT_TYPES` | `application/pdf` | Allowed downstream content types |
-| `TRAVERSAL_TIMEOUT_SECONDS` | `15` | Maximum time for a future network operation |
-| `TRAVERSAL_MAX_DOWNLOAD_MB` | `20` | Maximum linked file size |
+| `TRAVERSAL_TIMEOUT_SECONDS` | `15` | Maximum time for a future network operation; no network operation exists in Phase 2A |
+| `TRAVERSAL_MAX_DOWNLOAD_MB` | `20` | Maximum future linked file size |
 | `TRAVERSAL_ALLOWED_DOMAINS` | empty | Optional allowlist; empty means no domain allowlist is applied |
 | `TRAVERSAL_BLOCK_PRIVATE_IPS` | `true` | Blocks private/local network targets |
-| `TRAVERSAL_STORAGE_DIR` | `/app/data/runtime/linked-documents` | Controlled storage area for future linked downloads |
+| `TRAVERSAL_STORAGE_DIR` | `/app/data/runtime/linked-documents` | Controlled storage area for future linked downloads; readiness path only in Phase 2A |
 
 ## Policy Decisions
 
@@ -77,19 +84,19 @@ Policy reasons should be stable enough for tests and operator reporting, for exa
 
 | Target type | Policy |
 | --- | --- |
-| Direct PDF URL | Candidate may be allowed if all safety checks pass |
-| Known short URL | Candidate may be planned, but Phase 2 must still apply URL resolution and safety checks before download |
+| Direct PDF URL | Candidate may be planned and allowed if all safety checks pass |
+| Known short URL | Candidate may be planned, but a future downloader must still apply URL resolution and safety checks before download |
 | HTML page | Unsupported; no HTML link expansion |
 | Image URL | Unsupported |
 | Malformed URL | Unsupported |
 | Unsupported scheme | Unsupported |
 | Unknown target | Unsupported |
 
-No HTML link expansion is allowed. A resolved HTML page must not be parsed for links in Phase 2.
+No HTML link expansion is allowed. A resolved HTML page must not be parsed for links in any approved current phase.
 
 ## Security Boundary
 
-Future traversal must enforce these guardrails before any linked document is persisted as a child document:
+Traversal planning enforces deterministic classification and policy checks. Any future downloader must enforce these guardrails before any linked document is persisted as a child document:
 
 - block unsupported schemes
 - allow only `http` and `https`
@@ -147,9 +154,9 @@ data/runtime/linked-documents
 
 The traversal storage area is a staging area, not the normal import inbox. Files placed there must be subject to cleanup and retention rules in a later design.
 
-## Phase 2 Downloader Rule
+## Downloader Rule
 
-If Phase 2 adds a downloader, it must be:
+If a future phase adds a downloader, it must be:
 
 ```text
 manual single-depth operator-triggered traversal
@@ -159,7 +166,7 @@ It must not be automatic recursive crawl behavior. It must remain disabled by de
 
 ## No-Internet Test Policy
 
-Phase 2 tests must not require internet access.
+Traversal tests must not require internet access.
 
 Use:
 
@@ -171,14 +178,27 @@ Use:
 
 Tests must cover policy decisions without depending on external network availability, DNS, remote redirects, or live public websites.
 
-## Phase 2 Entry Criteria
+## Phase 2A Completion Criteria
 
-Phase 2 may start only when:
+Phase 2A is complete when:
 
-- Phase 1 docs are reviewed
-- security guardrails are approved
-- provenance model is approved
-- policy config defaults are approved
-- there is no objection to the proposed schema
-- the controlled pilot branch remains stable
+- traversal settings are available with strict defaults
+- classifier, policy, and security checks exist
+- planning persistence exists through `reference_traversals`
+- lifecycle planning events exist
+- `/documents/{id}/traversal`, `/documents/{id}/traversal/view`, and `/ops/traversal` are available
+- tests remain no-network
 
+These items are implemented in the current controlled-pilot branch.
+
+## Phase 2B Entry Criteria
+
+Downloader work may start only when:
+
+- Phase 2A has been deployed on the Linux controlled-pilot server
+- migration has run successfully
+- traversal planning UI/API have been reviewed
+- operators confirm the planning view is understandable
+- no downloader side effects are observed
+- no child document creation is observed
+- lifecycle/ops consistency remains stable
