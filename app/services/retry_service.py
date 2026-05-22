@@ -8,6 +8,7 @@ from sqlalchemy import select
 from app.batch.url_resolution import re_resolve_document_references
 from app.db.models import Document
 from app.services.process_batch import process_single_document_from_retained_source
+from app.services.traversal_review_service import evaluate_document_traversal_reviews
 
 
 @dataclass(frozen=True)
@@ -80,4 +81,5 @@ def retry_document_resolution(session, settings, document_id: int) -> RetryResul
         return RetryResult(False, "not_found")
 
     re_resolve_document_references(session, document.id, settings=settings)
+    evaluate_document_traversal_reviews(session, document.id)
     return RetryResult(True, "resolution_retried")

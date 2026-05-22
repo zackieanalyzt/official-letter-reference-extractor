@@ -132,6 +132,14 @@ class DocumentReference(Base):
         Index("ix_document_references_document_id", "document_id"),
         Index("ix_document_references_resolution_status", "resolution_status"),
         Index("ix_document_references_source_type", "source_type"),
+        Index("ix_document_references_recommended_action", "recommended_action"),
+        Index("ix_document_references_review_status", "review_status"),
+        Index("ix_document_references_risk_level", "risk_level"),
+        Index(
+            "ix_document_references_recommended_action_review_status",
+            "recommended_action",
+            "review_status",
+        ),
         UniqueConstraint(
             "document_id",
             "page_number",
@@ -157,8 +165,54 @@ class DocumentReference(Base):
     http_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
     resolution_error_type: Mapped[str | None] = mapped_column(Text, nullable=True)
     resolution_error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    confidence_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    risk_level: Mapped[str] = mapped_column(String(50), nullable=False, default="MEDIUM", server_default="MEDIUM")
+    recommended_action: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="REVIEW_REQUIRED", server_default="REVIEW_REQUIRED"
+    )
+    review_status: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="PENDING_REVIEW", server_default="PENDING_REVIEW"
+    )
+    review_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    operator_decision: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    operator_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     document: Mapped[Document] = relationship(back_populates="references")
+    traversal_reviews: Mapped[list["ReferenceTraversalReview"]] = relationship(
+        back_populates="reference",
+        cascade="all, delete-orphan",
+    )
+
+
+class ReferenceTraversalReview(Base):
+    __tablename__ = "reference_traversal_reviews"
+    __table_args__ = (
+        Index("ix_reference_traversal_reviews_traversal_id", "traversal_id"),
+        Index("ix_reference_traversal_reviews_review_status", "review_status"),
+        Index("ix_reference_traversal_reviews_created_at", "created_at"),
+        Index("ix_reference_traversal_reviews_event_type", "event_type"),
+    )
+
+    id: Mapped[int] = mapped_column(PK_TYPE, primary_key=True, autoincrement=True)
+    traversal_id: Mapped[int] = mapped_column(
+        PK_TYPE,
+        ForeignKey("document_references.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    review_status: Mapped[str] = mapped_column(String(50), nullable=False)
+    operator_decision: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    operator_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    acted_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    event_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    reference: Mapped[DocumentReference] = relationship(back_populates="traversal_reviews")
 
 
 class UserAudit(Base):

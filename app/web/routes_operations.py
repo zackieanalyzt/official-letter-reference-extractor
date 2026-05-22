@@ -30,6 +30,14 @@ from app.services.retry_service import (
     retry_document_resolution,
     retry_failed_document,
 )
+from app.services.traversal_review_service import (
+    DECISION_APPROVED,
+    DECISION_NOTED,
+    DECISION_REJECTED,
+    DECISION_SKIPPED,
+    apply_operator_review_action,
+    list_traversal_queue,
+)
 from app.services.ui_views import (
     count_pending_inbox_files,
     fetch_export_summary,
@@ -108,6 +116,10 @@ def _collect_result_filters(
 
 def _export_filter_context(filters: dict[str, str | None]) -> dict[str, str]:
     return {key: value or "" for key, value in filters.items()}
+
+
+def _operator_identity(_request: Request) -> str:
+    return "operator"
 
 
 def _save_uploaded_file(target_dir: Path, upload: UploadFile) -> tuple[bool, str]:
@@ -207,6 +219,108 @@ async def quality_page(request: Request):
         current_page="quality",
         context={"quality": quality},
     )
+
+
+@router.get("/ops/traversal")
+async def traversal_ops_page(
+    request: Request,
+    recommended_action: str | None = Query(default=None),
+    review_status: str | None = Query(default=None),
+):
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        queue = list_traversal_queue(
+            session,
+            recommended_action=_normalize_optional_query(recommended_action),
+            review_status=_normalize_optional_query(review_status),
+        )
+
+    return _render(
+        request,
+        name="ops_traversal.html",
+        current_page="ops_traversal",
+        context={
+            "queue": queue,
+            "recommended_action": recommended_action or "",
+            "review_status": review_status or "",
+        },
+    )
+
+
+@router.post("/ops/traversal/{reference_id}/approve")
+async def approve_traversal_reference(
+    request: Request,
+    reference_id: int,
+    operator_note: str | None = Form(default=None),
+):
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        apply_operator_review_action(
+            session,
+            reference_id=reference_id,
+            action=DECISION_APPROVED,
+            operator_note=operator_note,
+            acted_by=_operator_identity(request),
+        )
+        session.commit()
+    return RedirectResponse(url="/ops/traversal", status_code=303)
+
+
+@router.post("/ops/traversal/{reference_id}/reject")
+async def reject_traversal_reference(
+    request: Request,
+    reference_id: int,
+    operator_note: str | None = Form(default=None),
+):
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        apply_operator_review_action(
+            session,
+            reference_id=reference_id,
+            action=DECISION_REJECTED,
+            operator_note=operator_note,
+            acted_by=_operator_identity(request),
+        )
+        session.commit()
+    return RedirectResponse(url="/ops/traversal", status_code=303)
+
+
+@router.post("/ops/traversal/{reference_id}/skip")
+async def skip_traversal_reference(
+    request: Request,
+    reference_id: int,
+    operator_note: str | None = Form(default=None),
+):
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        apply_operator_review_action(
+            session,
+            reference_id=reference_id,
+            action=DECISION_SKIPPED,
+            operator_note=operator_note,
+            acted_by=_operator_identity(request),
+        )
+        session.commit()
+    return RedirectResponse(url="/ops/traversal", status_code=303)
+
+
+@router.post("/ops/traversal/{reference_id}/note")
+async def note_traversal_reference(
+    request: Request,
+    reference_id: int,
+    operator_note: str = Form(...),
+):
+    session_factory = get_session_factory(request.app.state.database_engine)
+    with session_factory() as session:
+        apply_operator_review_action(
+            session,
+            reference_id=reference_id,
+            action=DECISION_NOTED,
+            operator_note=operator_note,
+            acted_by=_operator_identity(request),
+        )
+        session.commit()
+    return RedirectResponse(url="/ops/traversal", status_code=303)
 
 
 @router.post("/imports/upload")

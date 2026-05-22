@@ -20,18 +20,18 @@ def test_readyz_checks_database_and_runtime_paths(client):
 
 def test_default_settings_match_docker_sqlite_runtime(monkeypatch):
     get_settings.cache_clear()
-    monkeypatch.delenv("DATABASE_URL", raising=False)
-    monkeypatch.delenv("INPUT_DIR", raising=False)
-    monkeypatch.delenv("PROCESSED_DIR", raising=False)
-    monkeypatch.delenv("ERROR_DIR", raising=False)
-    monkeypatch.delenv("QR_DEBUG_DIR", raising=False)
-    monkeypatch.delenv("RUNTIME_TMP_DIR", raising=False)
-    monkeypatch.delenv("FAILED_RETAINED_DIR", raising=False)
-    monkeypatch.delenv("APP_PORT", raising=False)
+    monkeypatch.setenv("DATABASE_URL", "sqlite:////app/data/olre.sqlite3")
+    monkeypatch.setenv("INPUT_DIR", "/app/data/input")
+    monkeypatch.setenv("PROCESSED_DIR", "/app/data/processed")
+    monkeypatch.setenv("ERROR_DIR", "/app/data/error")
+    monkeypatch.setenv("QR_DEBUG_DIR", "/app/data/debug/qr")
+    monkeypatch.setenv("RUNTIME_TMP_DIR", "/app/data/runtime/tmp")
+    monkeypatch.setenv("FAILED_RETAINED_DIR", "/app/data/runtime/failed-retained")
+    monkeypatch.setenv("APP_PORT", "7777")
 
     settings = get_settings()
 
-    assert settings.app_port == 8000
+    assert settings.app_port == 7777
     assert settings.resolved_database_url == "sqlite:////app/data/olre.sqlite3"
     assert settings.input_path.as_posix() == "/app/data/input"
     assert settings.processed_path.as_posix() == "/app/data/processed"

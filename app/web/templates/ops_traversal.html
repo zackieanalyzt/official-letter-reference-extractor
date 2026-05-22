@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}{{ labels.traversal_ops }} | OLRE{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="workspace-wide page-stack">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">{{ labels.traversal_ops_eyebrow }}</span>
+                <h1>{{ labels.traversal_ops_title }}</h1>
+                <p class="lead">{{ labels.traversal_ops_lead }}</p>
+            </div>
+        </div>
+
+        <article class="info-card">
+            <form method="get" action="/ops/traversal" class="filters-bar">
+                <label class="filter-field">
+                    <span>{{ labels.recommended_action }}</span>
+                    <select name="recommended_action">
+                        <option value="">{{ labels.all }}</option>
+                        <option value="AUTO_ELIGIBLE" {% if recommended_action == "AUTO_ELIGIBLE" %}selected{% endif %}>AUTO_ELIGIBLE</option>
+                        <option value="REVIEW_REQUIRED" {% if recommended_action == "REVIEW_REQUIRED" %}selected{% endif %}>REVIEW_REQUIRED</option>
+                        <option value="BLOCKED" {% if recommended_action == "BLOCKED" %}selected{% endif %}>BLOCKED</option>
+                        <option value="UNCERTAIN" {% if recommended_action == "UNCERTAIN" %}selected{% endif %}>UNCERTAIN</option>
+                    </select>
+                </label>
+                <label class="filter-field">
+                    <span>{{ labels.review_status_label }}</span>
+                    <select name="review_status">
+                        <option value="">{{ labels.all }}</option>
+                        <option value="NOT_REQUIRED" {% if review_status == "NOT_REQUIRED" %}selected{% endif %}>NOT_REQUIRED</option>
+                        <option value="PENDING_REVIEW" {% if review_status == "PENDING_REVIEW" %}selected{% endif %}>PENDING_REVIEW</option>
+                        <option value="APPROVED" {% if review_status == "APPROVED" %}selected{% endif %}>APPROVED</option>
+                        <option value="REJECTED" {% if review_status == "REJECTED" %}selected{% endif %}>REJECTED</option>
+                        <option value="SKIPPED" {% if review_status == "SKIPPED" %}selected{% endif %}>SKIPPED</option>
+                    </select>
+                </label>
+                <div class="filters-actions">
+                    <button type="submit" class="button button-primary button-small">{{ labels.apply }}</button>
+                    <a href="/ops/traversal" class="button button-secondary button-small">{{ labels.reset }}</a>
+                </div>
+            </form>
+        </article>
+
+        <article class="info-card">
+            <div class="section-head">
+                <h2>{{ labels.traversal_metrics }}</h2>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><strong>{{ queue.counts.total_candidates }}</strong><span>{{ labels.total_candidates }}</span></div>
+                <div class="stat-card"><strong>{{ queue.counts.auto_eligible_count }}</strong><span>{{ labels.auto_eligible_count }}</span></div>
+                <div class="stat-card"><strong>{{ queue.counts.review_required_count }}</strong><span>{{ labels.review_required_count }}</span></div>
+                <div class="stat-card"><strong>{{ queue.counts.blocked_count }}</strong><span>{{ labels.blocked_count }}</span></div>
+                <div class="stat-card"><strong>{{ queue.counts.uncertain_count }}</strong><span>{{ labels.uncertain_count }}</span></div>
+                <div class="stat-card"><strong>{{ queue.counts.approved_count }}</strong><span>{{ labels.approved_count }}</span></div>
+                <div class="stat-card"><strong>{{ queue.counts.rejected_count }}</strong><span>{{ labels.rejected_count }}</span></div>
+                <div class="stat-card"><strong>{{ queue.counts.skipped_count }}</strong><span>{{ labels.skipped_count }}</span></div>
+                <div class="stat-card"><strong>{{ queue.counts.estimated_manual_review_reduction }}%</strong><span>{{ labels.estimated_manual_review_reduction }}</span></div>
+            </div>
+        </article>
+
+        {% for action_name, rows in queue.grouped.items() %}
+        <article class="info-card table-card">
+            <div class="section-head">
+                <div class="results-meta">
+                    <strong>{{ rows|length }}</strong>
+                    <span>{{ action_name }}</span>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table results-table">
+                    <thead>
+                        <tr>
+                            <th>{{ labels.file_name }}</th>
+                            <th>{{ labels.page }}</th>
+                            <th>{{ labels.raw_reference }}</th>
+                            <th>{{ labels.confidence_score }}</th>
+                            <th>{{ labels.risk_level }}</th>
+                            <th>{{ labels.recommended_action }}</th>
+                            <th>{{ labels.review_status_label }}</th>
+                            <th>{{ labels.review_reason_label }}</th>
+                            <th>{{ labels.evidence_summary_label }}</th>
+                            <th>{{ labels.action }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr>
+                            <td class="cell-strong">{{ row.filename }}</td>
+                            <td>{{ row.page_number or "-" }}</td>
+                            <td class="cell-wrap"><span class="ellipsis-link" title="{{ row.raw_reference or row.evidence_summary or '-' }}">{{ row.raw_reference or "-" }}</span></td>
+                            <td>{{ row.confidence_score if row.confidence_score is not none else "-" }}</td>
+                            <td><span class="status-badge">{{ row.risk_level }}</span></td>
+                            <td><span class="status-badge">{{ row.recommended_action }}</span></td>
+                            <td><span class="status-badge">{{ row.review_status }}</span></td>
+                            <td class="cell-wrap">{{ row.review_reason or "-" }}</td>
+                            <td class="cell-wrap">{{ row.evidence_summary or "-" }}</td>
+                            <td>
+                                <div class="page-stack">
+                                    <form method="post" action="/ops/traversal/{{ row.reference_id }}/note" class="inline-form">
+                                        <input type="text" name="operator_note" value="{{ row.operator_note or '' }}" placeholder="{{ labels.add_note }}">
+                                        <button class="button button-secondary button-small" type="submit">{{ labels.save_note }}</button>
+                                    </form>
+                                    {% if row.recommended_action in ["REVIEW_REQUIRED", "UNCERTAIN"] %}
+                                    <form method="post" action="/ops/traversal/{{ row.reference_id }}/approve" class="inline-form">
+                                        <button class="button button-primary button-small" type="submit">{{ labels.approve }}</button>
+                                    </form>
+                                    <form method="post" action="/ops/traversal/{{ row.reference_id }}/reject" class="inline-form">
+                                        <button class="button button-secondary button-small" type="submit">{{ labels.reject }}</button>
+                                    </form>
+                                    <form method="post" action="/ops/traversal/{{ row.reference_id }}/skip" class="inline-form">
+                                        <button class="button button-ghost button-small" type="submit">{{ labels.skip }}</button>
+                                    </form>
+                                    {% else %}
+                                    <span class="muted-inline">{{ labels.no_review_action_required }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="table-empty">{{ labels.no_rows }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

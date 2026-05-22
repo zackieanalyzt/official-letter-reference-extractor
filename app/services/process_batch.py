@@ -49,6 +49,7 @@ from app.services.retention_service import (
     apply_source_retention_for_success,
     reconcile_document_source_flags,
 )
+from app.services.traversal_review_service import evaluate_document_traversal_reviews
 
 
 logger = get_logger(__name__)
@@ -241,6 +242,7 @@ def _process_document_from_source(
         document.file_size_bytes = fingerprint.file_size_bytes
         document.extraction_version = settings.extraction_version
         resolve_document_references(session, document.id, settings=settings)
+        evaluate_document_traversal_reviews(session, document.id)
 
         retention = apply_source_retention_for_success(
             fingerprint.path,

@@ -1,5 +1,15 @@
 # OLRE Daily Changelog - 2026-05-03
 
+## 2026-05-22 - Step 5 Confidence-Gated Traversal Review
+
+- added Step 5 traversal review state to `document_references`
+- added append-only `reference_traversal_reviews` audit history
+- added deterministic traversal review scoring, risk, and queue assignment
+- added `/ops/traversal` grouped queue for `AUTO_ELIGIBLE`, `REVIEW_REQUIRED`, `BLOCKED`, and `UNCERTAIN`
+- added operator approve, reject, skip, and note actions with append-only audit rows
+- kept Step 5 planning-only with no downloader, no recursive traversal, no child-document creation, and no new background traversal worker
+
+
 ## Project
 
 **Official Letter Reference Extractor (OLRE)**

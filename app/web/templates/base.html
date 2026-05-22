@@ -23,6 +23,7 @@
 
             <nav class="main-nav" aria-label="{{ labels.app_full_name }}">
                 <a href="/dashboard" class="nav-link {% if current_page == 'dashboard' %}is-active{% endif %}">{{ labels.dashboard }}</a>
+                <a href="/ops/traversal" class="nav-link {% if current_page == 'ops_traversal' %}is-active{% endif %}">{{ labels.traversal_ops }}</a>
                 <a href="/results" class="nav-link {% if current_page == 'results' %}is-active{% endif %}">{{ labels.results }}</a>
                 <a href="/quality" class="nav-link {% if current_page == 'quality' %}is-active{% endif %}">{{ labels.quality }}</a>
                 <a href="/exports" class="nav-link {% if current_page == 'exports' %}is-active{% endif %}">{{ labels.exports }}</a>
