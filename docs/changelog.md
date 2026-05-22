@@ -7,7 +7,11 @@
 - added deterministic traversal review scoring, risk, and queue assignment
 - added `/ops/traversal` grouped queue for `AUTO_ELIGIBLE`, `REVIEW_REQUIRED`, `BLOCKED`, and `UNCERTAIN`
 - added operator approve, reject, skip, and note actions with append-only audit rows
-- kept Step 5 planning-only with no downloader, no recursive traversal, no child-document creation, and no new background traversal worker
+- formalized conservative traversal philosophy: governance first, network execution later
+- normalized runtime baseline to port `7777` for Docker SQLite runtime alignment
+- verified the repository at `82 passed` tests after the Step 5 stabilization pass
+- explicit boundary: no downloader or recursive traversal introduced
+- kept Step 5 planning-only with no downloader, no URL following, no recursive traversal, no child-document creation, and no new background traversal worker
 
 
 ## Project
